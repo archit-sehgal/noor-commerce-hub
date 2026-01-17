@@ -171,16 +171,17 @@ const Products = () => {
                 Showing {filteredProducts.length} product(s)
               </p>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
-                {filteredProducts.map((product) => (
+              {filteredProducts.map((product) => (
                   <ProductCard
                     key={product.id}
-                    id={product.id}
-                    name={product.name}
-                    slug={product.slug}
-                    price={product.price}
-                    discountPrice={product.discount_price || undefined}
-                    image={product.images?.[0] || "/placeholder.svg"}
-                    category={product.category?.name || ""}
+                    product={{
+                      id: product.id,
+                      name: product.name,
+                      price: product.price,
+                      discountPrice: product.discount_price || null,
+                      image: product.images?.[0] || "/placeholder.svg",
+                      category: product.category?.name || "",
+                    }}
                   />
                 ))}
               </div>

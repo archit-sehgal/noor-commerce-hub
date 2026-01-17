@@ -62,7 +62,7 @@ const AdminOrders = () => {
     }
   };
 
-  const updateOrderStatus = async (orderId: string, status: string) => {
+  const updateOrderStatus = async (orderId: string, status: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled") => {
     try {
       const { error } = await supabase
         .from("orders")
