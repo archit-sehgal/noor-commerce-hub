@@ -62,7 +62,7 @@ const AdminOrders = () => {
     }
   };
 
-  const updateOrderStatus = async (orderId: string, status: string) => {
+  const updateOrderStatus = async (orderId: string, status: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled") => {
     try {
       const { error } = await supabase
         .from("orders")
@@ -200,7 +200,7 @@ const AdminOrders = () => {
                   <TableCell>
                     <Select
                       value={order.status}
-                      onValueChange={(value) =>
+                      onValueChange={(value: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled") =>
                         updateOrderStatus(order.id, value)
                       }
                     >
