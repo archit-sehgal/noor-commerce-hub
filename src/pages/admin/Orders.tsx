@@ -200,7 +200,7 @@ const AdminOrders = () => {
                   <TableCell>
                     <Select
                       value={order.status}
-                      onValueChange={(value) =>
+                      onValueChange={(value: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled") =>
                         updateOrderStatus(order.id, value)
                       }
                     >
