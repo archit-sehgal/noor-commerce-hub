@@ -1,10 +1,19 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, ShoppingBag, User, Search } from "lucide-react";
+import { Menu, X, ShoppingBag, User, Search, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, signOut, isStaff } = useAuth();
 
   const navLinks = [
     { name: "New Arrivals", href: "/new-arrivals" },
@@ -13,6 +22,8 @@ const Navbar = () => {
     { name: "Sarees", href: "/category/sarees" },
     { name: "Suits", href: "/category/suits" },
   ];
+
+  const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Account";
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border">
@@ -60,11 +71,44 @@ const Navbar = () => {
             <Button variant="ghost" size="icon" className="hidden lg:flex">
               <Search className="h-5 w-5" />
             </Button>
-            <Link to="/account">
-              <Button variant="ghost" size="icon">
-                <User className="h-5 w-5" />
-              </Button>
-            </Link>
+            
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="gap-2">
+                    <User className="h-5 w-5" />
+                    <span className="hidden lg:inline text-sm font-medium">{displayName}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 bg-background">
+                  <DropdownMenuItem asChild>
+                    <Link to="/account" className="cursor-pointer">
+                      My Account
+                    </Link>
+                  </DropdownMenuItem>
+                  {isStaff && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin" className="cursor-pointer">
+                        Admin Panel
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={signOut} className="cursor-pointer text-destructive">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link to="/login">
+                <Button variant="ghost" className="gap-2">
+                  <User className="h-5 w-5" />
+                  <span className="hidden lg:inline text-sm font-medium">Sign In</span>
+                </Button>
+              </Link>
+            )}
+            
             <Link to="/cart" className="relative">
               <Button variant="ghost" size="icon">
                 <ShoppingBag className="h-5 w-5" />
@@ -94,13 +138,43 @@ const Navbar = () => {
               </Link>
             ))}
             <div className="pt-4 border-t border-border">
-              <Link
-                to="/login"
-                onClick={() => setIsOpen(false)}
-                className="text-lg font-display tracking-wide text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Sign In
-              </Link>
+              {user ? (
+                <>
+                  <Link
+                    to="/account"
+                    onClick={() => setIsOpen(false)}
+                    className="block text-lg font-display tracking-wide text-muted-foreground hover:text-foreground transition-colors mb-4"
+                  >
+                    My Account ({displayName})
+                  </Link>
+                  {isStaff && (
+                    <Link
+                      to="/admin"
+                      onClick={() => setIsOpen(false)}
+                      className="block text-lg font-display tracking-wide text-muted-foreground hover:text-foreground transition-colors mb-4"
+                    >
+                      Admin Panel
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => {
+                      signOut();
+                      setIsOpen(false);
+                    }}
+                    className="text-lg font-display tracking-wide text-destructive hover:text-destructive/80 transition-colors"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <Link
+                  to="/login"
+                  onClick={() => setIsOpen(false)}
+                  className="text-lg font-display tracking-wide text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Sign In
+                </Link>
+              )}
             </div>
           </div>
         </div>
