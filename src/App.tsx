@@ -24,6 +24,8 @@ import AdminProductForm from "./pages/admin/ProductForm";
 import AdminCategories from "./pages/admin/Categories";
 import AdminOrders from "./pages/admin/Orders";
 import AdminCustomers from "./pages/admin/Customers";
+import AdminInventory from "./pages/admin/Inventory";
+import AdminReports from "./pages/admin/Reports";
 
 const queryClient = new QueryClient();
 
@@ -125,6 +127,22 @@ const App = () => (
               element={
                 <ProtectedRoute requireStaff>
                   <AdminCustomers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/inventory"
+              element={
+                <ProtectedRoute requireStaff>
+                  <AdminInventory />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/reports"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <AdminReports />
                 </ProtectedRoute>
               }
             />
