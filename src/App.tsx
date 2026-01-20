@@ -26,6 +26,8 @@ import AdminOrders from "./pages/admin/Orders";
 import AdminCustomers from "./pages/admin/Customers";
 import AdminInventory from "./pages/admin/Inventory";
 import AdminReports from "./pages/admin/Reports";
+import AdminBilling from "./pages/admin/Billing";
+import AdminInvoices from "./pages/admin/Invoices";
 
 const queryClient = new QueryClient();
 
@@ -143,6 +145,22 @@ const App = () => (
               element={
                 <ProtectedRoute requireAdmin>
                   <AdminReports />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/billing"
+              element={
+                <ProtectedRoute requireStaff>
+                  <AdminBilling />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/invoices"
+              element={
+                <ProtectedRoute requireStaff>
+                  <AdminInvoices />
                 </ProtectedRoute>
               }
             />
