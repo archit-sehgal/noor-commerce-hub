@@ -1,0 +1,890 @@
+import { useEffect, useState } from "react";
+import AdminLayout from "@/components/admin/AdminLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Search,
+  Plus,
+  Minus,
+  Trash2,
+  Printer,
+  Loader2,
+  User,
+  ShoppingBag,
+  Receipt,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+
+interface Product {
+  id: string;
+  name: string;
+  sku: string | null;
+  price: number;
+  discount_price: number | null;
+  stock_quantity: number;
+  sizes: string[] | null;
+  colors: string[] | null;
+}
+
+interface CartItem {
+  product: Product;
+  quantity: number;
+  size: string | null;
+  color: string | null;
+  unitPrice: number;
+}
+
+interface Customer {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+}
+
+const AdminBilling = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [showNewCustomer, setShowNewCustomer] = useState(false);
+  const [newCustomerName, setNewCustomerName] = useState("");
+  const [newCustomerPhone, setNewCustomerPhone] = useState("");
+  const [newCustomerEmail, setNewCustomerEmail] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<string>("cash");
+  const [discountAmount, setDiscountAmount] = useState<number>(0);
+  const [notes, setNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
+  const [generatedInvoice, setGeneratedInvoice] = useState<any>(null);
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    fetchProducts();
+    fetchCustomers();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, sku, price, discount_price, stock_quantity, sizes, colors")
+        .eq("is_active", true)
+        .gt("stock_quantity", 0)
+        .order("name");
+
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCustomers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("customers")
+        .select("id, name, phone, email")
+        .order("name");
+
+      if (error) throw error;
+      setCustomers(data || []);
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+    }
+  };
+
+  const filteredProducts = products.filter(
+    (p) =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.sku?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredCustomers = customers.filter(
+    (c) =>
+      c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+      c.phone?.includes(customerSearch) ||
+      c.email?.toLowerCase().includes(customerSearch.toLowerCase())
+  );
+
+  const addToCart = (product: Product) => {
+    const existingIndex = cart.findIndex((item) => item.product.id === product.id);
+    if (existingIndex >= 0) {
+      const updated = [...cart];
+      if (updated[existingIndex].quantity < product.stock_quantity) {
+        updated[existingIndex].quantity += 1;
+        setCart(updated);
+      } else {
+        toast({
+          title: "Stock Limit",
+          description: "Cannot add more than available stock",
+          variant: "destructive",
+        });
+      }
+    } else {
+      const unitPrice = product.discount_price || product.price;
+      setCart([
+        ...cart,
+        {
+          product,
+          quantity: 1,
+          size: product.sizes?.[0] || null,
+          color: product.colors?.[0] || null,
+          unitPrice,
+        },
+      ]);
+    }
+  };
+
+  const updateCartItem = (index: number, updates: Partial<CartItem>) => {
+    const updated = [...cart];
+    updated[index] = { ...updated[index], ...updates };
+    setCart(updated);
+  };
+
+  const removeFromCart = (index: number) => {
+    setCart(cart.filter((_, i) => i !== index));
+  };
+
+  const subtotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  const taxAmount = subtotal * 0.18; // 18% GST
+  const totalAmount = subtotal + taxAmount - discountAmount;
+
+  const createNewCustomer = async () => {
+    if (!newCustomerName.trim()) {
+      toast({
+        title: "Error",
+        description: "Customer name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("customers")
+        .insert({
+          name: newCustomerName.trim(),
+          phone: newCustomerPhone.trim() || null,
+          email: newCustomerEmail.trim() || null,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCustomers([...customers, data]);
+      setSelectedCustomer(data);
+      setShowNewCustomer(false);
+      setNewCustomerName("");
+      setNewCustomerPhone("");
+      setNewCustomerEmail("");
+
+      toast({
+        title: "Success",
+        description: "Customer created successfully",
+      });
+    } catch (error) {
+      console.error("Error creating customer:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create customer",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const generateOrderNumber = () => {
+    const date = new Date();
+    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, "");
+    const random = Math.floor(Math.random() * 10000)
+      .toString()
+      .padStart(4, "0");
+    return `POS-${dateStr}-${random}`;
+  };
+
+  const handleGenerateBill = async () => {
+    if (cart.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please add items to the cart",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const orderNumber = generateOrderNumber();
+
+      // Create order
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          order_number: orderNumber,
+          customer_id: selectedCustomer?.id || null,
+          user_id: null,
+          status: "delivered",
+          payment_status: paymentMethod === "cash" ? "paid" : "pending",
+          subtotal: subtotal,
+          tax_amount: taxAmount,
+          discount_amount: discountAmount,
+          total_amount: totalAmount,
+          notes: notes || `In-store purchase - ${paymentMethod}`,
+          created_by: user?.id,
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Create order items
+      const orderItems = cart.map((item) => ({
+        order_id: order.id,
+        product_id: item.product.id,
+        product_name: item.product.name,
+        quantity: item.quantity,
+        unit_price: item.unitPrice,
+        total_price: item.unitPrice * item.quantity,
+        size: item.size,
+        color: item.color,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from("order_items")
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      // Update stock for each product
+      for (const item of cart) {
+        const newStock = item.product.stock_quantity - item.quantity;
+        await supabase
+          .from("products")
+          .update({ stock_quantity: newStock })
+          .eq("id", item.product.id);
+
+        // Record stock history
+        await supabase.from("stock_history").insert({
+          product_id: item.product.id,
+          change_type: "sale",
+          change_amount: -item.quantity,
+          previous_quantity: item.product.stock_quantity,
+          new_quantity: newStock,
+          notes: `In-store sale - Order ${orderNumber}`,
+          reference_id: order.id,
+          created_by: user?.id,
+        });
+      }
+
+      // Create invoice
+      const { data: invoice, error: invoiceError } = await supabase
+        .from("invoices")
+        .insert({
+          invoice_number: orderNumber.replace("POS", "INV"),
+          order_id: order.id,
+          customer_id: selectedCustomer?.id || null,
+          subtotal: subtotal,
+          tax_amount: taxAmount,
+          discount_amount: discountAmount,
+          total_amount: totalAmount,
+          payment_status: paymentMethod === "cash" ? "paid" : "pending",
+          notes: notes,
+          created_by: user?.id,
+        })
+        .select()
+        .single();
+
+      if (invoiceError) throw invoiceError;
+
+      // Update customer stats if customer selected
+      if (selectedCustomer) {
+        await supabase
+          .from("customers")
+          .update({
+            total_orders: (selectedCustomer as any).total_orders
+              ? (selectedCustomer as any).total_orders + 1
+              : 1,
+            total_spent: (selectedCustomer as any).total_spent
+              ? (selectedCustomer as any).total_spent + totalAmount
+              : totalAmount,
+            last_purchase_date: new Date().toISOString(),
+          })
+          .eq("id", selectedCustomer.id);
+      }
+
+      // Generate invoice for display
+      setGeneratedInvoice({
+        invoiceNumber: invoice.invoice_number,
+        orderNumber: order.order_number,
+        customer: selectedCustomer,
+        items: cart,
+        subtotal,
+        taxAmount,
+        discountAmount,
+        totalAmount,
+        paymentMethod,
+        date: new Date(),
+      });
+
+      setInvoiceDialogOpen(true);
+
+      // Reset form
+      setCart([]);
+      setSelectedCustomer(null);
+      setDiscountAmount(0);
+      setNotes("");
+      fetchProducts(); // Refresh stock
+
+      toast({
+        title: "Success",
+        description: "Bill generated successfully!",
+      });
+    } catch (error) {
+      console.error("Error generating bill:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate bill",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const printInvoice = () => {
+    const printContent = document.getElementById("invoice-print-content");
+    if (printContent) {
+      const printWindow = window.open("", "_blank");
+      if (printWindow) {
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>Invoice - ${generatedInvoice?.invoiceNumber}</title>
+              <style>
+                body { font-family: 'Georgia', serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+                .header { text-align: center; border-bottom: 2px solid #8B4513; padding-bottom: 20px; margin-bottom: 20px; }
+                .header h1 { color: #8B4513; margin: 0; font-size: 28px; }
+                .header p { margin: 5px 0; color: #666; }
+                .invoice-details { display: flex; justify-content: space-between; margin-bottom: 30px; }
+                .invoice-details div { }
+                .invoice-details strong { color: #8B4513; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th { background: #8B4513; color: white; padding: 12px; text-align: left; }
+                td { padding: 10px; border-bottom: 1px solid #ddd; }
+                .totals { text-align: right; margin-top: 20px; }
+                .totals div { margin: 5px 0; }
+                .totals .total { font-size: 24px; color: #8B4513; font-weight: bold; }
+                .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; }
+              </style>
+            </head>
+            <body>
+              ${printContent.innerHTML}
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+      }
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+    }).format(amount);
+  };
+
+  return (
+    <AdminLayout title="In-Store Billing">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Products Section */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Product Search */}
+          <div className="bg-background rounded-lg p-4 shadow-sm">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search products by name or SKU..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          {/* Products Grid */}
+          <div className="bg-background rounded-lg p-4 shadow-sm">
+            <h3 className="font-serif text-lg font-semibold mb-4 flex items-center gap-2">
+              <ShoppingBag className="h-5 w-5 text-primary" />
+              Select Products
+            </h3>
+
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[400px] overflow-y-auto">
+                {filteredProducts.map((product) => (
+                  <button
+                    key={product.id}
+                    onClick={() => addToCart(product)}
+                    className="p-3 border border-border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors text-left"
+                  >
+                    <p className="font-medium text-sm truncate">{product.name}</p>
+                    <p className="text-xs text-muted-foreground">{product.sku || "-"}</p>
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="text-primary font-semibold text-sm">
+                        {formatCurrency(product.discount_price || product.price)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        Stock: {product.stock_quantity}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Cart & Billing Section */}
+        <div className="space-y-4">
+          {/* Customer Selection */}
+          <div className="bg-background rounded-lg p-4 shadow-sm">
+            <h3 className="font-serif text-lg font-semibold mb-3 flex items-center gap-2">
+              <User className="h-5 w-5 text-primary" />
+              Customer
+            </h3>
+
+            {selectedCustomer ? (
+              <div className="flex items-center justify-between p-3 bg-primary/5 rounded-lg">
+                <div>
+                  <p className="font-medium">{selectedCustomer.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedCustomer.phone || selectedCustomer.email || "Walk-in"}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedCustomer(null)}
+                >
+                  Change
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <Input
+                  placeholder="Search customer..."
+                  value={customerSearch}
+                  onChange={(e) => setCustomerSearch(e.target.value)}
+                />
+                {customerSearch && filteredCustomers.length > 0 && (
+                  <div className="max-h-32 overflow-y-auto border border-border rounded-lg">
+                    {filteredCustomers.slice(0, 5).map((customer) => (
+                      <button
+                        key={customer.id}
+                        onClick={() => {
+                          setSelectedCustomer(customer);
+                          setCustomerSearch("");
+                        }}
+                        className="w-full p-2 text-left hover:bg-muted/50 text-sm"
+                      >
+                        <p className="font-medium">{customer.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {customer.phone || customer.email}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowNewCustomer(true)}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Customer
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Cart Items */}
+          <div className="bg-background rounded-lg p-4 shadow-sm">
+            <h3 className="font-serif text-lg font-semibold mb-3 flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-primary" />
+              Cart ({cart.length} items)
+            </h3>
+
+            {cart.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                No items in cart
+              </p>
+            ) : (
+              <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                {cart.map((item, index) => (
+                  <div
+                    key={index}
+                    className="border border-border rounded-lg p-3 space-y-2"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{item.product.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatCurrency(item.unitPrice)} each
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFromCart(index)}
+                        className="text-destructive h-6 w-6 p-0"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {item.product.sizes && item.product.sizes.length > 0 && (
+                        <Select
+                          value={item.size || ""}
+                          onValueChange={(value) =>
+                            updateCartItem(index, { size: value })
+                          }
+                        >
+                          <SelectTrigger className="h-8 text-xs w-20">
+                            <SelectValue placeholder="Size" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {item.product.sizes.map((size) => (
+                              <SelectItem key={size} value={size}>
+                                {size}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+
+                      {item.product.colors && item.product.colors.length > 0 && (
+                        <Select
+                          value={item.color || ""}
+                          onValueChange={(value) =>
+                            updateCartItem(index, { color: value })
+                          }
+                        >
+                          <SelectTrigger className="h-8 text-xs w-24">
+                            <SelectValue placeholder="Color" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {item.product.colors.map((color) => (
+                              <SelectItem key={color} value={color}>
+                                {color}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+
+                      <div className="flex items-center gap-1 ml-auto">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() =>
+                            updateCartItem(index, {
+                              quantity: Math.max(1, item.quantity - 1),
+                            })
+                          }
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <span className="w-8 text-center text-sm font-medium">
+                          {item.quantity}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => {
+                            if (item.quantity < item.product.stock_quantity) {
+                              updateCartItem(index, { quantity: item.quantity + 1 });
+                            }
+                          }}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="text-right text-sm font-semibold text-primary">
+                      {formatCurrency(item.unitPrice * item.quantity)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Billing Summary */}
+          <div className="bg-background rounded-lg p-4 shadow-sm space-y-4">
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span>{formatCurrency(subtotal)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">GST (18%)</span>
+                <span>{formatCurrency(taxAmount)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <Label className="text-sm text-muted-foreground">Discount</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={discountAmount}
+                  onChange={(e) => setDiscountAmount(Number(e.target.value) || 0)}
+                  className="w-24 h-8 text-right"
+                />
+              </div>
+              <div className="flex justify-between text-lg font-bold pt-2 border-t border-border">
+                <span>Total</span>
+                <span className="text-primary">{formatCurrency(totalAmount)}</span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <Label className="text-sm">Payment Method</Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="card">Card</SelectItem>
+                    <SelectItem value="upi">UPI</SelectItem>
+                    <SelectItem value="credit">Credit (Pay Later)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="text-sm">Notes</Label>
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Any additional notes..."
+                  rows={2}
+                />
+              </div>
+
+              <Button
+                onClick={handleGenerateBill}
+                disabled={cart.length === 0 || submitting}
+                className="w-full"
+                size="lg"
+              >
+                {submitting ? (
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                ) : (
+                  <Receipt className="h-5 w-5 mr-2" />
+                )}
+                Generate Bill
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* New Customer Dialog */}
+      <Dialog open={showNewCustomer} onOpenChange={setShowNewCustomer}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-serif">Add New Customer</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Name *</Label>
+              <Input
+                value={newCustomerName}
+                onChange={(e) => setNewCustomerName(e.target.value)}
+                placeholder="Customer name"
+              />
+            </div>
+            <div>
+              <Label>Phone</Label>
+              <Input
+                value={newCustomerPhone}
+                onChange={(e) => setNewCustomerPhone(e.target.value)}
+                placeholder="Phone number"
+              />
+            </div>
+            <div>
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={newCustomerEmail}
+                onChange={(e) => setNewCustomerEmail(e.target.value)}
+                placeholder="Email address"
+              />
+            </div>
+            <Button onClick={createNewCustomer} className="w-full">
+              Add Customer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invoice Dialog */}
+      <Dialog open={invoiceDialogOpen} onOpenChange={setInvoiceDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-serif flex items-center justify-between">
+              <span>Invoice Generated</span>
+              <Button variant="outline" size="sm" onClick={printInvoice}>
+                <Printer className="h-4 w-4 mr-2" />
+                Print
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div id="invoice-print-content" className="p-4">
+            <div className="header text-center border-b-2 border-primary pb-4 mb-4">
+              <h1 className="text-2xl font-serif font-bold text-primary">
+                VASTRA ELEGANCE
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Premium Ethnic Fashion
+              </p>
+              <p className="text-xs text-muted-foreground">
+                123 Fashion Street, Mumbai - 400001
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
+              <div>
+                <p>
+                  <strong className="text-primary">Invoice #:</strong>{" "}
+                  {generatedInvoice?.invoiceNumber}
+                </p>
+                <p>
+                  <strong className="text-primary">Date:</strong>{" "}
+                  {generatedInvoice?.date?.toLocaleDateString("en-IN")}
+                </p>
+              </div>
+              <div className="text-right">
+                {generatedInvoice?.customer ? (
+                  <>
+                    <p>
+                      <strong className="text-primary">Customer:</strong>{" "}
+                      {generatedInvoice.customer.name}
+                    </p>
+                    {generatedInvoice.customer.phone && (
+                      <p>{generatedInvoice.customer.phone}</p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-muted-foreground">Walk-in Customer</p>
+                )}
+              </div>
+            </div>
+
+            <table className="w-full mb-4">
+              <thead>
+                <tr className="bg-primary text-primary-foreground">
+                  <th className="p-2 text-left">Item</th>
+                  <th className="p-2 text-center">Qty</th>
+                  <th className="p-2 text-right">Rate</th>
+                  <th className="p-2 text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {generatedInvoice?.items?.map((item: CartItem, index: number) => (
+                  <tr key={index} className="border-b border-border">
+                    <td className="p-2">
+                      <p className="font-medium">{item.product.name}</p>
+                      {(item.size || item.color) && (
+                        <p className="text-xs text-muted-foreground">
+                          {[item.size, item.color].filter(Boolean).join(", ")}
+                        </p>
+                      )}
+                    </td>
+                    <td className="p-2 text-center">{item.quantity}</td>
+                    <td className="p-2 text-right">
+                      {formatCurrency(item.unitPrice)}
+                    </td>
+                    <td className="p-2 text-right font-medium">
+                      {formatCurrency(item.unitPrice * item.quantity)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="space-y-1 text-right">
+              <p>
+                <span className="text-muted-foreground">Subtotal:</span>{" "}
+                <span className="font-medium">
+                  {formatCurrency(generatedInvoice?.subtotal || 0)}
+                </span>
+              </p>
+              <p>
+                <span className="text-muted-foreground">GST (18%):</span>{" "}
+                <span className="font-medium">
+                  {formatCurrency(generatedInvoice?.taxAmount || 0)}
+                </span>
+              </p>
+              {generatedInvoice?.discountAmount > 0 && (
+                <p>
+                  <span className="text-muted-foreground">Discount:</span>{" "}
+                  <span className="font-medium text-green-600">
+                    -{formatCurrency(generatedInvoice?.discountAmount || 0)}
+                  </span>
+                </p>
+              )}
+              <p className="text-xl font-bold text-primary pt-2 border-t border-border">
+                <span>Total:</span>{" "}
+                {formatCurrency(generatedInvoice?.totalAmount || 0)}
+              </p>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-border text-center text-xs text-muted-foreground">
+              <p>Payment Method: {generatedInvoice?.paymentMethod?.toUpperCase()}</p>
+              <p className="mt-2">Thank you for shopping with us!</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </AdminLayout>
+  );
+};
+
+export default AdminBilling;
