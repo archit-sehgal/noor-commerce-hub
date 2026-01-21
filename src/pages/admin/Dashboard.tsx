@@ -318,22 +318,22 @@ const AdminDashboard = () => {
                   </Button>
                 </Link>
               )}
-              <Link to="/admin/orders/new">
+              <Link to="/admin/billing">
                 <Button variant="outline">
                   <ShoppingCart className="h-4 w-4 mr-2" />
-                  Create Order
+                  Create Order (POS)
                 </Button>
               </Link>
-              <Link to="/admin/invoices/new">
+              <Link to="/admin/orders">
                 <Button variant="outline">
                   <FileText className="h-4 w-4 mr-2" />
-                  Generate Invoice
+                  View Orders
                 </Button>
               </Link>
-              <Link to="/admin/customers/new">
+              <Link to="/admin/customers">
                 <Button variant="outline">
                   <Users className="h-4 w-4 mr-2" />
-                  Add Customer
+                  Manage Customers
                 </Button>
               </Link>
             </CardContent>
