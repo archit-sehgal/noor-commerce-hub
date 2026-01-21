@@ -15,6 +15,7 @@ import {
   Warehouse,
   BarChart3,
   Receipt,
+  UserCheck,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -36,6 +37,7 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
     { name: "Categories", icon: Tags, href: "/admin/categories", show: isAdmin },
     { name: "Orders", icon: ShoppingCart, href: "/admin/orders", show: true },
     { name: "Customers", icon: Users, href: "/admin/customers", show: true },
+    { name: "Salesmen", icon: UserCheck, href: "/admin/salesmen", show: isAdmin },
     { name: "Inventory", icon: Warehouse, href: "/admin/inventory", show: true },
     { name: "Reports", icon: BarChart3, href: "/admin/reports", show: isAdmin },
     { name: "Invoices", icon: FileText, href: "/admin/invoices", show: true },
