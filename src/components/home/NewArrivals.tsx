@@ -1,51 +1,27 @@
 import ProductCard from "@/components/product/ProductCard";
 import { Link } from "react-router-dom";
-import productAnarkali from "@/assets/product-anarkali.jpg";
-import productSaree from "@/assets/product-saree.jpg";
-import productKurti from "@/assets/product-kurti.jpg";
-import productPalazzo from "@/assets/product-palazzo.jpg";
-
-// Sample products data (will be replaced with real data from database)
-const newArrivals = [
-  {
-    id: "1",
-    name: "Chanderi Silk Kurti",
-    price: 2499,
-    discountPrice: 1999,
-    image: productKurti,
-    category: "Kurtis",
-    isNew: true,
-  },
-  {
-    id: "2",
-    name: "Banarasi Silk Saree",
-    price: 8999,
-    discountPrice: null,
-    image: productSaree,
-    category: "Sarees",
-    isNew: true,
-  },
-  {
-    id: "3",
-    name: "Embroidered Anarkali",
-    price: 5499,
-    discountPrice: 4499,
-    image: productAnarkali,
-    category: "Suits",
-    isNew: true,
-  },
-  {
-    id: "4",
-    name: "Royal Palazzo Set",
-    price: 4299,
-    discountPrice: null,
-    image: productPalazzo,
-    category: "Suits",
-    isNew: true,
-  },
-];
+import { useProducts } from "@/hooks/useProducts";
+import { Loader2 } from "lucide-react";
 
 const NewArrivals = () => {
+  const { data: products, isLoading } = useProducts({ limit: 4 });
+
+  if (isLoading) {
+    return (
+      <section className="py-20 lg:py-32">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-gold" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!products || products.length === 0) {
+    return null;
+  }
+
   return (
     <section className="py-20 lg:py-32">
       <div className="container mx-auto px-4 lg:px-8">
@@ -58,7 +34,7 @@ const NewArrivals = () => {
             </h2>
           </div>
           <Link
-            to="/new-arrivals"
+            to="/products"
             className="text-sm font-medium tracking-wide text-muted-foreground hover:text-gold transition-colors flex items-center gap-2 group"
           >
             View All
@@ -80,8 +56,20 @@ const NewArrivals = () => {
 
         {/* Products Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-8 stagger-children">
-          {newArrivals.map((product) => (
-            <ProductCard key={product.id} product={product} />
+          {products.map((product) => (
+            <ProductCard 
+              key={product.id} 
+              product={{
+                id: product.id,
+                slug: product.slug,
+                name: product.name,
+                price: product.price,
+                discountPrice: product.discount_price,
+                image: product.images?.[0] || "/placeholder.svg",
+                category: product.category?.name || "",
+                isNew: true,
+              }} 
+            />
           ))}
         </div>
       </div>

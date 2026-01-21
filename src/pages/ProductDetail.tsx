@@ -19,6 +19,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&h=800&fit=crop";
+
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: product, isLoading, error } = useProduct(slug || "");
@@ -29,6 +31,7 @@ const ProductDetail = () => {
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
+  const [imageError, setImageError] = useState(false);
 
   if (isLoading) {
     return (
@@ -51,8 +54,9 @@ const ProductDetail = () => {
         <main className="pt-24 pb-16">
           <div className="container mx-auto px-4 lg:px-8 text-center py-16">
             <h1 className="text-2xl font-display mb-4">Product not found</h1>
+            <p className="text-muted-foreground mb-6">The product you're looking for doesn't exist or has been removed.</p>
             <Link to="/products">
-              <Button>Back to Products</Button>
+              <Button className="bg-charcoal hover:bg-charcoal/90 text-cream">Browse All Products</Button>
             </Link>
           </div>
         </main>
@@ -61,7 +65,11 @@ const ProductDetail = () => {
     );
   }
 
-  const images = product.images?.length > 0 ? product.images : ["/placeholder.svg"];
+  // Process images - filter out placeholders and add fallback
+  const processedImages = product.images?.filter(img => img && img !== "/placeholder.svg") || [];
+  const images = processedImages.length > 0 ? processedImages : [FALLBACK_IMAGE];
+  const currentImageUrl = imageError ? FALLBACK_IMAGE : images[selectedImage];
+  
   const currentPrice = product.discount_price || product.price;
   const hasDiscount = product.discount_price && product.discount_price < product.price;
   const discountPercentage = hasDiscount
@@ -131,11 +139,12 @@ const ProductDetail = () => {
             {/* Product Images */}
             <div className="space-y-4">
               {/* Main Image */}
-              <div className="relative aspect-[3/4] bg-cream rounded-lg overflow-hidden">
+              <div className="relative aspect-[3/4] bg-secondary rounded-lg overflow-hidden">
                 <img
-                  src={images[selectedImage]}
+                  src={currentImageUrl}
                   alt={product.name}
                   className="w-full h-full object-cover"
+                  onError={() => setImageError(true)}
                 />
                 {hasDiscount && (
                   <span className="absolute top-4 left-4 bg-destructive text-destructive-foreground px-3 py-1 text-sm font-medium rounded">
