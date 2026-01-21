@@ -76,6 +76,20 @@ const AdminOrders = () => {
     }
   };
 
+  const updatePaymentStatus = async (orderId: string, paymentStatus: "pending" | "paid" | "failed" | "refunded") => {
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ payment_status: paymentStatus })
+        .eq("id", orderId);
+
+      if (error) throw error;
+      fetchOrders();
+    } catch (error) {
+      console.error("Error updating payment status:", error);
+    }
+  };
+
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       order.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -189,13 +203,28 @@ const AdminOrders = () => {
                     ₹{Number(order.total_amount).toLocaleString()}
                   </TableCell>
                   <TableCell>
-                    <span
-                      className={`px-2 py-1 text-xs rounded-full ${getPaymentStatusColor(
-                        order.payment_status
-                      )}`}
+                    <Select
+                      value={order.payment_status}
+                      onValueChange={(value: "pending" | "paid" | "failed" | "refunded") =>
+                        updatePaymentStatus(order.id, value)
+                      }
                     >
-                      {order.payment_status}
-                    </span>
+                      <SelectTrigger className="w-[120px]">
+                        <span
+                          className={`px-2 py-1 text-xs rounded-full ${getPaymentStatusColor(
+                            order.payment_status
+                          )}`}
+                        >
+                          {order.payment_status}
+                        </span>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
+                        <SelectItem value="failed">Failed</SelectItem>
+                        <SelectItem value="refunded">Refunded</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell>
                     <Select
