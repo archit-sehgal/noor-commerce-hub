@@ -119,12 +119,28 @@ const AdminInvoices = () => {
 
   const updatePaymentStatus = async (invoiceId: string, status: "pending" | "paid" | "failed" | "refunded") => {
     try {
-      const { error } = await supabase
+      // Find the invoice to get its order_id
+      const invoice = invoices.find((inv) => inv.id === invoiceId);
+      
+      // Update invoice payment status
+      const { error: invoiceError } = await supabase
         .from("invoices")
         .update({ payment_status: status })
         .eq("id", invoiceId);
 
-      if (error) throw error;
+      if (invoiceError) throw invoiceError;
+
+      // If invoice is linked to an order, update the order's payment status too
+      if (invoice?.order_id) {
+        const { error: orderError } = await supabase
+          .from("orders")
+          .update({ payment_status: status })
+          .eq("id", invoice.order_id);
+
+        if (orderError) {
+          console.error("Error updating order payment status:", orderError);
+        }
+      }
 
       toast({ title: "Success", description: "Payment status updated" });
       fetchInvoices();
