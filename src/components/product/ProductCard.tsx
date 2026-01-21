@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Heart, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Product {
   id: string;
+  slug: string;
   name: string;
   price: number;
   discountPrice: number | null;
@@ -17,22 +19,29 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product }: ProductCardProps) => {
+  const [imageError, setImageError] = useState(false);
   const hasDiscount = product.discountPrice !== null;
   const discountPercentage = hasDiscount
     ? Math.round(((product.price - product.discountPrice!) / product.price) * 100)
     : 0;
 
+  const imageUrl = imageError || !product.image || product.image === "/placeholder.svg" 
+    ? "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=400&h=600&fit=crop" 
+    : product.image;
+
   return (
     <div className="group">
       {/* Image Container */}
       <Link 
-        to={`/product/${product.id}`} 
-        className="block relative aspect-[3/4] overflow-hidden bg-secondary mb-5 img-zoom"
+        to={`/product/${product.slug}`} 
+        className="block relative aspect-[3/4] overflow-hidden bg-secondary mb-5 rounded-sm"
       >
         <img
-          src={product.image}
+          src={imageUrl}
           alt={product.name}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+          onError={() => setImageError(true)}
+          loading="lazy"
         />
         
         {/* Overlay on hover */}
@@ -75,7 +84,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
         <p className="text-[10px] font-accent text-gold uppercase tracking-[0.25em]">
           {product.category}
         </p>
-        <Link to={`/product/${product.id}`}>
+        <Link to={`/product/${product.slug}`}>
           <h3 className="font-heading text-base lg:text-lg font-medium hover:text-gold transition-colors duration-300 line-clamp-2">
             {product.name}
           </h3>

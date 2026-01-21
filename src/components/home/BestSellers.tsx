@@ -1,47 +1,27 @@
 import ProductCard from "@/components/product/ProductCard";
 import { Link } from "react-router-dom";
-import productPalazzo from "@/assets/product-palazzo.jpg";
-import productSaree from "@/assets/product-saree.jpg";
-import productKurti from "@/assets/product-kurti.jpg";
-import productAnarkali from "@/assets/product-anarkali.jpg";
-
-// Sample products data
-const bestSellers = [
-  {
-    id: "5",
-    name: "Royal Blue Anarkali Set",
-    price: 6999,
-    discountPrice: 5499,
-    image: productPalazzo,
-    category: "Suits",
-  },
-  {
-    id: "6",
-    name: "Pure Georgette Saree",
-    price: 4999,
-    discountPrice: null,
-    image: productSaree,
-    category: "Sarees",
-  },
-  {
-    id: "7",
-    name: "Designer Palazzo Set",
-    price: 3499,
-    discountPrice: 2799,
-    image: productKurti,
-    category: "Kurtis",
-  },
-  {
-    id: "8",
-    name: "Wedding Anarkali",
-    price: 15999,
-    discountPrice: null,
-    image: productAnarkali,
-    category: "Suits",
-  },
-];
+import { useProducts } from "@/hooks/useProducts";
+import { Loader2 } from "lucide-react";
 
 const BestSellers = () => {
+  const { data: products, isLoading } = useProducts({ featured: true, limit: 4 });
+
+  if (isLoading) {
+    return (
+      <section className="py-20 lg:py-32 bg-secondary/30">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-gold" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!products || products.length === 0) {
+    return null;
+  }
+
   return (
     <section className="py-20 lg:py-32 bg-secondary/30">
       <div className="container mx-auto px-4 lg:px-8">
@@ -55,14 +35,25 @@ const BestSellers = () => {
 
         {/* Products Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-8 stagger-children">
-          {bestSellers.map((product) => (
-            <ProductCard key={product.id} product={product} />
+          {products.map((product) => (
+            <ProductCard 
+              key={product.id} 
+              product={{
+                id: product.id,
+                slug: product.slug,
+                name: product.name,
+                price: product.price,
+                discountPrice: product.discount_price,
+                image: product.images?.[0] || "/placeholder.svg",
+                category: product.category?.name || "",
+              }} 
+            />
           ))}
         </div>
 
         {/* CTA */}
         <div className="text-center mt-12">
-          <Link to="/best-sellers" className="btn-hero-outline">
+          <Link to="/products" className="btn-hero-outline">
             Shop All Best Sellers
           </Link>
         </div>

@@ -18,20 +18,35 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Loader2, Users, Eye } from "lucide-react";
+import { Plus, Search, Loader2, Users, Eye, Pencil, ShoppingBag, IndianRupee, Calendar } from "lucide-react";
 
 interface Customer {
   id: string;
   name: string;
   email: string | null;
   phone: string | null;
+  address: string | null;
   city: string | null;
+  state: string | null;
+  pincode: string | null;
+  notes: string | null;
   total_spent: number;
   total_orders: number;
   last_purchase_date: string | null;
+  created_at: string;
+}
+
+interface Order {
+  id: string;
+  order_number: string;
+  total_amount: number;
+  status: string;
+  payment_status: string;
   created_at: string;
 }
 
@@ -40,6 +55,11 @@ const AdminCustomers = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customerOrders, setCustomerOrders] = useState<Order[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -73,39 +93,72 @@ const AdminCustomers = () => {
     }
   };
 
+  const fetchCustomerOrders = async (customerId: string) => {
+    setOrdersLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, order_number, total_amount, status, payment_status, created_at")
+        .eq("customer_id", customerId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setCustomerOrders(data || []);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      setCustomerOrders([]);
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
-      const { error } = await supabase.from("customers").insert({
-        name: formData.name,
-        email: formData.email || null,
-        phone: formData.phone || null,
-        address: formData.address || null,
-        city: formData.city || null,
-        state: formData.state || null,
-        pincode: formData.pincode || null,
-        notes: formData.notes || null,
-      });
+      if (isEditing && selectedCustomer) {
+        const { error } = await supabase
+          .from("customers")
+          .update({
+            name: formData.name,
+            email: formData.email || null,
+            phone: formData.phone || null,
+            address: formData.address || null,
+            city: formData.city || null,
+            state: formData.state || null,
+            pincode: formData.pincode || null,
+            notes: formData.notes || null,
+          })
+          .eq("id", selectedCustomer.id);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: "Customer added",
-        description: "The customer has been successfully added.",
-      });
+        toast({
+          title: "Customer updated",
+          description: "The customer has been successfully updated.",
+        });
+      } else {
+        const { error } = await supabase.from("customers").insert({
+          name: formData.name,
+          email: formData.email || null,
+          phone: formData.phone || null,
+          address: formData.address || null,
+          city: formData.city || null,
+          state: formData.state || null,
+          pincode: formData.pincode || null,
+          notes: formData.notes || null,
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: "Customer added",
+          description: "The customer has been successfully added.",
+        });
+      }
 
       setIsDialogOpen(false);
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        address: "",
-        city: "",
-        state: "",
-        pincode: "",
-        notes: "",
-      });
+      resetForm();
       fetchCustomers();
     } catch (error: any) {
       toast({
@@ -116,12 +169,61 @@ const AdminCustomers = () => {
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      email: "",
+      phone: "",
+      address: "",
+      city: "",
+      state: "",
+      pincode: "",
+      notes: "",
+    });
+    setIsEditing(false);
+    setSelectedCustomer(null);
+  };
+
+  const handleEditCustomer = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setFormData({
+      name: customer.name,
+      email: customer.email || "",
+      phone: customer.phone || "",
+      address: customer.address || "",
+      city: customer.city || "",
+      state: customer.state || "",
+      pincode: customer.pincode || "",
+      notes: customer.notes || "",
+    });
+    setIsEditing(true);
+    setIsDialogOpen(true);
+  };
+
+  const handleViewCustomer = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setViewDialogOpen(true);
+    fetchCustomerOrders(customer.id);
+  };
+
   const filteredCustomers = customers.filter(
     (customer) =>
       customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       customer.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       customer.phone?.includes(searchQuery)
   );
+
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      pending: "bg-yellow-100 text-yellow-800",
+      confirmed: "bg-blue-100 text-blue-800",
+      processing: "bg-purple-100 text-purple-800",
+      shipped: "bg-indigo-100 text-indigo-800",
+      delivered: "bg-green-100 text-green-800",
+      cancelled: "bg-red-100 text-red-800",
+    };
+    return colors[status] || "bg-gray-100 text-gray-800";
+  };
 
   return (
     <AdminLayout title="Customers">
@@ -136,7 +238,10 @@ const AdminCustomers = () => {
             className="pl-10"
           />
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) resetForm();
+        }}>
           <DialogTrigger asChild>
             <Button className="bg-charcoal hover:bg-charcoal/90 text-cream">
               <Plus className="h-4 w-4 mr-2" />
@@ -145,7 +250,7 @@ const AdminCustomers = () => {
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Add Customer</DialogTitle>
+              <DialogTitle>{isEditing ? "Edit Customer" : "Add Customer"}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -247,12 +352,15 @@ const AdminCustomers = () => {
                   type="submit"
                   className="flex-1 bg-charcoal hover:bg-charcoal/90 text-cream"
                 >
-                  Add Customer
+                  {isEditing ? "Update Customer" : "Add Customer"}
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
+                  onClick={() => {
+                    setIsDialogOpen(false);
+                    resetForm();
+                  }}
                 >
                   Cancel
                 </Button>
@@ -260,6 +368,53 @@ const AdminCustomers = () => {
             </form>
           </DialogContent>
         </Dialog>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <Card className="border-none shadow-sm">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Users className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total Customers</p>
+                <p className="text-2xl font-serif font-bold">{customers.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-none shadow-sm">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <IndianRupee className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total Revenue</p>
+                <p className="text-2xl font-serif font-bold">
+                  ₹{customers.reduce((sum, c) => sum + Number(c.total_spent || 0), 0).toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-none shadow-sm">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <ShoppingBag className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total Orders</p>
+                <p className="text-2xl font-serif font-bold">
+                  {customers.reduce((sum, c) => sum + (c.total_orders || 0), 0)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Customers Table */}
@@ -275,8 +430,8 @@ const AdminCustomers = () => {
                 <TableHead>Name</TableHead>
                 <TableHead>Contact</TableHead>
                 <TableHead>City</TableHead>
-                <TableHead>Orders</TableHead>
-                <TableHead>Total Spent</TableHead>
+                <TableHead className="text-center">Orders</TableHead>
+                <TableHead className="text-right">Total Spent</TableHead>
                 <TableHead>Last Purchase</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -297,8 +452,8 @@ const AdminCustomers = () => {
                     </div>
                   </TableCell>
                   <TableCell>{customer.city || "-"}</TableCell>
-                  <TableCell>{customer.total_orders || 0}</TableCell>
-                  <TableCell>
+                  <TableCell className="text-center">{customer.total_orders || 0}</TableCell>
+                  <TableCell className="text-right">
                     ₹{Number(customer.total_spent || 0).toLocaleString()}
                   </TableCell>
                   <TableCell>
@@ -307,9 +462,22 @@ const AdminCustomers = () => {
                       : "-"}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon">
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                    <div className="flex justify-end gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleViewCustomer(customer)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleEditCustomer(customer)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -325,6 +493,145 @@ const AdminCustomers = () => {
           </Button>
         </div>
       )}
+
+      {/* View Customer Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl">Customer Details</DialogTitle>
+          </DialogHeader>
+          
+          {selectedCustomer && (
+            <Tabs defaultValue="details" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="details">Details</TabsTrigger>
+                <TabsTrigger value="orders">Order History</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="details" className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Card className="border-none shadow-sm bg-primary/5">
+                    <CardContent className="pt-4">
+                      <p className="text-sm text-muted-foreground">Total Spent</p>
+                      <p className="text-2xl font-serif font-bold text-gold">
+                        ₹{Number(selectedCustomer.total_spent || 0).toLocaleString()}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-none shadow-sm bg-primary/5">
+                    <CardContent className="pt-4">
+                      <p className="text-sm text-muted-foreground">Total Orders</p>
+                      <p className="text-2xl font-serif font-bold">
+                        {selectedCustomer.total_orders || 0}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-muted-foreground">Name</Label>
+                      <p className="font-medium">{selectedCustomer.name}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Email</Label>
+                      <p className="font-medium">{selectedCustomer.email || "-"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Phone</Label>
+                      <p className="font-medium">{selectedCustomer.phone || "-"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Last Purchase</Label>
+                      <p className="font-medium">
+                        {selectedCustomer.last_purchase_date
+                          ? new Date(selectedCustomer.last_purchase_date).toLocaleDateString()
+                          : "-"}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label className="text-muted-foreground">Address</Label>
+                    <p className="font-medium">
+                      {[
+                        selectedCustomer.address,
+                        selectedCustomer.city,
+                        selectedCustomer.state,
+                        selectedCustomer.pincode,
+                      ]
+                        .filter(Boolean)
+                        .join(", ") || "-"}
+                    </p>
+                  </div>
+
+                  {selectedCustomer.notes && (
+                    <div>
+                      <Label className="text-muted-foreground">Notes</Label>
+                      <p className="font-medium">{selectedCustomer.notes}</p>
+                    </div>
+                  )}
+
+                  <div>
+                    <Label className="text-muted-foreground">Customer Since</Label>
+                    <p className="font-medium">
+                      {new Date(selectedCustomer.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+
+                <Button 
+                  className="w-full bg-charcoal hover:bg-charcoal/90 text-cream"
+                  onClick={() => {
+                    setViewDialogOpen(false);
+                    handleEditCustomer(selectedCustomer);
+                  }}
+                >
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit Customer
+                </Button>
+              </TabsContent>
+              
+              <TabsContent value="orders" className="mt-4">
+                {ordersLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-gold" />
+                  </div>
+                ) : customerOrders.length > 0 ? (
+                  <div className="space-y-3">
+                    {customerOrders.map((order) => (
+                      <div 
+                        key={order.id}
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50"
+                      >
+                        <div>
+                          <p className="font-medium">{order.order_number}</p>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="h-3 w-3" />
+                            {new Date(order.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">₹{Number(order.total_amount).toLocaleString()}</p>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${getStatusColor(order.status)}`}>
+                            {order.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <ShoppingBag className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground">No orders yet</p>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          )}
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
