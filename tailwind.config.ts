@@ -14,8 +14,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ["Cormorant Garamond", "Georgia", "serif"],
-        body: ["Inter", "system-ui", "sans-serif"],
+        display: ["DM Serif Display", "Georgia", "serif"],
+        heading: ["Instrument Serif", "Georgia", "serif"],
+        body: ["Outfit", "system-ui", "sans-serif"],
+        accent: ["Tenor Sans", "Georgia", "serif"],
       },
       colors: {
         border: "hsl(var(--border))",

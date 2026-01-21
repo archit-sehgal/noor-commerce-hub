@@ -19,11 +19,11 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Loader2, Users, Eye, Pencil, ShoppingBag, IndianRupee, Calendar } from "lucide-react";
+import { Plus, Search, Loader2, Users, Eye, Pencil, ShoppingBag, IndianRupee, Calendar, Download } from "lucide-react";
 
 interface Customer {
   id: string;
@@ -206,6 +206,31 @@ const AdminCustomers = () => {
     fetchCustomerOrders(customer.id);
   };
 
+  const exportCustomers = () => {
+    const headers = ["Customer ID", "Name", "Email", "Phone", "City", "State", "Total Orders", "Total Spent"];
+    const csvContent = [
+      headers.join(","),
+      ...filteredCustomers.map((c) =>
+        [
+          c.id,
+          `"${c.name}"`,
+          c.email || "",
+          c.phone || "",
+          c.city || "",
+          c.state || "",
+          c.total_orders || 0,
+          c.total_spent || 0,
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `customers_${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+  };
+
   const filteredCustomers = customers.filter(
     (customer) =>
       customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -238,16 +263,25 @@ const AdminCustomers = () => {
             className="pl-10"
           />
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={(open) => {
-          setIsDialogOpen(open);
-          if (!open) resetForm();
-        }}>
-          <DialogTrigger asChild>
-            <Button className="bg-charcoal hover:bg-charcoal/90 text-cream">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Customer
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={exportCustomers}
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) resetForm();
+          }}>
+            <DialogTrigger asChild>
+              <Button className="bg-charcoal hover:bg-charcoal/90 text-cream">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Customer
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>{isEditing ? "Edit Customer" : "Add Customer"}</DialogTitle>
@@ -368,6 +402,7 @@ const AdminCustomers = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -427,6 +462,7 @@ const AdminCustomers = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[100px]">ID</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Contact</TableHead>
                 <TableHead>City</TableHead>
@@ -439,6 +475,9 @@ const AdminCustomers = () => {
             <TableBody>
               {filteredCustomers.map((customer) => (
                 <TableRow key={customer.id}>
+                  <TableCell className="font-mono text-xs text-muted-foreground">
+                    {customer.id.substring(0, 8)}...
+                  </TableCell>
                   <TableCell className="font-medium">{customer.name}</TableCell>
                   <TableCell>
                     <div className="text-sm">
