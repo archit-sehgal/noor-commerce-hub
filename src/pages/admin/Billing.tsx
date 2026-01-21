@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,8 @@ import {
   User,
   ShoppingBag,
   Receipt,
+  Barcode,
+  UserCheck,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -58,14 +60,22 @@ interface Customer {
   email: string | null;
 }
 
+interface Salesman {
+  id: string;
+  name: string;
+  phone: string | null;
+}
+
 const AdminBilling = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [salesmen, setSalesmen] = useState<Salesman[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [customerSearch, setCustomerSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedSalesman, setSelectedSalesman] = useState<Salesman | null>(null);
   const [showNewCustomer, setShowNewCustomer] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
@@ -76,12 +86,22 @@ const AdminBilling = () => {
   const [submitting, setSubmitting] = useState(false);
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const [generatedInvoice, setGeneratedInvoice] = useState<any>(null);
+  const [barcodeInput, setBarcodeInput] = useState("");
+  const barcodeInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
   useEffect(() => {
     fetchProducts();
     fetchCustomers();
+    fetchSalesmen();
+  }, []);
+
+  // Focus on barcode input when component mounts
+  useEffect(() => {
+    if (barcodeInputRef.current) {
+      barcodeInputRef.current.focus();
+    }
   }, []);
 
   const fetchProducts = async () => {
@@ -116,6 +136,21 @@ const AdminBilling = () => {
     }
   };
 
+  const fetchSalesmen = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("salesman")
+        .select("id, name, phone")
+        .eq("is_active", true)
+        .order("name");
+
+      if (error) throw error;
+      setSalesmen(data || []);
+    } catch (error) {
+      console.error("Error fetching salesmen:", error);
+    }
+  };
+
   const filteredProducts = products.filter(
     (p) =>
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -128,6 +163,32 @@ const AdminBilling = () => {
       c.phone?.includes(customerSearch) ||
       c.email?.toLowerCase().includes(customerSearch.toLowerCase())
   );
+
+  // Handle barcode scan
+  const handleBarcodeInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && barcodeInput.trim()) {
+      const scannedSku = barcodeInput.trim();
+      const product = products.find(
+        (p) => p.sku?.toLowerCase() === scannedSku.toLowerCase()
+      );
+
+      if (product) {
+        addToCart(product);
+        toast({
+          title: "Product Added",
+          description: `${product.name} added to cart`,
+        });
+      } else {
+        toast({
+          title: "Product Not Found",
+          description: `No product with SKU: ${scannedSku}`,
+          variant: "destructive",
+        });
+      }
+
+      setBarcodeInput("");
+    }
+  };
 
   const addToCart = (product: Product) => {
     const existingIndex = cart.findIndex((item) => item.product.id === product.id);
@@ -240,13 +301,14 @@ const AdminBilling = () => {
     try {
       const orderNumber = generateOrderNumber();
 
-      // Create order
+      // Create order with salesman
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
           order_number: orderNumber,
           customer_id: selectedCustomer?.id || null,
           user_id: null,
+          salesman_id: selectedSalesman?.id || null,
           status: "delivered",
           payment_status: paymentMethod === "cash" ? "paid" : "pending",
           subtotal: subtotal,
@@ -300,13 +362,14 @@ const AdminBilling = () => {
         });
       }
 
-      // Create invoice
+      // Create invoice with salesman
       const { data: invoice, error: invoiceError } = await supabase
         .from("invoices")
         .insert({
           invoice_number: orderNumber.replace("POS", "INV"),
           order_id: order.id,
           customer_id: selectedCustomer?.id || null,
+          salesman_id: selectedSalesman?.id || null,
           subtotal: subtotal,
           tax_amount: taxAmount,
           discount_amount: discountAmount,
@@ -336,11 +399,32 @@ const AdminBilling = () => {
           .eq("id", selectedCustomer.id);
       }
 
+      // Update salesman stats if salesman selected
+      if (selectedSalesman) {
+        // Fetch current salesman data to update correctly
+        const { data: currentSalesman } = await supabase
+          .from("salesman")
+          .select("total_sales, total_orders")
+          .eq("id", selectedSalesman.id)
+          .single();
+
+        if (currentSalesman) {
+          await supabase
+            .from("salesman")
+            .update({
+              total_sales: Number(currentSalesman.total_sales || 0) + totalAmount,
+              total_orders: (currentSalesman.total_orders || 0) + 1,
+            })
+            .eq("id", selectedSalesman.id);
+        }
+      }
+
       // Generate invoice for display
       setGeneratedInvoice({
         invoiceNumber: invoice.invoice_number,
         orderNumber: order.order_number,
         customer: selectedCustomer,
+        salesman: selectedSalesman,
         items: cart,
         subtotal,
         taxAmount,
@@ -355,6 +439,7 @@ const AdminBilling = () => {
       // Reset form
       setCart([]);
       setSelectedCustomer(null);
+      setSelectedSalesman(null);
       setDiscountAmount(0);
       setNotes("");
       fetchProducts(); // Refresh stock
@@ -399,6 +484,7 @@ const AdminBilling = () => {
                 .totals div { margin: 5px 0; }
                 .totals .total { font-size: 24px; color: #8B4513; font-weight: bold; }
                 .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; }
+                .salesman-info { margin-top: 10px; font-size: 14px; }
               </style>
             </head>
             <body>
@@ -424,6 +510,28 @@ const AdminBilling = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Products Section */}
         <div className="lg:col-span-2 space-y-4">
+          {/* Barcode Scanner Section */}
+          <div className="bg-background rounded-lg p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Barcode className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <Label className="text-sm text-muted-foreground">
+                  Barcode Scanner (SKU)
+                </Label>
+                <Input
+                  ref={barcodeInputRef}
+                  placeholder="Scan barcode or enter SKU and press Enter..."
+                  value={barcodeInput}
+                  onChange={(e) => setBarcodeInput(e.target.value)}
+                  onKeyDown={handleBarcodeInput}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Product Search */}
           <div className="bg-background rounded-lg p-4 shadow-sm">
             <div className="relative">
@@ -475,6 +583,51 @@ const AdminBilling = () => {
 
         {/* Cart & Billing Section */}
         <div className="space-y-4">
+          {/* Salesman Selection */}
+          <div className="bg-background rounded-lg p-4 shadow-sm">
+            <h3 className="font-serif text-lg font-semibold mb-3 flex items-center gap-2">
+              <UserCheck className="h-5 w-5 text-primary" />
+              Salesman
+            </h3>
+
+            {selectedSalesman ? (
+              <div className="flex items-center justify-between p-3 bg-gold/10 rounded-lg">
+                <div>
+                  <p className="font-medium">{selectedSalesman.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedSalesman.phone || "No phone"}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedSalesman(null)}
+                >
+                  Change
+                </Button>
+              </div>
+            ) : (
+              <Select
+                value=""
+                onValueChange={(value) => {
+                  const salesman = salesmen.find((s) => s.id === value);
+                  setSelectedSalesman(salesman || null);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select salesman..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {salesmen.map((salesman) => (
+                    <SelectItem key={salesman.id} value={salesman.id}>
+                      {salesman.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+
           {/* Customer Selection */}
           <div className="bg-background rounded-lg p-4 shadow-sm">
             <h3 className="font-serif text-lg font-semibold mb-3 flex items-center gap-2">
@@ -779,7 +932,7 @@ const AdminBilling = () => {
           <div id="invoice-print-content" className="p-4">
             <div className="header text-center border-b-2 border-primary pb-4 mb-4">
               <h1 className="text-2xl font-serif font-bold text-primary">
-                VASTRA ELEGANCE
+                NOOR CREATIONS
               </h1>
               <p className="text-sm text-muted-foreground">
                 Premium Ethnic Fashion
@@ -799,6 +952,12 @@ const AdminBilling = () => {
                   <strong className="text-primary">Date:</strong>{" "}
                   {generatedInvoice?.date?.toLocaleDateString("en-IN")}
                 </p>
+                {generatedInvoice?.salesman && (
+                  <p className="salesman-info">
+                    <strong className="text-primary">Salesman:</strong>{" "}
+                    {generatedInvoice.salesman.name}
+                  </p>
+                )}
               </div>
               <div className="text-right">
                 {generatedInvoice?.customer ? (
@@ -878,6 +1037,9 @@ const AdminBilling = () => {
 
             <div className="mt-6 pt-4 border-t border-border text-center text-xs text-muted-foreground">
               <p>Payment Method: {generatedInvoice?.paymentMethod?.toUpperCase()}</p>
+              {generatedInvoice?.salesman && (
+                <p className="mt-1">Served by: {generatedInvoice.salesman.name}</p>
+              )}
               <p className="mt-2">Thank you for shopping with us!</p>
             </div>
           </div>

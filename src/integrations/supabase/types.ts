@@ -185,6 +185,7 @@ export type Database = {
           notes: string | null
           order_id: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
+          salesman_id: string | null
           subtotal: number
           tax_amount: number | null
           total_amount: number
@@ -201,6 +202,7 @@ export type Database = {
           notes?: string | null
           order_id?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
+          salesman_id?: string | null
           subtotal?: number
           tax_amount?: number | null
           total_amount?: number
@@ -217,6 +219,7 @@ export type Database = {
           notes?: string | null
           order_id?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
+          salesman_id?: string | null
           subtotal?: number
           tax_amount?: number | null
           total_amount?: number
@@ -235,6 +238,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_salesman_id_fkey"
+            columns: ["salesman_id"]
+            isOneToOne: false
+            referencedRelation: "salesman"
             referencedColumns: ["id"]
           },
         ]
@@ -303,6 +313,7 @@ export type Database = {
           notes: string | null
           order_number: string
           payment_status: Database["public"]["Enums"]["payment_status"]
+          salesman_id: string | null
           shipping_address: string | null
           shipping_amount: number | null
           shipping_city: string | null
@@ -324,6 +335,7 @@ export type Database = {
           notes?: string | null
           order_number: string
           payment_status?: Database["public"]["Enums"]["payment_status"]
+          salesman_id?: string | null
           shipping_address?: string | null
           shipping_amount?: number | null
           shipping_city?: string | null
@@ -345,6 +357,7 @@ export type Database = {
           notes?: string | null
           order_number?: string
           payment_status?: Database["public"]["Enums"]["payment_status"]
+          salesman_id?: string | null
           shipping_address?: string | null
           shipping_amount?: number | null
           shipping_city?: string | null
@@ -363,6 +376,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_salesman_id_fkey"
+            columns: ["salesman_id"]
+            isOneToOne: false
+            referencedRelation: "salesman"
             referencedColumns: ["id"]
           },
         ]
@@ -486,6 +506,42 @@ export type Database = {
           state?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      salesman: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          phone: string | null
+          total_orders: number | null
+          total_sales: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          phone?: string | null
+          total_orders?: number | null
+          total_sales?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          phone?: string | null
+          total_orders?: number | null
+          total_sales?: number | null
+          updated_at?: string
         }
         Relationships: []
       }
