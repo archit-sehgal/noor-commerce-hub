@@ -121,43 +121,35 @@ const Settings = () => {
     },
   });
 
-  // Add new employee mutation
+  // Add new employee mutation - uses edge function to properly set role
   const addEmployeeMutation = useMutation({
     mutationFn: async () => {
-      // Create new user via sign up
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newEmployeeEmail,
-        password: newEmployeePassword,
-        options: {
-          emailRedirectTo: window.location.origin,
-          data: {
-            full_name: newEmployeeName,
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-employee`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionData.session?.access_token}`,
           },
-        },
-      });
+          body: JSON.stringify({
+            email: newEmployeeEmail,
+            password: newEmployeePassword,
+            fullName: newEmployeeName,
+            permissions: selectedPermissions,
+          }),
+        }
+      );
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Failed to create user");
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create employee');
+      }
 
-      // Update role to sales_staff
-      const { error: roleError } = await supabase
-        .from("user_roles")
-        .update({ role: "sales_staff" })
-        .eq("user_id", authData.user.id);
-
-      if (roleError) throw roleError;
-
-      // Add permissions
-      const { error: permError } = await supabase
-        .from("employee_permissions")
-        .insert({
-          user_id: authData.user.id,
-          ...selectedPermissions,
-        });
-
-      if (permError) throw permError;
-
-      return authData.user;
+      return result.user;
     },
     onSuccess: () => {
       toast.success("Employee added successfully");
