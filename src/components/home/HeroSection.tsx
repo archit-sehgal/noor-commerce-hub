@@ -16,14 +16,14 @@ const HeroSection = () => {
       </div>
 
       {/* Decorative Elements */}
-      <div className="absolute top-32 left-8 w-px h-32 bg-gradient-to-b from-transparent via-gold to-transparent opacity-40 hidden lg:block" />
-      <div className="absolute bottom-32 right-8 w-px h-32 bg-gradient-to-b from-transparent via-gold to-transparent opacity-40 hidden lg:block" />
+      <div className="absolute top-32 left-8 w-px h-32 bg-gradient-to-b from-transparent via-rose-gold to-transparent opacity-40 hidden lg:block" />
+      <div className="absolute bottom-32 right-8 w-px h-32 bg-gradient-to-b from-transparent via-rose-gold to-transparent opacity-40 hidden lg:block" />
 
       {/* Content */}
       <div className="container mx-auto px-4 lg:px-8 relative z-10">
         <div className="max-w-2xl">
           <div className="flex items-center gap-4 mb-6 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-            <div className="w-12 h-px bg-gold" />
+            <div className="w-12 h-px bg-rose-gold" />
             <p className="text-overline">New Collection 2024</p>
           </div>
           <h1 
@@ -31,7 +31,7 @@ const HeroSection = () => {
             style={{ animationDelay: "0.4s" }}
           >
             Timeless<br />
-            <span className="italic font-light text-gold">Elegance</span>
+            <span className="italic font-light text-rose-gold">Elegance</span>
           </h1>
           <p 
             className="text-lg lg:text-xl text-muted-foreground mb-12 max-w-lg leading-relaxed font-body animate-fade-in"
@@ -54,11 +54,8 @@ const HeroSection = () => {
         </div>
       </div>
 
-      {/* Scroll indicator */}
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3">
-        <span className="text-xs font-accent tracking-[0.3em] uppercase text-muted-foreground">Scroll</span>
-        <div className="w-px h-12 bg-gradient-to-b from-muted-foreground to-transparent animate-bounce" />
-      </div>
+      {/* Decorative bottom accent */}
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/30 to-transparent" />
     </section>
   );
 };

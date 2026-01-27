@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import ScrollToTop from "@/components/ScrollToTop";
 
 // Pages
 import Index from "./pages/Index";
@@ -29,6 +30,7 @@ import AdminReports from "./pages/admin/Reports";
 import AdminBilling from "./pages/admin/Billing";
 import AdminInvoices from "./pages/admin/Invoices";
 import AdminSalesman from "./pages/admin/Salesman";
+import AdminSettings from "./pages/admin/Settings";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +41,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ScrollToTop />
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Index />} />
@@ -170,6 +173,14 @@ const App = () => (
               element={
                 <ProtectedRoute requireAdmin>
                   <AdminSalesman />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/settings"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <AdminSettings />
                 </ProtectedRoute>
               }
             />
