@@ -55,7 +55,7 @@ const NewArrivals = () => {
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-8 stagger-children">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-8 stagger-children">
           {products.map((product) => (
             <ProductCard 
               key={product.id} 
@@ -68,6 +68,7 @@ const NewArrivals = () => {
                 image: product.images?.[0] || "/placeholder.svg",
                 category: product.category?.name || "",
                 isNew: true,
+                stockQuantity: product.stock_quantity,
               }} 
             />
           ))}

@@ -518,9 +518,9 @@ const AdminBilling = () => {
 
   return (
     <AdminLayout title="In-Store Billing">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6">
         {/* Products Section */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="xl:col-span-2 space-y-4">
           {/* Barcode Scanner Section */}
           <div className="bg-background rounded-lg p-4 shadow-sm">
             <div className="flex items-center gap-3">
@@ -568,7 +568,7 @@ const AdminBilling = () => {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[400px] overflow-y-auto">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 max-h-[300px] md:max-h-[400px] overflow-y-auto">
                 {filteredProducts.map((product) => (
                   <button
                     key={product.id}
