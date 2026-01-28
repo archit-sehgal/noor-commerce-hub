@@ -30,6 +30,7 @@ import {
   Receipt,
   Barcode,
   UserCheck,
+  Scissors,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -88,6 +89,9 @@ const AdminBilling = () => {
   const [generatedInvoice, setGeneratedInvoice] = useState<any>(null);
   const [barcodeInput, setBarcodeInput] = useState("");
   const barcodeInputRef = useRef<HTMLInputElement>(null);
+  const [needsAlteration, setNeedsAlteration] = useState(false);
+  const [alterationDueDate, setAlterationDueDate] = useState("");
+  const [alterationNotes, setAlterationNotes] = useState("");
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -301,7 +305,7 @@ const AdminBilling = () => {
     try {
       const orderNumber = generateOrderNumber();
 
-      // Create order with salesman
+      // Create order with salesman and alteration details
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
@@ -309,7 +313,7 @@ const AdminBilling = () => {
           customer_id: selectedCustomer?.id || null,
           user_id: null,
           salesman_id: selectedSalesman?.id || null,
-          status: "delivered",
+          status: needsAlteration ? "processing" : "delivered",
           payment_status: paymentMethod === "cash" ? "paid" : "pending",
           subtotal: subtotal,
           tax_amount: taxAmount,
@@ -317,6 +321,10 @@ const AdminBilling = () => {
           total_amount: totalAmount,
           notes: notes || `In-store purchase - ${paymentMethod}`,
           created_by: user?.id,
+          needs_alteration: needsAlteration,
+          alteration_due_date: needsAlteration && alterationDueDate ? alterationDueDate : null,
+          alteration_status: needsAlteration ? "pending" : null,
+          alteration_notes: needsAlteration ? alterationNotes : null,
         })
         .select()
         .single();
@@ -442,6 +450,9 @@ const AdminBilling = () => {
       setSelectedSalesman(null);
       setDiscountAmount(0);
       setNotes("");
+      setNeedsAlteration(false);
+      setAlterationDueDate("");
+      setAlterationNotes("");
       fetchProducts(); // Refresh stock
 
       toast({
@@ -857,6 +868,48 @@ const AdminBilling = () => {
                   placeholder="Any additional notes..."
                   rows={2}
                 />
+              </div>
+
+              {/* Alteration Section */}
+              <div className="border border-gold/20 rounded-lg p-3 space-y-3 bg-cream/30">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="needs-alteration"
+                    checked={needsAlteration}
+                    onChange={(e) => setNeedsAlteration(e.target.checked)}
+                    className="h-4 w-4 rounded border-gold accent-gold"
+                  />
+                  <Label htmlFor="needs-alteration" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                    <Scissors className="h-4 w-4 text-gold" />
+                    Needs Alteration
+                  </Label>
+                </div>
+                
+                {needsAlteration && (
+                  <div className="space-y-3 pt-2 border-t border-gold/10">
+                    <div>
+                      <Label className="text-sm">Due Date</Label>
+                      <Input
+                        type="date"
+                        value={alterationDueDate}
+                        onChange={(e) => setAlterationDueDate(e.target.value)}
+                        min={new Date().toISOString().split("T")[0]}
+                        className="border-gold/20"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm">Alteration Notes</Label>
+                      <Textarea
+                        value={alterationNotes}
+                        onChange={(e) => setAlterationNotes(e.target.value)}
+                        placeholder="Describe alteration requirements..."
+                        rows={2}
+                        className="border-gold/20"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <Button

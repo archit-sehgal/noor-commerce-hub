@@ -15,6 +15,8 @@ export interface EmployeePermissions {
   permission_invoices: boolean;
   permission_salesmen: boolean;
   permission_settings: boolean;
+  permission_alterations: boolean;
+  permission_purchases: boolean;
 }
 
 export const useEmployeePermissions = () => {
@@ -38,6 +40,8 @@ export const useEmployeePermissions = () => {
           permission_invoices: true,
           permission_salesmen: true,
           permission_settings: true,
+          permission_alterations: true,
+          permission_purchases: true,
         } as EmployeePermissions;
       }
 
@@ -63,6 +67,8 @@ export const useEmployeePermissions = () => {
             permission_invoices: true,
             permission_salesmen: false,
             permission_settings: false,
+            permission_alterations: true,
+            permission_purchases: false,
           } as EmployeePermissions;
         }
 
@@ -79,6 +85,8 @@ export const useEmployeePermissions = () => {
             permission_invoices: true,
             permission_salesmen: false,
             permission_settings: false,
+            permission_alterations: true,
+            permission_purchases: false,
           } as EmployeePermissions;
         }
 

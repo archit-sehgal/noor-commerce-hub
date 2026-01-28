@@ -177,6 +177,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          permission_alterations: boolean | null
           permission_billing: boolean | null
           permission_categories: boolean | null
           permission_customers: boolean | null
@@ -184,6 +185,7 @@ export type Database = {
           permission_invoices: boolean | null
           permission_orders: boolean | null
           permission_products: boolean | null
+          permission_purchases: boolean | null
           permission_reports: boolean | null
           permission_salesmen: boolean | null
           permission_settings: boolean | null
@@ -193,6 +195,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          permission_alterations?: boolean | null
           permission_billing?: boolean | null
           permission_categories?: boolean | null
           permission_customers?: boolean | null
@@ -200,6 +203,7 @@ export type Database = {
           permission_invoices?: boolean | null
           permission_orders?: boolean | null
           permission_products?: boolean | null
+          permission_purchases?: boolean | null
           permission_reports?: boolean | null
           permission_salesmen?: boolean | null
           permission_settings?: boolean | null
@@ -209,6 +213,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          permission_alterations?: boolean | null
           permission_billing?: boolean | null
           permission_categories?: boolean | null
           permission_customers?: boolean | null
@@ -216,6 +221,7 @@ export type Database = {
           permission_invoices?: boolean | null
           permission_orders?: boolean | null
           permission_products?: boolean | null
+          permission_purchases?: boolean | null
           permission_reports?: boolean | null
           permission_salesmen?: boolean | null
           permission_settings?: boolean | null
@@ -356,11 +362,15 @@ export type Database = {
       }
       orders: {
         Row: {
+          alteration_due_date: string | null
+          alteration_notes: string | null
+          alteration_status: string | null
           created_at: string
           created_by: string | null
           customer_id: string | null
           discount_amount: number | null
           id: string
+          needs_alteration: boolean | null
           notes: string | null
           order_number: string
           payment_status: Database["public"]["Enums"]["payment_status"]
@@ -378,11 +388,15 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          alteration_due_date?: string | null
+          alteration_notes?: string | null
+          alteration_status?: string | null
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
           discount_amount?: number | null
           id?: string
+          needs_alteration?: boolean | null
           notes?: string | null
           order_number: string
           payment_status?: Database["public"]["Enums"]["payment_status"]
@@ -400,11 +414,15 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          alteration_due_date?: string | null
+          alteration_notes?: string | null
+          alteration_status?: string | null
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
           discount_amount?: number | null
           id?: string
+          needs_alteration?: boolean | null
           notes?: string | null
           order_number?: string
           payment_status?: Database["public"]["Enums"]["payment_status"]
@@ -560,6 +578,97 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_items: {
+        Row: {
+          created_at: string
+          hsn_code: string | null
+          id: string
+          item_name: string
+          purchase_id: string
+          quantity: number | null
+          sno: number
+          total_price: number | null
+          unit_price: number | null
+        }
+        Insert: {
+          created_at?: string
+          hsn_code?: string | null
+          id?: string
+          item_name: string
+          purchase_id: string
+          quantity?: number | null
+          sno: number
+          total_price?: number | null
+          unit_price?: number | null
+        }
+        Update: {
+          created_at?: string
+          hsn_code?: string | null
+          id?: string
+          item_name?: string
+          purchase_id?: string
+          quantity?: number | null
+          sno?: number
+          total_price?: number | null
+          unit_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_items_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchases: {
+        Row: {
+          bill_image_url: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          purchase_date: string
+          purchase_number: string
+          supplier_id: string
+          total_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          bill_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          purchase_date?: string
+          purchase_number: string
+          supplier_id: string
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          bill_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          purchase_date?: string
+          purchase_number?: string
+          supplier_id?: string
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchases_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       salesman: {
         Row: {
           created_at: string
@@ -642,6 +751,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          city: string | null
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          gst_number: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          notes: string | null
+          phone: string | null
+          pincode: string | null
+          state: string | null
+          total_purchases: number | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          gst_number?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          pincode?: string | null
+          state?: string | null
+          total_purchases?: number | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          gst_number?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          pincode?: string | null
+          state?: string | null
+          total_purchases?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

@@ -17,6 +17,8 @@ import {
   BarChart3,
   Receipt,
   UserCheck,
+  Scissors,
+  Truck,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -35,12 +37,14 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
   const sidebarItems = [
     { name: "Dashboard", icon: LayoutDashboard, href: "/admin", show: true },
     { name: "Billing (POS)", icon: Receipt, href: "/admin/billing", show: isAdmin || hasPermission("permission_billing") },
+    { name: "Alterations", icon: Scissors, href: "/admin/alterations", show: isAdmin || hasPermission("permission_alterations") },
     { name: "Products", icon: Package, href: "/admin/products", show: isAdmin || hasPermission("permission_products") },
     { name: "Categories", icon: Tags, href: "/admin/categories", show: isAdmin || hasPermission("permission_categories") },
     { name: "Orders", icon: ShoppingCart, href: "/admin/orders", show: isAdmin || hasPermission("permission_orders") },
     { name: "Customers", icon: Users, href: "/admin/customers", show: isAdmin || hasPermission("permission_customers") },
     { name: "Salesmen", icon: UserCheck, href: "/admin/salesmen", show: isAdmin || hasPermission("permission_salesmen") },
     { name: "Inventory", icon: Warehouse, href: "/admin/inventory", show: isAdmin || hasPermission("permission_inventory") },
+    { name: "Purchases", icon: Truck, href: "/admin/purchases", show: isAdmin || hasPermission("permission_purchases") },
     { name: "Reports", icon: BarChart3, href: "/admin/reports", show: isAdmin || hasPermission("permission_reports") },
     { name: "Invoices", icon: FileText, href: "/admin/invoices", show: isAdmin || hasPermission("permission_invoices") },
     { name: "Settings", icon: Settings, href: "/admin/settings", show: isAdmin || hasPermission("permission_settings") },
