@@ -31,6 +31,8 @@ import AdminBilling from "./pages/admin/Billing";
 import AdminInvoices from "./pages/admin/Invoices";
 import AdminSalesman from "./pages/admin/Salesman";
 import AdminSettings from "./pages/admin/Settings";
+import AdminAlterations from "./pages/admin/Alterations";
+import AdminPurchases from "./pages/admin/Purchases";
 
 const queryClient = new QueryClient();
 
@@ -181,6 +183,22 @@ const App = () => (
               element={
                 <ProtectedRoute requireAdmin>
                   <AdminSettings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/alterations"
+              element={
+                <ProtectedRoute requireStaff>
+                  <AdminAlterations />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/purchases"
+              element={
+                <ProtectedRoute requireStaff>
+                  <AdminPurchases />
                 </ProtectedRoute>
               }
             />

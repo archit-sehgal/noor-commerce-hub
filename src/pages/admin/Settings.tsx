@@ -34,9 +34,11 @@ interface Employee {
 
 const permissionLabels = {
   permission_billing: "Billing (POS)",
+  permission_alterations: "Alterations",
   permission_orders: "Orders",
   permission_customers: "Customers",
   permission_inventory: "Inventory",
+  permission_purchases: "Purchases",
   permission_products: "Products",
   permission_categories: "Categories",
   permission_reports: "Reports",
@@ -53,9 +55,11 @@ const Settings = () => {
   const [newEmployeePassword, setNewEmployeePassword] = useState("");
   const [selectedPermissions, setSelectedPermissions] = useState<Record<string, boolean>>({
     permission_billing: true,
+    permission_alterations: true,
     permission_orders: true,
     permission_customers: false,
     permission_inventory: false,
+    permission_purchases: false,
     permission_products: false,
     permission_categories: false,
     permission_reports: false,
@@ -160,9 +164,11 @@ const Settings = () => {
       setNewEmployeePassword("");
       setSelectedPermissions({
         permission_billing: true,
+        permission_alterations: true,
         permission_orders: true,
         permission_customers: false,
         permission_inventory: false,
+        permission_purchases: false,
         permission_products: false,
         permission_categories: false,
         permission_reports: false,
