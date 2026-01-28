@@ -170,7 +170,7 @@ const Products = () => {
               <p className="text-sm text-muted-foreground mb-6">
                 Showing {filteredProducts.length} product(s)
               </p>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
               {filteredProducts.map((product) => (
                   <ProductCard
                     key={product.id}
@@ -182,6 +182,7 @@ const Products = () => {
                       discountPrice: product.discount_price || null,
                       image: product.images?.[0] || "/placeholder.svg",
                       category: product.category?.name || "",
+                      stockQuantity: product.stock_quantity,
                     }}
                   />
                 ))}

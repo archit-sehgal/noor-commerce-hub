@@ -455,77 +455,127 @@ const AdminCustomers = () => {
         </Card>
       </div>
 
-      {/* Customers Table */}
+      {/* Customers */}
       {loading ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="h-8 w-8 animate-spin text-gold" />
         </div>
       ) : filteredCustomers.length > 0 ? (
-        <div className="border rounded-lg overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[100px]">ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>City</TableHead>
-                <TableHead className="text-center">Orders</TableHead>
-                <TableHead className="text-right">Total Spent</TableHead>
-                <TableHead>Last Purchase</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCustomers.map((customer) => (
-                <TableRow key={customer.id}>
-                  <TableCell className="font-mono text-xs text-muted-foreground">
-                    {customer.id.substring(0, 8)}...
-                  </TableCell>
-                  <TableCell className="font-medium">{customer.name}</TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      {customer.email && <p>{customer.email}</p>}
-                      {customer.phone && (
-                        <p className="text-muted-foreground">{customer.phone}</p>
-                      )}
-                      {!customer.email && !customer.phone && (
-                        <p className="text-muted-foreground">-</p>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>{customer.city || "-"}</TableCell>
-                  <TableCell className="text-center">{customer.total_orders || 0}</TableCell>
-                  <TableCell className="text-right">
-                    ₹{Number(customer.total_spent || 0).toLocaleString()}
-                  </TableCell>
-                  <TableCell>
-                    {customer.last_purchase_date
-                      ? new Date(customer.last_purchase_date).toLocaleDateString()
-                      : "-"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => handleViewCustomer(customer)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => handleEditCustomer(customer)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <>
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {filteredCustomers.map((customer) => (
+              <div
+                key={customer.id}
+                className="bg-card border border-border rounded-lg p-4 shadow-sm"
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <p className="font-semibold">{customer.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {customer.phone || customer.email || "No contact"}
+                    </p>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => handleViewCustomer(customer)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => handleEditCustomer(customer)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Orders</p>
+                    <p className="font-medium">{customer.total_orders || 0}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Total Spent</p>
+                    <p className="font-semibold text-gold">₹{Number(customer.total_spent || 0).toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block border rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="hidden xl:table-cell w-[100px]">ID</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead className="hidden sm:table-cell">Contact</TableHead>
+                    <TableHead className="hidden lg:table-cell">City</TableHead>
+                    <TableHead className="text-center">Orders</TableHead>
+                    <TableHead className="text-right">Total Spent</TableHead>
+                    <TableHead className="hidden lg:table-cell">Last Purchase</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCustomers.map((customer) => (
+                    <TableRow key={customer.id}>
+                      <TableCell className="hidden xl:table-cell font-mono text-xs text-muted-foreground">
+                        {customer.id.substring(0, 8)}...
+                      </TableCell>
+                      <TableCell className="font-medium">{customer.name}</TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <div className="text-sm">
+                          {customer.email && <p className="truncate max-w-[150px]">{customer.email}</p>}
+                          {customer.phone && (
+                            <p className="text-muted-foreground">{customer.phone}</p>
+                          )}
+                          {!customer.email && !customer.phone && (
+                            <p className="text-muted-foreground">-</p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">{customer.city || "-"}</TableCell>
+                      <TableCell className="text-center">{customer.total_orders || 0}</TableCell>
+                      <TableCell className="text-right font-semibold">
+                        ₹{Number(customer.total_spent || 0).toLocaleString()}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {customer.last_purchase_date
+                          ? new Date(customer.last_purchase_date).toLocaleDateString()
+                          : "-"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleViewCustomer(customer)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleEditCustomer(customer)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </>
       ) : (
         <div className="text-center py-16 border rounded-lg">
           <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

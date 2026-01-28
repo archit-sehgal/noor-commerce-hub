@@ -190,58 +190,59 @@ const Alterations = () => {
             {isLoading ? (
               <div className="text-center py-12 text-muted-foreground">Loading...</div>
             ) : filteredOrders && filteredOrders.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-gold/10">
-                    <TableHead>Order #</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Due Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Notes</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <>
+                {/* Mobile Card View */}
+                <div className="md:hidden p-4 space-y-3">
                   {filteredOrders.map((order) => {
                     const isOverdue =
                       order.alteration_due_date &&
                       new Date(order.alteration_due_date) < new Date() &&
                       order.alteration_status !== "delivered";
                     return (
-                      <TableRow key={order.id} className={`border-gold/10 ${isOverdue ? "bg-red-50" : ""}`}>
-                        <TableCell className="font-medium">{order.order_number}</TableCell>
-                        <TableCell>{order.customer?.name || "—"}</TableCell>
-                        <TableCell>{order.customer?.phone || "—"}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {order.alteration_due_date
-                              ? format(new Date(order.alteration_due_date), "dd MMM yyyy")
-                              : "Not set"}
-                            {isOverdue && (
-                              <Badge variant="destructive" className="text-xs">
-                                Overdue
-                              </Badge>
-                            )}
+                      <div
+                        key={order.id}
+                        className={`border rounded-lg p-4 ${isOverdue ? "bg-red-50 border-red-200" : "border-gold/10"}`}
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <p className="font-semibold text-sm">{order.order_number}</p>
+                            <p className="text-sm text-muted-foreground">{order.customer?.name || "—"}</p>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={`${statusColors[order.alteration_status || "pending"]} flex items-center gap-1 w-fit`}>
+                          <Badge className={`${statusColors[order.alteration_status || "pending"]} flex items-center gap-1`}>
                             {statusIcons[order.alteration_status || "pending"]}
                             {order.alteration_status?.replace("_", " ") || "pending"}
                           </Badge>
-                        </TableCell>
-                        <TableCell className="max-w-[200px] truncate">
-                          {order.alteration_notes || "—"}
-                        </TableCell>
-                        <TableCell className="text-right">
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Phone</span>
+                            <span>{order.customer?.phone || "—"}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Due Date</span>
+                            <div className="flex items-center gap-2">
+                              <span>
+                                {order.alteration_due_date
+                                  ? format(new Date(order.alteration_due_date), "dd MMM yyyy")
+                                  : "Not set"}
+                              </span>
+                              {isOverdue && (
+                                <Badge variant="destructive" className="text-xs">Overdue</Badge>
+                              )}
+                            </div>
+                          </div>
+                          {order.alteration_notes && (
+                            <p className="text-muted-foreground truncate">{order.alteration_notes}</p>
+                          )}
+                        </div>
+                        <div className="mt-3 pt-3 border-t">
                           <Select
                             value={order.alteration_status || "pending"}
                             onValueChange={(value) =>
                               updateStatusMutation.mutate({ orderId: order.id, status: value })
                             }
                           >
-                            <SelectTrigger className="w-32 border-gold/20">
+                            <SelectTrigger className="w-full border-gold/20">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -251,12 +252,81 @@ const Alterations = () => {
                               <SelectItem value="delivered">Delivered</SelectItem>
                             </SelectContent>
                           </Select>
-                        </TableCell>
-                      </TableRow>
+                        </div>
+                      </div>
                     );
                   })}
-                </TableBody>
-              </Table>
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-gold/10">
+                        <TableHead>Order #</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead className="hidden lg:table-cell">Phone</TableHead>
+                        <TableHead>Due Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="hidden lg:table-cell">Notes</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredOrders.map((order) => {
+                        const isOverdue =
+                          order.alteration_due_date &&
+                          new Date(order.alteration_due_date) < new Date() &&
+                          order.alteration_status !== "delivered";
+                        return (
+                          <TableRow key={order.id} className={`border-gold/10 ${isOverdue ? "bg-red-50" : ""}`}>
+                            <TableCell className="font-medium">{order.order_number}</TableCell>
+                            <TableCell>{order.customer?.name || "—"}</TableCell>
+                            <TableCell className="hidden lg:table-cell">{order.customer?.phone || "—"}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                {order.alteration_due_date
+                                  ? format(new Date(order.alteration_due_date), "dd MMM yyyy")
+                                  : "Not set"}
+                                {isOverdue && (
+                                  <Badge variant="destructive" className="text-xs">Overdue</Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={`${statusColors[order.alteration_status || "pending"]} flex items-center gap-1 w-fit`}>
+                                {statusIcons[order.alteration_status || "pending"]}
+                                {order.alteration_status?.replace("_", " ") || "pending"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="hidden lg:table-cell max-w-[200px] truncate">
+                              {order.alteration_notes || "—"}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Select
+                                value={order.alteration_status || "pending"}
+                                onValueChange={(value) =>
+                                  updateStatusMutation.mutate({ orderId: order.id, status: value })
+                                }
+                              >
+                                <SelectTrigger className="w-28 border-gold/20">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">Pending</SelectItem>
+                                  <SelectItem value="in_progress">In Progress</SelectItem>
+                                  <SelectItem value="ready">Ready</SelectItem>
+                                  <SelectItem value="delivered">Delivered</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             ) : (
               <div className="text-center py-12 space-y-4">
                 <div className="w-16 h-16 mx-auto bg-gold/10 rounded-full flex items-center justify-center">

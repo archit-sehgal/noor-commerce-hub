@@ -325,95 +325,135 @@ const AdminSalesman = () => {
         </Button>
       </div>
 
-      {/* Table */}
-      <div className="bg-background rounded-lg shadow-sm overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      {/* Salesmen */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : filteredSalesmen.length === 0 ? (
+        <div className="text-center py-12 bg-background rounded-lg shadow-sm">
+          <UserCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">No salesmen found</p>
+        </div>
+      ) : (
+        <>
+          {/* Mobile Card View */}
+          <div className="lg:hidden space-y-3">
+            {filteredSalesmen.map((salesman) => (
+              <div
+                key={salesman.id}
+                className="bg-card border border-border rounded-lg p-4 shadow-sm"
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <p className="font-semibold">{salesman.name}</p>
+                    <p className="text-sm text-muted-foreground">{salesman.phone || salesman.email || "No contact"}</p>
+                  </div>
+                  <Badge variant={salesman.is_active ? "default" : "secondary"}>
+                    {salesman.is_active ? "Active" : "Inactive"}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+                  <div>
+                    <p className="text-muted-foreground">Commission Rate</p>
+                    <p className="font-medium">{Number(salesman.commission_rate || 0)}%</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Total Sales</p>
+                    <p className="font-semibold text-primary">{formatCurrency(Number(salesman.total_sales || 0))}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Commission Earned</p>
+                    <p className="font-semibold text-green-600">
+                      {formatCurrency((Number(salesman.total_sales || 0) * Number(salesman.commission_rate || 0)) / 100)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Orders</p>
+                    <p className="font-medium">{salesman.total_orders || 0}</p>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 pt-2 border-t">
+                  <Button variant="ghost" size="sm" onClick={() => handleViewDetails(salesman)}>
+                    <Eye className="h-4 w-4 mr-1" /> View
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleEdit(salesman)}>
+                    <Edit2 className="h-4 w-4 mr-1" /> Edit
+                  </Button>
+                  <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(salesman.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Commission %</TableHead>
-                <TableHead className="text-right">Total Sales</TableHead>
-                <TableHead className="text-right">Commission Earned</TableHead>
-                <TableHead className="text-right">Orders</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredSalesmen.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    No salesmen found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredSalesmen.map((salesman) => (
-                  <TableRow key={salesman.id}>
-                    <TableCell className="font-medium">{salesman.name}</TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {salesman.phone && <p>{salesman.phone}</p>}
-                        {salesman.email && (
-                          <p className="text-muted-foreground">{salesman.email}</p>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={salesman.is_active ? "default" : "secondary"}>
-                        {salesman.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {Number(salesman.commission_rate || 0)}%
-                    </TableCell>
-                    <TableCell className="text-right font-semibold text-primary">
-                      {formatCurrency(Number(salesman.total_sales || 0))}
-                    </TableCell>
-                    <TableCell className="text-right font-semibold text-green-600">
-                      {formatCurrency(
-                        (Number(salesman.total_sales || 0) * Number(salesman.commission_rate || 0)) / 100
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">{salesman.total_orders || 0}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleViewDetails(salesman)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(salesman)}
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive"
-                          onClick={() => handleDelete(salesman.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+
+          {/* Desktop Table View */}
+          <div className="hidden lg:block bg-background rounded-lg shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Commission %</TableHead>
+                    <TableHead className="text-right">Total Sales</TableHead>
+                    <TableHead className="text-right">Commission Earned</TableHead>
+                    <TableHead className="text-right">Orders</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        )}
-      </div>
+                </TableHeader>
+                <TableBody>
+                  {filteredSalesmen.map((salesman) => (
+                    <TableRow key={salesman.id}>
+                      <TableCell className="font-medium">{salesman.name}</TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          {salesman.phone && <p>{salesman.phone}</p>}
+                          {salesman.email && (
+                            <p className="text-muted-foreground">{salesman.email}</p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={salesman.is_active ? "default" : "secondary"}>
+                          {salesman.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {Number(salesman.commission_rate || 0)}%
+                      </TableCell>
+                      <TableCell className="text-right font-semibold text-primary">
+                        {formatCurrency(Number(salesman.total_sales || 0))}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold text-green-600">
+                        {formatCurrency(
+                          (Number(salesman.total_sales || 0) * Number(salesman.commission_rate || 0)) / 100
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">{salesman.total_orders || 0}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => handleViewDetails(salesman)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleEdit(salesman)}>
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(salesman.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Add/Edit Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
