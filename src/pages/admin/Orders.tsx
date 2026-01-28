@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import AdminLayout from "@/components/admin/AdminLayout";
+import OrderDetailDialog from "@/components/admin/OrderDetailDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Search, Loader2, ShoppingCart, Eye } from "lucide-react";
 
@@ -38,6 +39,8 @@ const AdminOrders = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -265,7 +268,14 @@ const AdminOrders = () => {
                     </Select>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon">
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => {
+                        setSelectedOrderId(order.id);
+                        setDetailDialogOpen(true);
+                      }}
+                    >
                       <Eye className="h-4 w-4" />
                     </Button>
                   </TableCell>
@@ -280,6 +290,14 @@ const AdminOrders = () => {
           <p className="text-muted-foreground">No orders found</p>
         </div>
       )}
+
+      {/* Order Detail Dialog */}
+      <OrderDetailDialog
+        orderId={selectedOrderId}
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        onOrderUpdated={fetchOrders}
+      />
     </AdminLayout>
   );
 };

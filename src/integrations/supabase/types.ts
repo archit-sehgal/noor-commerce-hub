@@ -671,6 +671,7 @@ export type Database = {
       }
       salesman: {
         Row: {
+          commission_rate: number | null
           created_at: string
           email: string | null
           id: string
@@ -682,6 +683,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          commission_rate?: number | null
           created_at?: string
           email?: string | null
           id?: string
@@ -693,6 +695,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          commission_rate?: number | null
           created_at?: string
           email?: string | null
           id?: string

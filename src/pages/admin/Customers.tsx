@@ -21,9 +21,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import AdminLayout from "@/components/admin/AdminLayout";
+import OrderDetailDialog from "@/components/admin/OrderDetailDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Loader2, Users, Eye, Pencil, ShoppingBag, IndianRupee, Calendar, Download } from "lucide-react";
+import { Plus, Search, Loader2, Users, Eye, Pencil, ShoppingBag, IndianRupee, Calendar, Download, ExternalLink } from "lucide-react";
 
 interface Customer {
   id: string;
@@ -60,6 +61,8 @@ const AdminCustomers = () => {
   const [customerOrders, setCustomerOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [orderDetailDialogOpen, setOrderDetailDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -642,10 +645,17 @@ const AdminCustomers = () => {
                     {customerOrders.map((order) => (
                       <div 
                         key={order.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50"
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                        onClick={() => {
+                          setSelectedOrderId(order.id);
+                          setOrderDetailDialogOpen(true);
+                        }}
                       >
                         <div>
-                          <p className="font-medium">{order.order_number}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{order.order_number}</p>
+                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                          </div>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Calendar className="h-3 w-3" />
                             {new Date(order.created_at).toLocaleDateString()}
@@ -671,6 +681,13 @@ const AdminCustomers = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Order Detail Dialog */}
+      <OrderDetailDialog
+        orderId={selectedOrderId}
+        open={orderDetailDialogOpen}
+        onOpenChange={setOrderDetailDialogOpen}
+      />
     </AdminLayout>
   );
 };

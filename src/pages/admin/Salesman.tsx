@@ -48,6 +48,7 @@ interface Salesman {
   is_active: boolean;
   total_sales: number;
   total_orders: number;
+  commission_rate: number;
   created_at: string;
 }
 
@@ -75,6 +76,7 @@ const AdminSalesman = () => {
     phone: "",
     email: "",
     is_active: true,
+    commission_rate: 0,
   });
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
@@ -153,13 +155,14 @@ const AdminSalesman = () => {
       phone: salesman.phone || "",
       email: salesman.email || "",
       is_active: salesman.is_active,
+      commission_rate: Number(salesman.commission_rate) || 0,
     });
     setShowDialog(true);
   };
 
   const handleAddNew = () => {
     setEditingId(null);
-    setFormData({ name: "", phone: "", email: "", is_active: true });
+    setFormData({ name: "", phone: "", email: "", is_active: true, commission_rate: 0 });
     setShowDialog(true);
   };
 
@@ -183,6 +186,7 @@ const AdminSalesman = () => {
             phone: formData.phone.trim() || null,
             email: formData.email.trim() || null,
             is_active: formData.is_active,
+            commission_rate: formData.commission_rate,
           })
           .eq("id", editingId);
 
@@ -194,6 +198,7 @@ const AdminSalesman = () => {
           phone: formData.phone.trim() || null,
           email: formData.email.trim() || null,
           is_active: formData.is_active,
+          commission_rate: formData.commission_rate,
         });
 
         if (error) throw error;
@@ -333,7 +338,9 @@ const AdminSalesman = () => {
                 <TableHead>Name</TableHead>
                 <TableHead>Contact</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="text-right">Commission %</TableHead>
                 <TableHead className="text-right">Total Sales</TableHead>
+                <TableHead className="text-right">Commission Earned</TableHead>
                 <TableHead className="text-right">Orders</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -341,7 +348,7 @@ const AdminSalesman = () => {
             <TableBody>
               {filteredSalesmen.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No salesmen found
                   </TableCell>
                 </TableRow>
@@ -362,8 +369,16 @@ const AdminSalesman = () => {
                         {salesman.is_active ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-right">
+                      {Number(salesman.commission_rate || 0)}%
+                    </TableCell>
                     <TableCell className="text-right font-semibold text-primary">
                       {formatCurrency(Number(salesman.total_sales || 0))}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold text-green-600">
+                      {formatCurrency(
+                        (Number(salesman.total_sales || 0) * Number(salesman.commission_rate || 0)) / 100
+                      )}
                     </TableCell>
                     <TableCell className="text-right">{salesman.total_orders || 0}</TableCell>
                     <TableCell className="text-right">
@@ -450,6 +465,21 @@ const AdminSalesman = () => {
                   <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label>Commission Rate (%)</Label>
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                step="0.5"
+                value={formData.commission_rate}
+                onChange={(e) => setFormData({ ...formData, commission_rate: parseFloat(e.target.value) || 0 })}
+                placeholder="e.g., 5 for 5%"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Commission calculated on total sales
+              </p>
             </div>
             <Button
               onClick={handleSubmit}
