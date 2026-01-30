@@ -14,10 +14,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ["DM Serif Display", "Georgia", "serif"],
-        heading: ["Instrument Serif", "Georgia", "serif"],
-        body: ["Outfit", "system-ui", "sans-serif"],
-        accent: ["Tenor Sans", "Georgia", "serif"],
+        display: ["Playfair Display", "Georgia", "serif"],
+        heading: ["Cormorant Garamond", "Georgia", "serif"],
+        body: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
+        accent: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",

@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { createOrderNotification } from "@/hooks/useNotifications";
 
 interface Product {
   id: string;
@@ -325,6 +326,7 @@ const AdminBilling = () => {
           alteration_due_date: needsAlteration && alterationDueDate ? alterationDueDate : null,
           alteration_status: needsAlteration ? "pending" : null,
           alteration_notes: needsAlteration ? alterationNotes : null,
+          order_source: "pos",
         })
         .select()
         .single();
@@ -454,6 +456,9 @@ const AdminBilling = () => {
       setAlterationDueDate("");
       setAlterationNotes("");
       fetchProducts(); // Refresh stock
+
+      // Create notification for the new order
+      await createOrderNotification(orderNumber, totalAmount, 'pos');
 
       toast({
         title: "Success",

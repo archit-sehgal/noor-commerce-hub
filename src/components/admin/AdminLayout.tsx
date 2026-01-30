@@ -4,7 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEmployeePermissions } from "@/hooks/useEmployeePermissions";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import NotificationsPanel from "./NotificationsPanel";
 import {
   LayoutDashboard,
   Package,
@@ -21,7 +22,6 @@ import {
   UserCheck,
   Scissors,
   Truck,
-  X,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -199,6 +199,7 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
             <h2 className="text-lg md:text-xl font-display truncate">{title}</h2>
           </div>
           <div className="flex items-center gap-2 md:gap-4">
+            <NotificationsPanel />
             <span className="text-xs md:text-sm text-muted-foreground hidden sm:block truncate max-w-[150px]">
               {user?.email}
             </span>
