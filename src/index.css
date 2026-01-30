@@ -2,8 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Noor Creations - Modern Elegant Traditional Fashion Brand Design System */
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=Tenor+Sans&display=swap');
+/* Noor Creations - Modern Elegant Premium Fashion Brand Design System */
+/* Modern fonts - Playfair Display for elegance, Plus Jakarta Sans for readability */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap');
 
 @layer base {
   :root {
@@ -90,10 +91,10 @@
     --shadow-elegant: 0 4px 20px -4px hsl(25 25% 12% / 0.06), 0 0 0 1px hsl(15 55% 60% / 0.08);
 
     /* Typography - Modern Elegant */
-    --font-display: 'DM Serif Display', Georgia, serif;
-    --font-heading: 'Instrument Serif', Georgia, serif;
-    --font-body: 'Outfit', system-ui, sans-serif;
-    --font-accent: 'Tenor Sans', Georgia, serif;
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-heading: 'Cormorant Garamond', Georgia, serif;
+    --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-accent: 'Plus Jakarta Sans', system-ui, sans-serif;
   }
 
   .dark {

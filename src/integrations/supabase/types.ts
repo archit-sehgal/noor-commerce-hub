@@ -306,6 +306,36 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          data: Json | null
+          id: string
+          is_read: boolean | null
+          message: string
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          title: string
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           color: string | null
@@ -373,6 +403,7 @@ export type Database = {
           needs_alteration: boolean | null
           notes: string | null
           order_number: string
+          order_source: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           salesman_id: string | null
           shipping_address: string | null
@@ -399,6 +430,7 @@ export type Database = {
           needs_alteration?: boolean | null
           notes?: string | null
           order_number: string
+          order_source?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           salesman_id?: string | null
           shipping_address?: string | null
@@ -425,6 +457,7 @@ export type Database = {
           needs_alteration?: boolean | null
           notes?: string | null
           order_number?: string
+          order_source?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           salesman_id?: string | null
           shipping_address?: string | null

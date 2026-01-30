@@ -17,8 +17,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, AlertTriangle, Plus, Minus, Loader2 } from "lucide-react";
+import { Search, AlertTriangle, Plus, Minus, Loader2, Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -50,9 +51,11 @@ const AdminInventory = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [stockHistory, setStockHistory] = useState<StockHistory[]>([]);
+  const [adjustmentMode, setAdjustmentMode] = useState<"set" | "adjust">("set");
   const [adjustmentType, setAdjustmentType] = useState<"add" | "remove">("add");
   const [adjustmentQuantity, setAdjustmentQuantity] = useState("");
   const [adjustmentNotes, setAdjustmentNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -85,7 +88,7 @@ const AdminInventory = () => {
           stock_quantity: p.stock_quantity,
           min_stock_alert: p.min_stock_alert,
           price: p.price,
-          category_name: (p.categories as any)?.name || null,
+          category_name: (p.categories as { name: string } | null)?.name || null,
         })) || []
       );
     } catch (error) {
@@ -118,6 +121,7 @@ const AdminInventory = () => {
     await fetchStockHistory(product.id);
     setAdjustmentQuantity("");
     setAdjustmentNotes("");
+    setAdjustmentMode("set");
     setDialogOpen(true);
   };
 
@@ -125,7 +129,7 @@ const AdminInventory = () => {
     if (!selectedProduct || !adjustmentQuantity) return;
 
     const quantity = parseInt(adjustmentQuantity);
-    if (isNaN(quantity) || quantity <= 0) {
+    if (isNaN(quantity) || quantity < 0) {
       toast({
         title: "Error",
         description: "Please enter a valid quantity",
@@ -134,16 +138,29 @@ const AdminInventory = () => {
       return;
     }
 
-    const changeAmount = adjustmentType === "add" ? quantity : -quantity;
-    const newQuantity = selectedProduct.stock_quantity + changeAmount;
+    setSubmitting(true);
 
-    if (newQuantity < 0) {
-      toast({
-        title: "Error",
-        description: "Cannot remove more than available stock",
-        variant: "destructive",
-      });
-      return;
+    let newQuantity: number;
+    let changeAmount: number;
+
+    if (adjustmentMode === "set") {
+      // SET mode: set stock to exact value
+      newQuantity = quantity;
+      changeAmount = quantity - selectedProduct.stock_quantity;
+    } else {
+      // ADJUST mode: add or remove from current stock
+      changeAmount = adjustmentType === "add" ? quantity : -quantity;
+      newQuantity = selectedProduct.stock_quantity + changeAmount;
+
+      if (newQuantity < 0) {
+        toast({
+          title: "Error",
+          description: "Cannot remove more than available stock",
+          variant: "destructive",
+        });
+        setSubmitting(false);
+        return;
+      }
     }
 
     try {
@@ -158,11 +175,11 @@ const AdminInventory = () => {
       // Record stock history
       const { error: historyError } = await supabase.from("stock_history").insert({
         product_id: selectedProduct.id,
-        change_type: adjustmentType === "add" ? "adjustment_in" : "adjustment_out",
+        change_type: adjustmentMode === "set" ? "stock_set" : adjustmentType === "add" ? "adjustment_in" : "adjustment_out",
         change_amount: changeAmount,
         previous_quantity: selectedProduct.stock_quantity,
         new_quantity: newQuantity,
-        notes: adjustmentNotes || null,
+        notes: adjustmentNotes || `Stock ${adjustmentMode === "set" ? "set to" : adjustmentType === "add" ? "added" : "removed"} ${quantity}`,
         created_by: user?.id,
       });
 
@@ -170,7 +187,7 @@ const AdminInventory = () => {
 
       toast({
         title: "Success",
-        description: "Stock updated successfully",
+        description: `Stock ${adjustmentMode === "set" ? "set to" : "updated to"} ${newQuantity}`,
       });
 
       setDialogOpen(false);
@@ -182,6 +199,8 @@ const AdminInventory = () => {
         description: "Failed to update stock",
         variant: "destructive",
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -193,7 +212,8 @@ const AdminInventory = () => {
     if (filter === "low") {
       return (
         matchesSearch &&
-        product.stock_quantity <= (product.min_stock_alert || 10)
+        product.stock_quantity <= (product.min_stock_alert || 10) &&
+        product.stock_quantity > 0
       );
     }
     if (filter === "out") {
@@ -212,25 +232,25 @@ const AdminInventory = () => {
     <AdminLayout title="Inventory">
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-background rounded-lg p-4 shadow-sm">
+        <div className="bg-background rounded-lg p-4 shadow-sm border border-border">
           <p className="text-sm text-muted-foreground">Total Products</p>
-          <p className="text-2xl font-serif font-bold">{products.length}</p>
+          <p className="text-2xl font-display font-bold">{products.length}</p>
         </div>
-        <div className="bg-yellow-50 rounded-lg p-4 shadow-sm">
+        <div className="bg-yellow-50 rounded-lg p-4 shadow-sm border border-yellow-200">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-yellow-600" />
             <p className="text-sm text-yellow-700">Low Stock</p>
           </div>
-          <p className="text-2xl font-serif font-bold text-yellow-700">
+          <p className="text-2xl font-display font-bold text-yellow-700">
             {lowStockCount}
           </p>
         </div>
-        <div className="bg-red-50 rounded-lg p-4 shadow-sm">
+        <div className="bg-red-50 rounded-lg p-4 shadow-sm border border-red-200">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-red-600" />
             <p className="text-sm text-red-700">Out of Stock</p>
           </div>
-          <p className="text-2xl font-serif font-bold text-red-700">
+          <p className="text-2xl font-display font-bold text-red-700">
             {outOfStockCount}
           </p>
         </div>
@@ -265,11 +285,11 @@ const AdminInventory = () => {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : filteredProducts.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
+        <div className="text-center py-12 text-muted-foreground border rounded-lg">
           No products found
         </div>
       ) : (
-        <div className="bg-background rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-background rounded-lg shadow-sm overflow-hidden border border-border">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-muted/50">
@@ -277,19 +297,19 @@ const AdminInventory = () => {
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
                     Product
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground hidden md:table-cell">
                     SKU
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground hidden lg:table-cell">
                     Category
                   </th>
                   <th className="text-center py-3 px-4 text-sm font-medium text-muted-foreground">
                     Stock
                   </th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-muted-foreground">
+                  <th className="text-center py-3 px-4 text-sm font-medium text-muted-foreground hidden sm:table-cell">
                     Min Alert
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground hidden sm:table-cell">
                     Status
                   </th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
@@ -309,18 +329,20 @@ const AdminInventory = () => {
                       key={product.id}
                       className="border-b border-border/50 hover:bg-muted/30"
                     >
-                      <td className="py-3 px-4 font-medium">{product.name}</td>
-                      <td className="py-3 px-4 text-muted-foreground">
+                      <td className="py-3 px-4 font-medium text-sm">{product.name}</td>
+                      <td className="py-3 px-4 text-muted-foreground text-sm hidden md:table-cell">
                         {product.sku || "-"}
                       </td>
-                      <td className="py-3 px-4">{product.category_name || "-"}</td>
-                      <td className="py-3 px-4 text-center font-medium">
-                        {product.stock_quantity}
+                      <td className="py-3 px-4 text-sm hidden lg:table-cell">{product.category_name || "-"}</td>
+                      <td className="py-3 px-4 text-center font-bold text-lg">
+                        <span className={isOut ? "text-red-600" : isLow ? "text-yellow-600" : "text-green-600"}>
+                          {product.stock_quantity}
+                        </span>
                       </td>
-                      <td className="py-3 px-4 text-center text-muted-foreground">
+                      <td className="py-3 px-4 text-center text-muted-foreground hidden sm:table-cell">
                         {product.min_stock_alert || 10}
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-4 hidden sm:table-cell">
                         {isOut ? (
                           <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
                             Out of Stock
@@ -357,7 +379,7 @@ const AdminInventory = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="font-serif">
+            <DialogTitle className="font-display">
               Adjust Stock - {selectedProduct?.name}
             </DialogTitle>
           </DialogHeader>
@@ -365,41 +387,75 @@ const AdminInventory = () => {
           <div className="space-y-4">
             <div className="bg-muted/50 rounded-lg p-4 text-center">
               <p className="text-sm text-muted-foreground">Current Stock</p>
-              <p className="text-3xl font-serif font-bold">
+              <p className="text-4xl font-display font-bold text-gold">
                 {selectedProduct?.stock_quantity}
               </p>
             </div>
 
-            <div className="flex gap-2">
-              <Button
-                variant={adjustmentType === "add" ? "default" : "outline"}
-                onClick={() => setAdjustmentType("add")}
-                className="flex-1"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Stock
-              </Button>
-              <Button
-                variant={adjustmentType === "remove" ? "default" : "outline"}
-                onClick={() => setAdjustmentType("remove")}
-                className="flex-1"
-              >
-                <Minus className="h-4 w-4 mr-2" />
-                Remove Stock
-              </Button>
-            </div>
+            {/* Mode Selection */}
+            <Tabs value={adjustmentMode} onValueChange={(v) => setAdjustmentMode(v as "set" | "adjust")}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="set" className="gap-2">
+                  <Target className="h-4 w-4" />
+                  Set Stock To
+                </TabsTrigger>
+                <TabsTrigger value="adjust" className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add/Remove
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="set" className="space-y-4 pt-4">
+                <div>
+                  <Label htmlFor="set-quantity">New Stock Quantity</Label>
+                  <Input
+                    id="set-quantity"
+                    type="number"
+                    min="0"
+                    value={adjustmentQuantity}
+                    onChange={(e) => setAdjustmentQuantity(e.target.value)}
+                    placeholder="Enter new stock quantity"
+                    className="text-lg font-medium"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    The stock will be set to this exact number
+                  </p>
+                </div>
+              </TabsContent>
 
-            <div>
-              <Label htmlFor="quantity">Quantity</Label>
-              <Input
-                id="quantity"
-                type="number"
-                min="1"
-                value={adjustmentQuantity}
-                onChange={(e) => setAdjustmentQuantity(e.target.value)}
-                placeholder="Enter quantity"
-              />
-            </div>
+              <TabsContent value="adjust" className="space-y-4 pt-4">
+                <div className="flex gap-2">
+                  <Button
+                    variant={adjustmentType === "add" ? "default" : "outline"}
+                    onClick={() => setAdjustmentType("add")}
+                    className="flex-1"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Stock
+                  </Button>
+                  <Button
+                    variant={adjustmentType === "remove" ? "default" : "outline"}
+                    onClick={() => setAdjustmentType("remove")}
+                    className="flex-1"
+                  >
+                    <Minus className="h-4 w-4 mr-2" />
+                    Remove Stock
+                  </Button>
+                </div>
+
+                <div>
+                  <Label htmlFor="adjust-quantity">Quantity to {adjustmentType}</Label>
+                  <Input
+                    id="adjust-quantity"
+                    type="number"
+                    min="1"
+                    value={adjustmentQuantity}
+                    onChange={(e) => setAdjustmentQuantity(e.target.value)}
+                    placeholder={`Enter quantity to ${adjustmentType}`}
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
 
             <div>
               <Label htmlFor="notes">Notes (Optional)</Label>
@@ -412,8 +468,15 @@ const AdminInventory = () => {
               />
             </div>
 
-            <Button onClick={handleStockAdjustment} className="w-full">
-              Confirm Adjustment
+            <Button 
+              onClick={handleStockAdjustment} 
+              className="w-full"
+              disabled={submitting || !adjustmentQuantity}
+            >
+              {submitting ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Confirm {adjustmentMode === "set" ? "Set to" : adjustmentType === "add" ? "Add" : "Remove"} {adjustmentQuantity || "0"}
             </Button>
 
             {/* History */}
@@ -430,8 +493,8 @@ const AdminInventory = () => {
                         <span
                           className={
                             item.change_amount > 0
-                              ? "text-green-600"
-                              : "text-red-600"
+                              ? "text-green-600 font-medium"
+                              : "text-red-600 font-medium"
                           }
                         >
                           {item.change_amount > 0 ? "+" : ""}
@@ -441,7 +504,7 @@ const AdminInventory = () => {
                           ({item.previous_quantity} → {item.new_quantity})
                         </span>
                       </div>
-                      <span className="text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         {new Date(item.created_at).toLocaleDateString()}
                       </span>
                     </div>
