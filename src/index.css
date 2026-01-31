@@ -267,98 +267,115 @@
     box-shadow: inset 0 0 30px hsl(var(--gold) / 0.1);
   }
 
-  /* Jewelry Box Navigation */
+  /* Jewelry Box Navigation - Traditional Ornate Design */
   .jewelry-box {
+    cursor: pointer;
+    perspective: 300px;
     position: relative;
-    perspective: 1000px;
+  }
+
+  .jewelry-box .float-text {
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%) translateY(0);
+    opacity: 0;
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    color: hsl(var(--gold));
+    white-space: nowrap;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    text-shadow: 0 0 10px hsl(var(--gold) / 0.3);
+    pointer-events: none;
+  }
+
+  .jewelry-box:hover .float-text {
+    transform: translateX(-50%) translateY(-4px);
+    opacity: 1;
   }
 
   .jewelry-box-lid {
-    position: relative;
-    padding: 8px 16px;
-    background: linear-gradient(180deg, hsl(38 50% 22%) 0%, hsl(38 45% 16%) 100%);
-    border: 1px solid hsl(var(--gold) / 0.4);
+    background: linear-gradient(135deg, hsl(var(--maroon)) 0%, hsl(var(--maroon-dark)) 50%, hsl(var(--maroon)) 100%);
+    border: 1px solid hsl(var(--gold) / 0.5);
     border-bottom: none;
-    cursor: pointer;
+    border-radius: 2px 2px 0 0;
     transform-origin: bottom center;
-    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
     box-shadow: 
-      inset 0 1px 0 hsl(var(--gold) / 0.2),
-      0 -2px 10px hsl(30 15% 5% / 0.3);
+      inset 0 1px 0 hsl(var(--gold) / 0.3),
+      0 -2px 8px hsl(0 0% 0% / 0.3);
   }
 
+  /* Ornate lid decoration */
   .jewelry-box-lid::before {
-    content: '';
+    content: '❖';
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 20px;
-    height: 8px;
-    border: 1px solid hsl(var(--gold) / 0.5);
-    border-radius: 2px;
-    background: linear-gradient(180deg, hsl(var(--gold)) 0%, hsl(var(--gold-dark)) 100%);
+    font-size: 6px;
+    color: hsl(var(--gold) / 0.7);
   }
 
-  .jewelry-box-base {
-    background: linear-gradient(180deg, hsl(350 55% 28%) 0%, hsl(350 60% 20%) 100%);
-    border: 1px solid hsl(var(--gold) / 0.4);
-    padding: 12px 16px;
-    box-shadow: 
-      inset 0 5px 15px hsl(30 15% 5% / 0.5),
-      0 5px 20px hsl(30 15% 5% / 0.4);
-    position: relative;
-  }
-
-  .jewelry-box-base::before {
+  /* Lid corner ornaments */
+  .jewelry-box-lid::after {
     content: '';
     position: absolute;
-    inset: 4px;
-    border: 1px solid hsl(var(--gold) / 0.15);
+    inset: 2px;
+    border: 1px solid hsl(var(--gold) / 0.25);
+    border-radius: 1px;
     pointer-events: none;
   }
 
   .jewelry-box:hover .jewelry-box-lid {
-    transform: rotateX(-110deg);
+    transform: rotateX(-100deg);
+  }
+
+  .jewelry-box-base {
+    background: linear-gradient(180deg, hsl(var(--maroon-dark)) 0%, hsl(350 60% 12%) 100%);
+    border: 1px solid hsl(var(--gold) / 0.5);
+    border-top: none;
+    border-radius: 0 0 2px 2px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 
+      inset 0 2px 6px hsl(0 0% 0% / 0.5),
+      0 4px 12px hsl(0 0% 0% / 0.4);
+  }
+
+  /* Velvet interior texture */
+  .jewelry-box-base::before {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    background: radial-gradient(ellipse at center, hsl(350 70% 18%) 0%, hsl(350 60% 12%) 100%);
+    border-radius: 1px;
+  }
+
+  /* Inner gold trim */
+  .jewelry-box-base::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border: 1px solid hsl(var(--gold) / 0.15);
+    border-radius: 1px;
+    pointer-events: none;
   }
 
   .jewelry-box-content {
-    opacity: 0;
-    transform: translateY(10px);
-    transition: all 0.4s ease 0.2s;
-    font-family: var(--font-display);
-    color: hsl(var(--gold));
-    text-transform: uppercase;
-    letter-spacing: 0.2em;
-    font-size: 11px;
+    color: hsl(var(--gold) / 0.6);
+    transition: opacity 0.3s ease;
+    position: relative;
+    z-index: 1;
   }
 
   .jewelry-box:hover .jewelry-box-content {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  /* Floating text effect */
-  .float-text {
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%) translateY(20px);
     opacity: 0;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.3s;
-    white-space: nowrap;
-    font-family: var(--font-display);
-    color: hsl(var(--gold));
-    text-shadow: 0 0 20px hsl(var(--gold) / 0.5);
-    letter-spacing: 0.25em;
-    font-size: 12px;
-    text-transform: uppercase;
   }
 
-  .jewelry-box:hover .float-text {
-    opacity: 1;
-    transform: translateX(-50%) translateY(-8px);
-  }
 
   /* Text styles */
   .text-display {
