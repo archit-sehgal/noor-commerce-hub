@@ -114,7 +114,7 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
   );
 
   return (
-    <div className="min-h-screen bg-cream flex">
+    <div className="min-h-screen flex admin-theme">
       {/* Desktop Sidebar */}
       <aside
         className={`${
@@ -203,14 +203,14 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
             <span className="text-xs md:text-sm text-muted-foreground hidden sm:block truncate max-w-[150px]">
               {user?.email}
             </span>
-            <span className="px-2 md:px-3 py-1 md:py-1.5 text-xs font-medium bg-gradient-to-r from-rose-gold/20 to-gold/20 text-rose-gold rounded-full border border-rose-gold/20 whitespace-nowrap">
+            <span className="px-2 md:px-3 py-1 md:py-1.5 text-xs font-medium bg-maroon text-white rounded-full border border-rose-gold/20 whitespace-nowrap">
               {isAdmin ? "Admin" : isSalesStaff ? "Employee" : "User"}
             </span>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 md:p-6 bg-gradient-to-b from-cream to-cream-dark/30">{children}</main>
+        <main className="flex-1 p-4 md:p-6 bg-background">{children}</main>
       </div>
     </div>
   );
