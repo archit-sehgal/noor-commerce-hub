@@ -203,7 +203,7 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
             <span className="text-xs md:text-sm text-muted-foreground hidden sm:block truncate max-w-[150px]">
               {user?.email}
             </span>
-            <span className="px-2 md:px-3 py-1 md:py-1.5 text-xs font-medium bg-maroon text-white rounded-full border border-rose-gold/20 whitespace-nowrap">
+            <span className="px-2 md:px-3 py-1 md:py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded-full border border-border whitespace-nowrap">
               {isAdmin ? "Admin" : isSalesStaff ? "Employee" : "User"}
             </span>
           </div>
