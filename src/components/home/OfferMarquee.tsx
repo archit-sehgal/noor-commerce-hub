@@ -1,12 +1,13 @@
 import { useEffect, useRef } from "react";
+import { Crown } from "lucide-react";
 
 const offers = [
-  "🎉 FLAT 30% OFF on First Purchase",
-  "✨ Free Shipping on Orders Above ₹999",
-  "🔥 Limited Time: Buy 2 Get 1 Free on Kurtis",
-  "💝 Extra 10% Off with Code: NOOR10",
-  "🛍️ New Collection Just Dropped!",
-  "⭐ Premium Quality Guaranteed",
+  "✧ Free Shipping on Orders Above ₹999",
+  "✧ Use Code NOOR15 for 15% Off",
+  "✧ Handcrafted with Love from Punjab",
+  "✧ Authentic Pakistani & Indian Designs",
+  "✧ Easy 7-Day Returns",
+  "✧ Secure Payment Options",
 ];
 
 const OfferMarquee = () => {
@@ -20,7 +21,7 @@ const OfferMarquee = () => {
     let position = 0;
 
     const animate = () => {
-      position -= 1;
+      position -= 0.5;
       if (position <= -container.scrollWidth / 2) {
         position = 0;
       }
@@ -34,22 +35,31 @@ const OfferMarquee = () => {
   }, []);
 
   return (
-    <div className="w-full bg-gradient-to-r from-charcoal via-charcoal-light to-charcoal overflow-hidden py-3">
-      <div 
-        ref={containerRef}
-        className="flex whitespace-nowrap will-change-transform"
-        style={{ width: 'max-content' }}
-      >
-        {[...offers, ...offers, ...offers].map((offer, index) => (
-          <span
-            key={index}
-            className="inline-flex items-center gap-8 px-8 text-sm font-accent text-cream/90 tracking-wider"
-          >
-            {offer}
-            <span className="text-gold">•</span>
-          </span>
-        ))}
+    <div className="w-full bg-maroon border-b border-gold/30 overflow-hidden relative">
+      {/* Decorative gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-r from-maroon-dark via-maroon to-maroon-dark opacity-50" />
+      
+      <div className="relative py-2.5">
+        <div 
+          ref={containerRef}
+          className="flex whitespace-nowrap will-change-transform"
+          style={{ width: 'max-content' }}
+        >
+          {[...offers, ...offers, ...offers].map((offer, index) => (
+            <span
+              key={index}
+              className="inline-flex items-center gap-4 px-8 text-sm font-display tracking-[0.15em] text-cream/90"
+            >
+              {offer}
+              <Crown className="h-3 w-3 text-gold" />
+            </span>
+          ))}
+        </div>
       </div>
+      
+      {/* Fade edges */}
+      <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-maroon to-transparent z-10" />
+      <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-maroon to-transparent z-10" />
     </div>
   );
 };
