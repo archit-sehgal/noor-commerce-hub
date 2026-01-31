@@ -25,19 +25,19 @@ const features = [
 
 const FeatureBanner = () => {
   return (
-    <section className="py-16 lg:py-20 border-y border-border bg-secondary/30">
+    <section className="py-10 lg:py-12 border-y border-gold/20 bg-secondary/30">
       <div className="container mx-auto px-4 lg:px-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
           {features.map((feature) => (
-            <div key={feature.title} className="flex flex-col items-center text-center gap-4">
-              <div className="h-14 w-14 rounded-full bg-background border border-gold/30 flex items-center justify-center">
-                <feature.icon className="h-5 w-5 text-gold" />
+            <div key={feature.title} className="flex flex-col items-center text-center gap-3">
+              <div className="h-12 w-12 rounded-full bg-background border border-gold/30 flex items-center justify-center">
+                <feature.icon className="h-4 w-4 text-gold" />
               </div>
               <div>
-                <h3 className="font-heading text-sm lg:text-base font-medium tracking-wide mb-1">
+                <h3 className="font-heading text-xs lg:text-sm font-medium tracking-wide mb-0.5">
                   {feature.title}
                 </h3>
-                <p className="text-xs lg:text-sm text-muted-foreground">
+                <p className="text-[11px] lg:text-xs text-muted-foreground">
                   {feature.description}
                 </p>
               </div>

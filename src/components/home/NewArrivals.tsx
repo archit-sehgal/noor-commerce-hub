@@ -24,31 +24,31 @@ const NewArrivals = () => {
   }
 
   return (
-    <section className="py-20 lg:py-32 bg-background relative">
+    <section className="py-12 lg:py-16 bg-background relative">
       {/* Decorative corner ornaments */}
-      <div className="absolute top-8 left-8 text-gold/20 text-2xl hidden lg:block">✧</div>
-      <div className="absolute top-8 right-8 text-gold/20 text-2xl hidden lg:block">✧</div>
+      <div className="absolute top-6 left-6 text-gold/20 text-xl hidden lg:block">✧</div>
+      <div className="absolute top-6 right-6 text-gold/20 text-xl hidden lg:block">✧</div>
       
       <div className="container mx-auto px-4 lg:px-8">
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
           <div>
-            <div className="flex items-center gap-3 mb-4">
-              <Sparkles className="h-4 w-4 text-gold" />
-              <p className="text-overline">Just Landed</p>
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="h-3.5 w-3.5 text-gold" />
+              <p className="text-overline text-xs">Just Landed</p>
             </div>
-            <h2 className="font-display text-4xl lg:text-5xl font-medium tracking-wider">
+            <h2 className="font-display text-2xl lg:text-3xl font-medium tracking-wider">
               New Arrivals
             </h2>
-            <div className="w-20 h-px bg-gradient-to-r from-gold to-transparent mt-4" />
+            <div className="w-16 h-px bg-gradient-to-r from-gold to-transparent mt-3" />
           </div>
           <Link
             to="/products"
-            className="text-sm font-display tracking-[0.2em] text-gold hover:text-gold-light transition-colors flex items-center gap-3 group uppercase"
+            className="text-xs font-display tracking-[0.2em] text-gold hover:text-gold-light transition-colors flex items-center gap-2 group uppercase"
           >
             View All
             <svg
-              className="w-4 h-4 transform group-hover:translate-x-2 transition-transform"
+              className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -64,7 +64,7 @@ const NewArrivals = () => {
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8 stagger-children">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 stagger-children">
           {products.map((product) => (
             <ProductCard 
               key={product.id} 

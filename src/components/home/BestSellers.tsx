@@ -24,28 +24,28 @@ const BestSellers = () => {
   }
 
   return (
-    <section className="py-20 lg:py-32 bg-secondary/30 relative">
+    <section className="py-12 lg:py-16 bg-secondary/30 relative">
       {/* Decorative corners */}
-      <div className="absolute top-8 left-8 text-gold/15 text-3xl hidden lg:block">✦</div>
-      <div className="absolute top-8 right-8 text-gold/15 text-3xl hidden lg:block">✦</div>
+      <div className="absolute top-6 left-6 text-gold/15 text-2xl hidden lg:block">✦</div>
+      <div className="absolute top-6 right-6 text-gold/15 text-2xl hidden lg:block">✦</div>
       
       <div className="container mx-auto px-4 lg:px-8">
         {/* Section Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-4 mb-4">
-            <div className="w-12 h-px bg-gradient-to-r from-transparent to-gold/50" />
-            <Crown className="h-5 w-5 text-gold" />
-            <p className="text-overline">Customer Favorites</p>
-            <Crown className="h-5 w-5 text-gold" />
-            <div className="w-12 h-px bg-gradient-to-l from-transparent to-gold/50" />
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <div className="w-10 h-px bg-gradient-to-r from-transparent to-gold/50" />
+            <Crown className="h-4 w-4 text-gold" />
+            <p className="text-overline text-xs">Customer Favorites</p>
+            <Crown className="h-4 w-4 text-gold" />
+            <div className="w-10 h-px bg-gradient-to-l from-transparent to-gold/50" />
           </div>
-          <h2 className="font-display text-4xl lg:text-5xl font-medium gold-underline inline-block pb-4 tracking-wider">
+          <h2 className="font-display text-2xl lg:text-3xl font-medium gold-underline inline-block pb-3 tracking-wider">
             Best Sellers
           </h2>
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8 stagger-children">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 stagger-children">
           {products.map((product) => (
             <ProductCard 
               key={product.id} 
@@ -64,8 +64,8 @@ const BestSellers = () => {
         </div>
 
         {/* CTA */}
-        <div className="text-center mt-12">
-          <Link to="/products" className="btn-hero-outline">
+        <div className="text-center mt-8">
+          <Link to="/products" className="btn-hero-outline text-sm">
             <span className="mr-2">✧</span>
             Shop All Best Sellers
             <span className="ml-2">✧</span>

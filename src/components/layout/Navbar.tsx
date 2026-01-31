@@ -22,11 +22,11 @@ const JewelryBoxLink = ({ name, href, onClick }: { name: string; href: string; o
       {/* The ornate box */}
       <div className="relative">
         {/* Lid of the box */}
-        <div className="jewelry-box-lid h-4 w-20" />
+        <div className="jewelry-box-lid h-3 w-16" />
         
         {/* Base of the box with velvet interior */}
-        <div className="jewelry-box-base h-6 w-20 flex items-center justify-center">
-          <span className="jewelry-box-content text-[10px]">✧</span>
+        <div className="jewelry-box-base h-5 w-16 flex items-center justify-center">
+          <span className="jewelry-box-content text-[8px]">✧</span>
         </div>
       </div>
     </Link>
