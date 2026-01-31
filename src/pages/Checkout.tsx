@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import PageHero from "@/components/layout/PageHero";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,8 +11,8 @@ import { useCart, useClearCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ShoppingBag, CheckCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Loader2, ShoppingBag, CheckCircle, Sparkles } from "lucide-react";
+import heroCheckout from "@/assets/hero-checkout.jpg";
 
 interface ShippingForm {
   fullName: string;
@@ -180,19 +181,28 @@ const Checkout = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-background">
         <Navbar />
-        <main className="pt-24 pb-16">
+        <PageHero
+          title="Checkout"
+          subtitle="Complete your royal purchase"
+          image={heroCheckout}
+          overlay="gradient"
+          height="50vh"
+        />
+        <main className="py-16">
           <div className="container mx-auto px-4 lg:px-8">
-            <div className="max-w-md mx-auto text-center py-16">
-              <ShoppingBag className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h1 className="text-2xl font-display mb-4">Sign in to checkout</h1>
-              <p className="text-muted-foreground mb-8">
+            <div className="max-w-md mx-auto text-center">
+              <ShoppingBag className="h-16 w-16 text-gold/40 mx-auto mb-4" />
+              <h2 className="text-2xl font-display mb-4 tracking-wider">Sign in to checkout</h2>
+              <p className="text-muted-foreground mb-8 font-body">
                 Please login to proceed with your order.
               </p>
               <Link to="/login">
-                <Button className="bg-charcoal hover:bg-charcoal/90 text-cream rounded-none">
+                <Button className="btn-hero">
+                  <span className="mr-2">✧</span>
                   Sign In
+                  <span className="ml-2">✧</span>
                 </Button>
               </Link>
             </div>
@@ -205,30 +215,39 @@ const Checkout = () => {
 
   if (orderPlaced) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-background">
         <Navbar />
-        <main className="pt-24 pb-16">
+        <PageHero
+          title="Order Confirmed"
+          subtitle="Thank you for your purchase"
+          image={heroCheckout}
+          overlay="gradient"
+          height="50vh"
+        />
+        <main className="py-16">
           <div className="container mx-auto px-4 lg:px-8">
-            <div className="max-w-md mx-auto text-center py-16">
-              <div className="h-20 w-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
-                <CheckCircle className="h-10 w-10 text-green-600" />
+            <div className="max-w-md mx-auto text-center">
+              <div className="h-20 w-20 border border-emerald/40 bg-emerald/10 flex items-center justify-center mx-auto mb-6">
+                <CheckCircle className="h-10 w-10 text-emerald-light" />
               </div>
-              <h1 className="text-3xl font-display mb-4">Order Confirmed!</h1>
-              <p className="text-muted-foreground mb-2">
+              <h2 className="text-3xl font-display mb-4 tracking-wider">Order Placed!</h2>
+              <p className="text-muted-foreground mb-2 font-body">
                 Thank you for your purchase.
               </p>
               <p className="font-heading text-lg mb-8">
-                Order Number: <span className="text-gold font-semibold">{orderNumber}</span>
+                Order Number: <span className="text-gold font-display">{orderNumber}</span>
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link to="/account">
-                  <Button variant="outline" className="rounded-none">
+                  <Button variant="outline" className="border-gold/30 hover:bg-gold/10">
                     View Orders
                   </Button>
                 </Link>
                 <Link to="/">
-                  <Button className="bg-charcoal hover:bg-charcoal/90 text-cream rounded-none">
+                  <Button className="bg-maroon hover:bg-maroon-light text-cream border border-gold/40">
+                    <span className="mr-2">✧</span>
                     Continue Shopping
+                    <span className="ml-2">✧</span>
                   </Button>
                 </Link>
               </div>
@@ -242,11 +261,19 @@ const Checkout = () => {
 
   if (cartLoading) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-background">
         <Navbar />
-        <main className="pt-24 pb-16">
-          <div className="container mx-auto px-4 lg:px-8 flex items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-gold" />
+        <PageHero
+          title="Checkout"
+          subtitle="Complete your royal purchase"
+          image={heroCheckout}
+          overlay="gradient"
+          height="50vh"
+        />
+        <main className="py-16">
+          <div className="container mx-auto px-4 lg:px-8 flex flex-col items-center justify-center">
+            <div className="w-12 h-12 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+            <p className="text-gold/60 font-display tracking-widest text-xs mt-4">Loading...</p>
           </div>
         </main>
         <Footer />
@@ -256,19 +283,28 @@ const Checkout = () => {
 
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-background">
         <Navbar />
-        <main className="pt-24 pb-16">
+        <PageHero
+          title="Checkout"
+          subtitle="Complete your royal purchase"
+          image={heroCheckout}
+          overlay="gradient"
+          height="50vh"
+        />
+        <main className="py-16">
           <div className="container mx-auto px-4 lg:px-8">
-            <div className="max-w-md mx-auto text-center py-16">
-              <ShoppingBag className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h1 className="text-2xl font-display mb-4">Your cart is empty</h1>
-              <p className="text-muted-foreground mb-8">
+            <div className="max-w-md mx-auto text-center">
+              <ShoppingBag className="h-16 w-16 text-gold/40 mx-auto mb-4" />
+              <h2 className="text-2xl font-display mb-4 tracking-wider">Your cart is empty</h2>
+              <p className="text-muted-foreground mb-8 font-body">
                 Add some items to your cart before checking out.
               </p>
               <Link to="/">
-                <Button className="bg-charcoal hover:bg-charcoal/90 text-cream rounded-none">
+                <Button className="btn-hero">
+                  <span className="mr-2">✧</span>
                   Continue Shopping
+                  <span className="ml-2">✧</span>
                 </Button>
               </Link>
             </div>
@@ -280,59 +316,61 @@ const Checkout = () => {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="pt-24 pb-16">
+      <PageHero
+        title="Checkout"
+        subtitle="Complete your royal purchase"
+        image={heroCheckout}
+        overlay="gradient"
+        height="50vh"
+      />
+      <main className="py-12">
         <div className="container mx-auto px-4 lg:px-8">
-          <div className="text-center mb-12">
-            <h1 className="text-3xl lg:text-4xl font-display mb-2">Checkout</h1>
-            <p className="text-muted-foreground">Complete your order</p>
-          </div>
-
           <div className="grid lg:grid-cols-2 gap-12 max-w-5xl mx-auto">
             {/* Shipping Form */}
             <div>
-              <h2 className="text-xl font-heading mb-6 flex items-center gap-3">
-                <span className="h-8 w-8 rounded-full bg-charcoal text-cream text-sm flex items-center justify-center">1</span>
+              <h2 className="text-xl font-display mb-6 flex items-center gap-3 tracking-wider">
+                <span className="h-8 w-8 border border-gold/40 bg-secondary/50 text-gold text-sm flex items-center justify-center font-display">1</span>
                 Shipping Details
               </h2>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="fullName">Full Name *</Label>
+                    <Label htmlFor="fullName" className="font-display tracking-wider text-xs uppercase">Full Name *</Label>
                     <Input
                       id="fullName"
                       name="fullName"
                       value={form.fullName}
                       onChange={handleInputChange}
                       required
-                      className="mt-1 rounded-none"
+                      className="mt-1 border-gold/30"
                       placeholder="Your full name"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="phone">Phone Number *</Label>
+                    <Label htmlFor="phone" className="font-display tracking-wider text-xs uppercase">Phone Number *</Label>
                     <Input
                       id="phone"
                       name="phone"
                       value={form.phone}
                       onChange={handleInputChange}
                       required
-                      className="mt-1 rounded-none"
+                      className="mt-1 border-gold/30"
                       placeholder="10-digit mobile number"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="address">Address *</Label>
+                  <Label htmlFor="address" className="font-display tracking-wider text-xs uppercase">Address *</Label>
                   <Textarea
                     id="address"
                     name="address"
                     value={form.address}
                     onChange={handleInputChange}
                     required
-                    className="mt-1 rounded-none"
+                    className="mt-1 border-gold/30"
                     placeholder="House/Flat No., Building, Street, Area"
                     rows={3}
                   />
@@ -340,51 +378,51 @@ const Checkout = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="city">City *</Label>
+                    <Label htmlFor="city" className="font-display tracking-wider text-xs uppercase">City *</Label>
                     <Input
                       id="city"
                       name="city"
                       value={form.city}
                       onChange={handleInputChange}
                       required
-                      className="mt-1 rounded-none"
+                      className="mt-1 border-gold/30"
                       placeholder="City"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="state">State *</Label>
+                    <Label htmlFor="state" className="font-display tracking-wider text-xs uppercase">State *</Label>
                     <Input
                       id="state"
                       name="state"
                       value={form.state}
                       onChange={handleInputChange}
                       required
-                      className="mt-1 rounded-none"
+                      className="mt-1 border-gold/30"
                       placeholder="State"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="pincode">Pincode *</Label>
+                    <Label htmlFor="pincode" className="font-display tracking-wider text-xs uppercase">Pincode *</Label>
                     <Input
                       id="pincode"
                       name="pincode"
                       value={form.pincode}
                       onChange={handleInputChange}
                       required
-                      className="mt-1 rounded-none"
+                      className="mt-1 border-gold/30"
                       placeholder="6-digit pincode"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="notes">Order Notes (Optional)</Label>
+                  <Label htmlFor="notes" className="font-display tracking-wider text-xs uppercase">Order Notes (Optional)</Label>
                   <Textarea
                     id="notes"
                     name="notes"
                     value={form.notes}
                     onChange={handleInputChange}
-                    className="mt-1 rounded-none"
+                    className="mt-1 border-gold/30"
                     placeholder="Any special instructions for delivery"
                     rows={2}
                   />
@@ -392,7 +430,7 @@ const Checkout = () => {
 
                 <Button
                   type="submit"
-                  className="w-full h-14 bg-charcoal hover:bg-gold text-cream rounded-none font-accent tracking-wider text-sm uppercase"
+                  className="w-full h-14 bg-maroon hover:bg-maroon-light text-cream border border-gold/40 font-display tracking-[0.15em] text-sm uppercase shadow-gold"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
@@ -401,7 +439,11 @@ const Checkout = () => {
                       Placing Order...
                     </>
                   ) : (
-                    `Place Order • ₹${total.toLocaleString()}`
+                    <>
+                      <span className="mr-2">✧</span>
+                      Place Order • ₹{total.toLocaleString()}
+                      <span className="ml-2">✧</span>
+                    </>
                   )}
                 </Button>
               </form>
@@ -409,15 +451,19 @@ const Checkout = () => {
 
             {/* Order Summary */}
             <div>
-              <h2 className="text-xl font-heading mb-6 flex items-center gap-3">
-                <span className="h-8 w-8 rounded-full bg-charcoal text-cream text-sm flex items-center justify-center">2</span>
+              <h2 className="text-xl font-display mb-6 flex items-center gap-3 tracking-wider">
+                <span className="h-8 w-8 border border-gold/40 bg-secondary/50 text-gold text-sm flex items-center justify-center font-display">2</span>
                 Order Summary
               </h2>
-              <div className="bg-secondary/50 p-6 border border-border">
+              <div className="bg-secondary/30 border border-gold/20 p-6 relative">
+                {/* Corner ornaments */}
+                <div className="absolute top-2 left-2 text-gold/30 text-xs">✧</div>
+                <div className="absolute top-2 right-2 text-gold/30 text-xs">✧</div>
+                
                 <div className="space-y-4 mb-6">
                   {cartItems.map((item) => (
                     <div key={item.id} className="flex gap-4">
-                      <div className="w-16 h-20 bg-cream overflow-hidden flex-shrink-0">
+                      <div className="w-16 h-20 overflow-hidden flex-shrink-0 border border-gold/20">
                         {item.product?.images?.[0] ? (
                           <img
                             src={item.product.images[0]}
@@ -425,13 +471,13 @@ const Checkout = () => {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                          <div className="w-full h-full flex items-center justify-center bg-secondary text-gold/40">
                             <ShoppingBag className="h-6 w-6" />
                           </div>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm line-clamp-2">{item.product?.name}</p>
+                        <p className="font-heading text-sm line-clamp-2">{item.product?.name}</p>
                         {(item.size || item.color) && (
                           <p className="text-xs text-muted-foreground mt-1">
                             {item.size && `Size: ${item.size}`}
@@ -441,21 +487,21 @@ const Checkout = () => {
                         )}
                         <p className="text-xs text-muted-foreground mt-1">Qty: {item.quantity}</p>
                       </div>
-                      <p className="font-medium text-sm whitespace-nowrap">
+                      <p className="font-display text-sm text-gold whitespace-nowrap">
                         ₹{((item.product?.discount_price || item.product?.price || 0) * item.quantity).toLocaleString()}
                       </p>
                     </div>
                   ))}
                 </div>
 
-                <div className="border-t border-border pt-4 space-y-3">
-                  <div className="flex justify-between text-sm">
+                <div className="border-t border-gold/20 pt-4 space-y-3">
+                  <div className="flex justify-between text-sm font-body">
                     <span className="text-muted-foreground">Subtotal</span>
                     <span>₹{subtotal.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-sm font-body">
                     <span className="text-muted-foreground">Shipping</span>
-                    <span className={shipping === 0 ? "text-green-600" : ""}>
+                    <span className={shipping === 0 ? "text-emerald-light" : ""}>
                       {shipping === 0 ? "Free" : `₹${shipping}`}
                     </span>
                   </div>
@@ -464,16 +510,18 @@ const Checkout = () => {
                       Free shipping on orders above ₹2,999
                     </p>
                   )}
-                  <div className="border-t border-border pt-3 flex justify-between font-semibold text-lg">
+                  <div className="border-t border-gold/20 pt-3 flex justify-between font-display text-lg">
                     <span>Total</span>
                     <span className="text-gold">₹{total.toLocaleString()}</span>
                   </div>
                 </div>
 
-                <div className="mt-6 p-4 bg-background border border-gold/20">
-                  <p className="text-xs text-muted-foreground text-center">
-                    💳 Cash on Delivery available • 🔒 Secure checkout
-                  </p>
+                <div className="mt-6 p-4 bg-background border border-gold/20 text-center">
+                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground font-display tracking-wider">
+                    <Sparkles className="h-3 w-3 text-gold/60" />
+                    Cash on Delivery • Secure Checkout
+                    <Sparkles className="h-3 w-3 text-gold/60" />
+                  </div>
                 </div>
               </div>
             </div>

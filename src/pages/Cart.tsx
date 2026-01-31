@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import PageHero from "@/components/layout/PageHero";
 import { Button } from "@/components/ui/button";
 import { useCart, useUpdateCartItem, useRemoveFromCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
-import { Minus, Plus, Trash2, ShoppingBag, Loader2, Crown, Sparkles } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, Crown, Sparkles } from "lucide-react";
+import heroCart from "@/assets/hero-cart.jpg";
 
 const Cart = () => {
   const { user } = useAuth();
@@ -22,13 +24,20 @@ const Cart = () => {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <main className="pt-28 pb-16">
+        <PageHero
+          title="Shopping Cart"
+          subtitle="Your royal collection awaits"
+          image={heroCart}
+          overlay="gradient"
+          height="50vh"
+        />
+        <main className="py-16">
           <div className="container mx-auto px-4 lg:px-8">
-            <div className="max-w-md mx-auto text-center py-16">
+            <div className="max-w-md mx-auto text-center">
               <div className="w-20 h-20 mx-auto mb-6 border border-gold/30 flex items-center justify-center bg-secondary/50">
                 <ShoppingBag className="h-10 w-10 text-gold/60" />
               </div>
-              <h1 className="text-3xl font-display mb-4 tracking-wider">Sign In Required</h1>
+              <h2 className="text-2xl font-display mb-4 tracking-wider">Sign In Required</h2>
               <p className="text-muted-foreground mb-8 font-body">
                 Please login to view your royal cart and proceed to checkout.
               </p>
@@ -51,8 +60,15 @@ const Cart = () => {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <main className="pt-28 pb-16">
-          <div className="container mx-auto px-4 lg:px-8 flex flex-col items-center justify-center py-16">
+        <PageHero
+          title="Shopping Cart"
+          subtitle="Your royal collection awaits"
+          image={heroCart}
+          overlay="gradient"
+          height="50vh"
+        />
+        <main className="py-16">
+          <div className="container mx-auto px-4 lg:px-8 flex flex-col items-center justify-center">
             <div className="w-16 h-16 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
             <p className="text-gold font-display tracking-widest text-sm mt-4">Loading your cart...</p>
           </div>
@@ -66,13 +82,20 @@ const Cart = () => {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <main className="pt-28 pb-16">
+        <PageHero
+          title="Shopping Cart"
+          subtitle="Your royal collection awaits"
+          image={heroCart}
+          overlay="gradient"
+          height="50vh"
+        />
+        <main className="py-16">
           <div className="container mx-auto px-4 lg:px-8">
-            <div className="max-w-md mx-auto text-center py-16">
+            <div className="max-w-md mx-auto text-center">
               <div className="w-20 h-20 mx-auto mb-6 border border-gold/30 flex items-center justify-center bg-secondary/50">
                 <ShoppingBag className="h-10 w-10 text-gold/60" />
               </div>
-              <h1 className="text-3xl font-display mb-4 tracking-wider">Your Cart is Empty</h1>
+              <h2 className="text-2xl font-display mb-4 tracking-wider">Your Cart is Empty</h2>
               <p className="text-muted-foreground mb-8 font-body">
                 Looks like you haven't added any treasures to your cart yet.
               </p>
@@ -94,12 +117,19 @@ const Cart = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="pt-28 pb-16">
+      <PageHero
+        title="Shopping Cart"
+        subtitle="Your royal collection awaits"
+        image={heroCart}
+        overlay="gradient"
+        height="50vh"
+      />
+      <main className="py-12">
         <div className="container mx-auto px-4 lg:px-8">
           {/* Header */}
           <div className="flex items-center gap-4 mb-10">
             <Crown className="h-6 w-6 text-gold" />
-            <h1 className="text-3xl font-display tracking-wider">Shopping Cart</h1>
+            <h2 className="text-2xl font-display tracking-wider">Your Items</h2>
             <span className="text-sm text-muted-foreground font-body">({cartItems.length} items)</span>
           </div>
 

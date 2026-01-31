@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import PageHero from "@/components/layout/PageHero";
 import ProductCard from "@/components/product/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ import {
 import { useProducts } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
 import { Search, Filter, X, Loader2 } from "lucide-react";
+import heroProducts from "@/assets/hero-products.jpg";
 
 const Products = () => {
   const { slug } = useParams();
@@ -77,20 +79,20 @@ const Products = () => {
     categories?.find((c) => c.slug === selectedCategory)?.name || "All Products";
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="pt-24 pb-16">
-        <div className="container mx-auto px-4 lg:px-8">
-          {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl lg:text-4xl font-display mb-2">
-              {slug ? categoryName : "Our Collection"}
-            </h1>
-            <p className="text-muted-foreground">
-              Discover our exquisite range of handcrafted ethnic wear
-            </p>
-          </div>
+      
+      {/* Hero Section */}
+      <PageHero
+        title={slug ? categoryName : "Our Collection"}
+        subtitle="Discover our exquisite range of handcrafted ethnic wear"
+        image={heroProducts}
+        overlay="gradient"
+        height="50vh"
+      />
 
+      <main className="py-12">
+        <div className="container mx-auto px-4 lg:px-8">
           {/* Filters Bar */}
           <div className="flex flex-col lg:flex-row gap-4 mb-8">
             {/* Search */}
@@ -101,10 +103,10 @@ const Products = () => {
                   placeholder="Search products..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 border-gold/30"
                 />
               </div>
-              <Button type="submit" variant="outline">
+              <Button type="submit" variant="outline" className="border-gold/30 hover:bg-gold/10">
                 Search
               </Button>
             </form>
@@ -112,7 +114,7 @@ const Products = () => {
             {/* Filter Toggle (Mobile) */}
             <Button
               variant="outline"
-              className="lg:hidden"
+              className="lg:hidden border-gold/30"
               onClick={() => setShowFilters(!showFilters)}
             >
               <Filter className="h-4 w-4 mr-2" />
@@ -126,7 +128,7 @@ const Products = () => {
               } flex-col lg:flex-row gap-4`}
             >
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-full lg:w-[180px]">
+                <SelectTrigger className="w-full lg:w-[180px] border-gold/30">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -140,7 +142,7 @@ const Products = () => {
               </Select>
 
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-full lg:w-[180px]">
+                <SelectTrigger className="w-full lg:w-[180px] border-gold/30">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
@@ -152,7 +154,7 @@ const Products = () => {
               </Select>
 
               {(searchQuery || selectedCategory !== "all" || sortBy !== "newest") && (
-                <Button variant="ghost" onClick={clearFilters}>
+                <Button variant="ghost" onClick={clearFilters} className="text-gold hover:text-gold-light">
                   <X className="h-4 w-4 mr-2" />
                   Clear
                 </Button>
@@ -162,13 +164,14 @@ const Products = () => {
 
           {/* Products Grid */}
           {productsLoading || categoriesLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="h-8 w-8 animate-spin text-gold" />
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="w-12 h-12 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+              <p className="text-gold/60 font-display tracking-widest text-xs mt-4">Loading...</p>
             </div>
           ) : filteredProducts && filteredProducts.length > 0 ? (
             <>
-              <p className="text-sm text-muted-foreground mb-6">
-                Showing {filteredProducts.length} product(s)
+              <p className="text-sm text-muted-foreground mb-6 font-display tracking-wider">
+                Showing {filteredProducts.length} treasure(s)
               </p>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
               {filteredProducts.map((product) => (
@@ -192,10 +195,10 @@ const Products = () => {
             </>
           ) : (
             <div className="text-center py-16">
-              <p className="text-lg text-muted-foreground mb-4">
-                No products found
+              <p className="text-lg text-muted-foreground mb-4 font-heading">
+                No treasures found
               </p>
-              <Button onClick={clearFilters} variant="outline">
+              <Button onClick={clearFilters} variant="outline" className="border-gold/30">
                 Clear Filters
               </Button>
             </div>
