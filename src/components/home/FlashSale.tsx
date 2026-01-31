@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Clock, Flame, ArrowRight } from "lucide-react";
+import { Clock, Crown, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface TimeLeft {
@@ -43,50 +43,47 @@ const FlashSale = () => {
   const formatNumber = (num: number) => num.toString().padStart(2, '0');
 
   return (
-    <section className="py-12 bg-gradient-to-r from-rose-gold/10 via-gold/5 to-rose-gold/10 overflow-hidden relative">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-1/2 -left-1/4 w-1/2 h-full bg-gradient-to-br from-gold/10 to-transparent rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -bottom-1/2 -right-1/4 w-1/2 h-full bg-gradient-to-tl from-rose-gold/10 to-transparent rounded-full blur-3xl animate-pulse delay-1000" />
-      </div>
-
+    <section className="py-10 bg-secondary/50 border-y border-gold/20 overflow-hidden relative">
+      {/* Decorative elements */}
+      <div className="absolute inset-0 bg-gradient-to-r from-maroon/5 via-transparent to-maroon/5" />
+      
       <div className="container mx-auto px-4 relative z-10">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Left - Title */}
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-rose-gold/20 rounded-full animate-bounce">
-              <Flame className="h-6 w-6 text-rose-gold" />
+            <div className="p-3 border border-gold/40 bg-maroon/20">
+              <Crown className="h-6 w-6 text-gold animate-pulse" />
             </div>
             <div>
               <p className="text-overline mb-1">Limited Time Only</p>
-              <h3 className="font-display text-2xl md:text-3xl">Flash Sale</h3>
+              <h3 className="font-display text-2xl md:text-3xl tracking-wider">Royal Flash Sale</h3>
             </div>
           </div>
 
           {/* Center - Timer */}
           <div className="flex items-center gap-3">
-            <Clock className="h-5 w-5 text-rose-gold animate-pulse" />
+            <Clock className="h-5 w-5 text-gold" />
             <div className="flex items-center gap-2">
-              <div className="bg-charcoal text-cream px-4 py-2 rounded-lg min-w-[60px] text-center">
-                <span className="font-display text-2xl">{formatNumber(timeLeft.hours)}</span>
-                <p className="text-[10px] uppercase tracking-wider text-cream/60">Hours</p>
+              <div className="bg-background border border-gold/40 text-foreground px-4 py-2 min-w-[60px] text-center shadow-antique">
+                <span className="font-display text-2xl text-gold">{formatNumber(timeLeft.hours)}</span>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-display">Hours</p>
               </div>
-              <span className="text-2xl font-bold text-charcoal">:</span>
-              <div className="bg-charcoal text-cream px-4 py-2 rounded-lg min-w-[60px] text-center">
-                <span className="font-display text-2xl">{formatNumber(timeLeft.minutes)}</span>
-                <p className="text-[10px] uppercase tracking-wider text-cream/60">Mins</p>
+              <span className="text-2xl font-bold text-gold">:</span>
+              <div className="bg-background border border-gold/40 text-foreground px-4 py-2 min-w-[60px] text-center shadow-antique">
+                <span className="font-display text-2xl text-gold">{formatNumber(timeLeft.minutes)}</span>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-display">Mins</p>
               </div>
-              <span className="text-2xl font-bold text-charcoal">:</span>
-              <div className="bg-rose-gold text-cream px-4 py-2 rounded-lg min-w-[60px] text-center animate-pulse">
+              <span className="text-2xl font-bold text-gold">:</span>
+              <div className="bg-maroon border border-gold/40 text-cream px-4 py-2 min-w-[60px] text-center glow-pulse">
                 <span className="font-display text-2xl">{formatNumber(timeLeft.seconds)}</span>
-                <p className="text-[10px] uppercase tracking-wider text-cream/80">Secs</p>
+                <p className="text-[10px] uppercase tracking-wider text-cream/80 font-display">Secs</p>
               </div>
             </div>
           </div>
 
           {/* Right - CTA */}
           <Link to="/products">
-            <Button className="bg-charcoal hover:bg-charcoal/90 text-cream group">
+            <Button className="bg-maroon hover:bg-maroon-light text-cream border border-gold/40 font-display tracking-[0.15em] text-xs uppercase group shadow-gold">
               Shop Now
               <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </Button>
