@@ -43,7 +43,7 @@ const FlashSale = () => {
   const formatNumber = (num: number) => num.toString().padStart(2, '0');
 
   return (
-    <section className="py-6 bg-secondary/50 border-y border-gold/20 overflow-hidden relative">
+    <section className="py-6 mt-4 mb-8 lg:mb-10 bg-secondary/50 border-y border-gold/20 overflow-hidden relative">
       {/* Decorative elements */}
       <div className="absolute inset-0 bg-gradient-to-r from-maroon/5 via-transparent to-maroon/5" />
       

@@ -4,7 +4,7 @@ import heroImage from "@/assets/hero-fashion.jpg";
 
 const HeroSection = () => {
   return (
-    <section className="relative min-h-screen flex items-center pt-20 lg:pt-24 rustic-overlay">
+    <section className="relative min-h-screen flex items-center pt-20 lg:pt-24 mb-8 lg:mb-12 rustic-overlay">
       {/* Background Image with dark overlay */}
       <div className="absolute inset-0 z-0">
         <img
