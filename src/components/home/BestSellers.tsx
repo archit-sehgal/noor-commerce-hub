@@ -58,6 +58,8 @@ const BestSellers = () => {
                 image: product.images?.[0] || "/placeholder.svg",
                 category: product.category?.name || "",
                 stockQuantity: product.stock_quantity,
+                sizes: product.sizes,
+                colors: product.colors,
               }} 
             />
           ))}

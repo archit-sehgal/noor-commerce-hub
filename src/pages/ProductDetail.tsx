@@ -25,6 +25,114 @@ import {
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&h=800&fit=crop";
 
+// Color name to CSS color mapping
+const colorMap: Record<string, string> = {
+  // Reds
+  "red": "#DC2626",
+  "maroon": "#800000",
+  "crimson": "#DC143C",
+  "burgundy": "#722F37",
+  "wine": "#722F37",
+  "cherry": "#DE3163",
+  "rose": "#FF007F",
+  "coral": "#FF7F50",
+  "salmon": "#FA8072",
+  "rust": "#B7410E",
+  // Pinks
+  "pink": "#EC4899",
+  "hot pink": "#FF69B4",
+  "magenta": "#FF00FF",
+  "fuchsia": "#FF00FF",
+  "blush": "#DE5D83",
+  "peach": "#FFCBA4",
+  // Oranges
+  "orange": "#F97316",
+  "tangerine": "#FF9966",
+  "burnt orange": "#CC5500",
+  "terracotta": "#E2725B",
+  // Yellows
+  "yellow": "#EAB308",
+  "gold": "#FFD700",
+  "golden": "#FFD700",
+  "mustard": "#FFDB58",
+  "cream": "#FFFDD0",
+  "beige": "#F5F5DC",
+  "ivory": "#FFFFF0",
+  "champagne": "#F7E7CE",
+  // Greens
+  "green": "#22C55E",
+  "emerald": "#50C878",
+  "olive": "#808000",
+  "forest green": "#228B22",
+  "mint": "#98FF98",
+  "sage": "#9DC183",
+  "teal": "#008080",
+  "turquoise": "#40E0D0",
+  "aqua": "#00FFFF",
+  "lime": "#32CD32",
+  // Blues
+  "blue": "#3B82F6",
+  "navy": "#000080",
+  "navy blue": "#000080",
+  "royal blue": "#4169E1",
+  "sky blue": "#87CEEB",
+  "baby blue": "#89CFF0",
+  "cobalt": "#0047AB",
+  "indigo": "#4B0082",
+  "powder blue": "#B0E0E6",
+  "midnight blue": "#191970",
+  "cyan": "#00FFFF",
+  // Purples
+  "purple": "#A855F7",
+  "violet": "#8B5CF6",
+  "lavender": "#E6E6FA",
+  "lilac": "#C8A2C8",
+  "plum": "#DDA0DD",
+  "mauve": "#E0B0FF",
+  "orchid": "#DA70D6",
+  "grape": "#6F2DA8",
+  // Browns
+  "brown": "#92400E",
+  "chocolate": "#7B3F00",
+  "coffee": "#6F4E37",
+  "tan": "#D2B48C",
+  "camel": "#C19A6B",
+  "khaki": "#C3B091",
+  "taupe": "#483C32",
+  "mocha": "#967969",
+  "sand": "#C2B280",
+  "bronze": "#CD7F32",
+  "copper": "#B87333",
+  // Neutrals
+  "white": "#FFFFFF",
+  "off-white": "#FAF9F6",
+  "black": "#1a1a1a",
+  "grey": "#6B7280",
+  "gray": "#6B7280",
+  "charcoal": "#36454F",
+  "silver": "#C0C0C0",
+  "slate": "#708090",
+  // Multi/Special
+  "multi": "linear-gradient(135deg, #FF6B6B, #4ECDC4, #FFE66D, #95E1D3)",
+  "multicolor": "linear-gradient(135deg, #FF6B6B, #4ECDC4, #FFE66D, #95E1D3)",
+  "rainbow": "linear-gradient(135deg, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #8B00FF)",
+};
+
+const getColorStyle = (colorName: string): React.CSSProperties => {
+  const normalizedName = colorName.toLowerCase().trim();
+  const colorValue = colorMap[normalizedName];
+  
+  if (colorValue) {
+    if (colorValue.includes("gradient")) {
+      return { background: colorValue };
+    }
+    return { backgroundColor: colorValue };
+  }
+  
+  // Try to use the color name directly as CSS color
+  return { backgroundColor: colorName.toLowerCase() };
+};
+
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: product, isLoading, error } = useProduct(slug || "");
@@ -228,26 +336,7 @@ const ProductDetail = () => {
                     </span>
                   )}
                 </div>
-                
-                {/* Stock status */}
-                <div className="flex items-center gap-2 mt-4">
-                  {product.stock_quantity > 0 ? (
-                    <>
-                      <div className="w-2 h-2 rounded-full bg-emerald animate-pulse" />
-                      <span className="text-sm text-emerald-light font-body">
-                        {product.stock_quantity < 5 ? `Only ${product.stock_quantity} left` : 'In Stock'}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-2 h-2 rounded-full bg-maroon" />
-                      <span className="text-sm text-maroon-light font-body">Out of Stock</span>
-                    </>
-                  )}
-                </div>
               </div>
-
-              {/* Size Selection */}
               {product.sizes && product.sizes.length > 0 && (
                 <div>
                   <label className="text-sm font-display mb-4 block tracking-widest uppercase text-foreground/80">
@@ -271,24 +360,32 @@ const ProductDetail = () => {
                 </div>
               )}
 
-              {/* Color Selection */}
+              {/* Color Selection - Color Swatches */}
               {product.colors && product.colors.length > 0 && (
                 <div>
                   <label className="text-sm font-display mb-4 block tracking-widest uppercase text-foreground/80">
                     Select Color
                   </label>
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex flex-wrap gap-4">
                     {product.colors.map((color) => (
                       <button
                         key={color}
                         onClick={() => setSelectedColor(color)}
-                        className={`px-5 py-3 border text-sm font-body tracking-wide transition-all duration-300 ${
-                          selectedColor === color
-                            ? "border-gold bg-gold/10 text-gold"
-                            : "border-gold/30 hover:border-gold text-foreground"
-                        }`}
+                        className="relative group flex flex-col items-center gap-2 transition-all duration-300"
                       >
-                        {color}
+                        <div
+                          className={`w-12 h-12 rounded-full border-2 transition-all duration-300 shadow-md ${
+                            selectedColor === color
+                              ? "border-gold ring-2 ring-gold ring-offset-2 ring-offset-background scale-110"
+                              : "border-gold/30 hover:border-gold/60 hover:scale-105"
+                          }`}
+                          style={getColorStyle(color)}
+                        />
+                        <span className={`text-xs font-display tracking-wider capitalize ${
+                          selectedColor === color ? "text-gold" : "text-muted-foreground"
+                        }`}>
+                          {color}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -300,7 +397,7 @@ const ProductDetail = () => {
                 <label className="text-sm font-display mb-4 block tracking-widest uppercase text-foreground/80">
                   Quantity
                 </label>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center">
                   <div className="flex items-center border border-gold/30">
                     <Button
                       variant="ghost"
@@ -320,9 +417,6 @@ const ProductDetail = () => {
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
-                  <span className="text-sm text-muted-foreground">
-                    {product.stock_quantity} pieces available
-                  </span>
                 </div>
               </div>
 
