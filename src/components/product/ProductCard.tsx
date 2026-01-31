@@ -50,13 +50,19 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
   return (
     <div className="group">
-      {/* Antique Mirror Frame Container */}
+      {/* Baroque Mirror Frame Container */}
       <Link 
         to={`/product/${product.slug}`} 
-        className="block antique-frame antique-corners relative overflow-hidden mb-4 md:mb-5"
+        className="block baroque-frame baroque-corners baroque-flourishes relative overflow-hidden mb-4 md:mb-5"
       >
+        {/* Decorative corner flourishes */}
+        <span className="corner-tl">❦</span>
+        <span className="corner-tr">❦</span>
+        <span className="corner-bl">❦</span>
+        <span className="corner-br">❦</span>
+        
         {/* Inner image container */}
-        <div className="relative aspect-[3/4] overflow-hidden bg-secondary">
+        <div className="relative aspect-[3/4] overflow-hidden bg-secondary rounded-sm">
           <img
             src={imageUrl}
             alt={product.name}
@@ -81,7 +87,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
           )}
           
           {/* Badges */}
-          <div className="absolute top-3 md:top-4 left-3 md:left-4 flex flex-col gap-2">
+          <div className="absolute top-3 md:top-4 left-3 md:left-4 flex flex-col gap-2 z-20">
             {product.isNew && (
               <span className="flex items-center gap-1 px-3 py-1.5 text-[9px] md:text-[10px] font-display tracking-[0.2em] uppercase bg-emerald text-cream border border-gold/30">
                 <Sparkles className="h-3 w-3" />
@@ -99,14 +105,14 @@ const ProductCard = ({ product }: ProductCardProps) => {
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-3 md:top-4 right-3 md:right-4 h-9 w-9 bg-background/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-gold hover:text-background border border-gold/30"
+            className="absolute top-3 md:top-4 right-3 md:right-4 h-9 w-9 bg-background/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-gold hover:text-background border border-gold/30 z-20"
           >
             <Heart className="h-4 w-4" />
           </Button>
 
           {/* Quick Add */}
           {!isOutOfStock && user && (
-            <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
+            <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500 z-20">
               <Button 
                 onClick={handleQuickAdd}
                 disabled={addToCart.isPending}

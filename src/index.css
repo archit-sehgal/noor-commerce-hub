@@ -168,7 +168,7 @@
 }
 
 @layer components {
-  /* Antique Mirror Frame for Products */
+  /* Simple Antique Frame for Categories */
   .antique-frame {
     position: relative;
     padding: 12px;
@@ -199,7 +199,118 @@
     pointer-events: none;
   }
 
-  /* Ornate corner decorations */
+  /* Baroque Mirror Frame for Products - Ornate Traditional Style */
+  .baroque-frame {
+    position: relative;
+    padding: 6px;
+    background: linear-gradient(
+      135deg,
+      hsl(38 65% 35%) 0%,
+      hsl(40 70% 45%) 15%,
+      hsl(38 60% 30%) 30%,
+      hsl(40 75% 50%) 50%,
+      hsl(38 60% 30%) 70%,
+      hsl(40 70% 45%) 85%,
+      hsl(38 65% 35%) 100%
+    );
+    border-radius: 4px;
+    box-shadow: 
+      0 0 0 1px hsl(40 80% 55% / 0.6),
+      0 0 0 3px hsl(38 50% 25%),
+      0 0 0 4px hsl(40 75% 50% / 0.4),
+      inset 0 0 15px hsl(40 80% 60% / 0.2),
+      0 15px 40px -10px hsl(30 15% 5% / 0.7);
+  }
+
+  .baroque-frame::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    background: linear-gradient(
+      180deg,
+      hsl(40 80% 60% / 0.15) 0%,
+      transparent 30%,
+      transparent 70%,
+      hsl(40 80% 60% / 0.1) 100%
+    );
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  /* Baroque ornate corners */
+  .baroque-corners {
+    position: relative;
+  }
+
+  .baroque-corners::before,
+  .baroque-corners::after {
+    position: absolute;
+    font-family: serif;
+    color: hsl(var(--gold));
+    text-shadow: 
+      0 1px 2px hsl(30 15% 5% / 0.5),
+      0 0 8px hsl(40 80% 55% / 0.4);
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .baroque-corners::before {
+    content: '❧';
+    top: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 18px;
+  }
+
+  .baroque-corners::after {
+    content: '❧';
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%) rotate(180deg);
+    font-size: 18px;
+  }
+
+  /* Additional corner flourishes container */
+  .baroque-flourishes {
+    position: relative;
+  }
+
+  .baroque-flourishes .corner-tl,
+  .baroque-flourishes .corner-tr,
+  .baroque-flourishes .corner-bl,
+  .baroque-flourishes .corner-br {
+    position: absolute;
+    font-size: 14px;
+    color: hsl(var(--gold));
+    text-shadow: 0 1px 2px hsl(30 15% 5% / 0.5);
+    z-index: 10;
+    opacity: 0.85;
+  }
+
+  .baroque-flourishes .corner-tl {
+    top: 1px;
+    left: 1px;
+  }
+
+  .baroque-flourishes .corner-tr {
+    top: 1px;
+    right: 1px;
+    transform: scaleX(-1);
+  }
+
+  .baroque-flourishes .corner-bl {
+    bottom: 1px;
+    left: 1px;
+    transform: scaleY(-1);
+  }
+
+  .baroque-flourishes .corner-br {
+    bottom: 1px;
+    right: 1px;
+    transform: scale(-1);
+  }
+
+  /* Simple corner decorations */
   .antique-corners {
     position: relative;
   }
