@@ -98,8 +98,10 @@ export const useEmployeePermissions = () => {
     enabled: !!user && (isAdmin || isSalesStaff),
   });
 
+  // IMPORTANT: Admins always have all permissions, regardless of loading state
   const hasPermission = (permission: keyof EmployeePermissions): boolean => {
     if (isAdmin) return true;
+    if (isLoading) return true; // Show all items while loading to prevent flash
     if (!permissions) return false;
     return !!permissions[permission];
   };

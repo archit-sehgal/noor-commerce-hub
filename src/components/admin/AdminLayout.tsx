@@ -119,7 +119,7 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
       <aside
         className={`${
           sidebarOpen ? "w-64" : "w-20"
-        } bg-gradient-charcoal text-cream transition-all duration-300 hidden md:flex flex-col fixed h-full z-50`}
+        } bg-charcoal text-cream transition-all duration-300 hidden md:flex flex-col fixed h-full z-50`}
       >
         {sidebarOpen ? (
           <NavContent />
@@ -166,7 +166,7 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
 
       {/* Mobile Sidebar */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <SheetContent side="left" className="w-72 p-0 bg-gradient-charcoal text-cream border-none">
+        <SheetContent side="left" className="w-72 p-0 bg-charcoal text-cream border-none">
           <div className="h-full flex flex-col">
             <NavContent />
           </div>
