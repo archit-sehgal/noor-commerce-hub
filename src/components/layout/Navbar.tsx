@@ -46,6 +46,8 @@ const Navbar = () => {
     { name: "Kurtis", href: "/category/kurtis" },
     { name: "Sarees", href: "/category/sarees" },
     { name: "Suits", href: "/category/suits" },
+    { name: "Anarkalis", href: "/category/anarkalis" },
+    { name: "Lehengas", href: "/category/lehengas" },
   ];
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Account";
