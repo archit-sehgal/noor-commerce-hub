@@ -17,6 +17,8 @@ import Checkout from "./pages/Checkout";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
 import Account from "./pages/Account";
+import NewArrivals from "./pages/NewArrivals";
+import Collections from "./pages/Collections";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -52,8 +54,8 @@ const App = () => (
             <Route path="/products" element={<Products />} />
             <Route path="/category/:slug" element={<Products />} />
             <Route path="/product/:slug" element={<ProductDetail />} />
-            <Route path="/new-arrivals" element={<Products />} />
-            <Route path="/collections" element={<Products />} />
+            <Route path="/new-arrivals" element={<NewArrivals />} />
+            <Route path="/collections" element={<Collections />} />
 
             {/* Protected Customer Routes */}
             <Route

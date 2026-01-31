@@ -43,48 +43,48 @@ const PageHero = ({
         />
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 text-center px-4">
+      {/* Content - Added more padding-top for centering */}
+      <div className="relative z-10 text-center px-4 pt-16">
         {/* Decorative top element */}
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="w-12 h-px bg-gradient-to-r from-transparent to-gold/60" />
-          <Crown className="h-5 w-5 text-gold animate-pulse" />
-          <div className="w-12 h-px bg-gradient-to-l from-transparent to-gold/60" />
+        <div className="flex items-center justify-center gap-3 mb-3">
+          <div className="w-10 h-px bg-gradient-to-r from-transparent to-gold/60" />
+          <Crown className="h-4 w-4 text-gold animate-pulse" />
+          <div className="w-10 h-px bg-gradient-to-l from-transparent to-gold/60" />
         </div>
         
-        {/* Title */}
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-display tracking-[0.2em] uppercase text-foreground mb-4">
+        {/* Title - Reduced size */}
+        <h1 className="text-2xl md:text-3xl lg:text-4xl font-display tracking-[0.15em] uppercase text-foreground mb-3">
           {title}
         </h1>
         
         {/* Decorative underline */}
-        <div className="flex justify-center mb-4">
-          <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent" />
+        <div className="flex justify-center mb-3">
+          <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent" />
         </div>
         
-        {/* Subtitle */}
+        {/* Subtitle - Reduced size */}
         {subtitle && (
-          <p className="text-lg md:text-xl font-heading text-foreground/80 max-w-2xl mx-auto">
+          <p className="text-sm md:text-base font-heading text-foreground/80 max-w-xl mx-auto">
             {subtitle}
           </p>
         )}
         
         {/* Decorative bottom element */}
-        <div className="flex items-center justify-center gap-2 mt-6">
-          <Sparkles className="h-3 w-3 text-gold/60" />
-          <span className="text-gold/60 text-xs font-display tracking-[0.3em]">✧ NOOR ✧</span>
-          <Sparkles className="h-3 w-3 text-gold/60" />
+        <div className="flex items-center justify-center gap-2 mt-4">
+          <Sparkles className="h-2.5 w-2.5 text-gold/60" />
+          <span className="text-gold/60 text-[10px] font-display tracking-[0.3em]">✧ NOOR ✧</span>
+          <Sparkles className="h-2.5 w-2.5 text-gold/60" />
         </div>
       </div>
 
       {/* Bottom fade gradient */}
-      <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background to-transparent z-10" />
+      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent z-10" />
       
-      {/* Corner ornaments */}
-      <div className="absolute top-8 left-8 text-gold/30 text-2xl hidden md:block">❧</div>
-      <div className="absolute top-8 right-8 text-gold/30 text-2xl hidden md:block transform scale-x-[-1]">❧</div>
-      <div className="absolute bottom-8 left-8 text-gold/30 text-2xl hidden md:block transform scale-y-[-1]">❧</div>
-      <div className="absolute bottom-8 right-8 text-gold/30 text-2xl hidden md:block transform scale-[-1]">❧</div>
+      {/* Corner ornaments - smaller */}
+      <div className="absolute top-6 left-6 text-gold/25 text-xl hidden md:block">❧</div>
+      <div className="absolute top-6 right-6 text-gold/25 text-xl hidden md:block transform scale-x-[-1]">❧</div>
+      <div className="absolute bottom-6 left-6 text-gold/25 text-xl hidden md:block transform scale-y-[-1]">❧</div>
+      <div className="absolute bottom-6 right-6 text-gold/25 text-xl hidden md:block transform scale-[-1]">❧</div>
     </section>
   );
 };
