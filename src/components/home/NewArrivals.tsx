@@ -78,6 +78,8 @@ const NewArrivals = () => {
                 category: product.category?.name || "",
                 isNew: true,
                 stockQuantity: product.stock_quantity,
+                sizes: product.sizes,
+                colors: product.colors,
               }} 
             />
           ))}
