@@ -159,8 +159,27 @@ const AdminOrders = () => {
     });
   };
 
-  const onlineOrders = orders.filter((o) => o.order_source === 'online');
-  const posOrders = orders.filter((o) => o.order_source !== 'online');
+  // Helper to filter by date only (for stats)
+  const filterByDate = (orderList: Order[]) => {
+    return orderList.filter((order) => {
+      const orderDate = new Date(order.created_at);
+      if (dateFrom && dateTo) {
+        return isWithinInterval(orderDate, {
+          start: startOfDay(dateFrom),
+          end: endOfDay(dateTo),
+        });
+      } else if (dateFrom) {
+        return orderDate >= startOfDay(dateFrom);
+      } else if (dateTo) {
+        return orderDate <= endOfDay(dateTo);
+      }
+      return true;
+    });
+  };
+
+  const dateFilteredOrders = filterByDate(orders);
+  const onlineOrders = dateFilteredOrders.filter((o) => o.order_source === 'online');
+  const posOrders = dateFilteredOrders.filter((o) => o.order_source !== 'online');
 
   const filterOrders = (orderList: Order[]) => {
     return orderList.filter((order) => {
@@ -561,18 +580,22 @@ const AdminOrders = () => {
             <span className="text-sm text-foreground">Pending</span>
           </div>
           <p className="text-2xl font-display font-bold text-yellow-600">
-            {orders.filter((o) => o.status === "pending").length}
+            {dateFilteredOrders.filter((o) => o.status === "pending").length}
           </p>
         </div>
         <div className="bg-card border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm text-foreground">Today's Revenue</span>
+            <span className="text-sm text-foreground">
+              {dateFrom || dateTo ? "Filtered Revenue" : "Today's Revenue"}
+            </span>
           </div>
           <p className="text-2xl font-display font-bold text-gold">
             {formatCurrency(
-              orders
-                .filter((o) => new Date(o.created_at).toDateString() === new Date().toDateString())
-                .reduce((sum, o) => sum + Number(o.total_amount), 0)
+              dateFrom || dateTo
+                ? dateFilteredOrders.reduce((sum, o) => sum + Number(o.total_amount), 0)
+                : orders
+                    .filter((o) => new Date(o.created_at).toDateString() === new Date().toDateString())
+                    .reduce((sum, o) => sum + Number(o.total_amount), 0)
             )}
           </p>
         </div>
