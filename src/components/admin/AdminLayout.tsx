@@ -68,7 +68,7 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
 
   const NavContent = () => (
     <>
-      <div className="p-4 border-b border-rose-gold/20">
+      <div className="p-4 border-b border-sidebar-border">
         <Link to="/" className="block">
           <h1 className="font-display font-medium tracking-wide text-xl">
             NOOR <span className="text-rose-gold">CREATIONS</span>
@@ -84,11 +84,11 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
               key={item.name}
               to={item.href}
               onClick={() => setMobileMenuOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-rose-gold/10 transition-all duration-200 ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg ${
                 location.pathname === item.href ||
                 location.pathname.startsWith(item.href + "/")
-                  ? "bg-rose-gold/20 text-rose-gold"
-                  : "text-cream/80 hover:text-cream"
+                  ? "bg-sidebar-accent text-sidebar-foreground"
+                  : "text-sidebar-foreground/80"
               }`}
             >
               <item.icon className="h-5 w-5 flex-shrink-0" />
@@ -97,13 +97,13 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
           ))}
       </nav>
 
-      <div className="p-4 border-t border-rose-gold/20">
-        <div className="text-xs text-cream/60 mb-2 truncate px-2">
+      <div className="p-4 border-t border-sidebar-border">
+        <div className="text-xs text-sidebar-foreground/60 mb-2 truncate px-2">
           {user?.email}
         </div>
         <Button
           variant="ghost"
-          className="w-full justify-start text-cream hover:bg-rose-gold/10 hover:text-rose-gold"
+          className="w-full justify-start text-sidebar-foreground"
           onClick={handleSignOut}
         >
           <LogOut className="h-5 w-5 mr-3" />
@@ -119,13 +119,13 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
       <aside
         className={`${
           sidebarOpen ? "w-64" : "w-20"
-        } bg-charcoal text-cream transition-all duration-300 hidden md:flex flex-col fixed h-full z-50`}
+        } bg-sidebar text-sidebar-foreground transition-all duration-300 hidden md:flex flex-col fixed h-full z-50`}
       >
         {sidebarOpen ? (
           <NavContent />
         ) : (
           <>
-            <div className="p-4 border-b border-rose-gold/20 text-center">
+            <div className="p-4 border-b border-sidebar-border text-center">
               <Link to="/" className="block">
                 <span className="font-display font-medium text-lg">NC</span>
               </Link>
@@ -137,11 +137,11 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`flex items-center justify-center p-3 rounded-lg hover:bg-rose-gold/10 transition-all duration-200 ${
+                    className={`flex items-center justify-center p-3 rounded-lg ${
                       location.pathname === item.href ||
                       location.pathname.startsWith(item.href + "/")
-                        ? "bg-rose-gold/20 text-rose-gold"
-                        : "text-cream/80 hover:text-cream"
+                        ? "bg-sidebar-accent text-sidebar-foreground"
+                        : "text-sidebar-foreground/80"
                     }`}
                     title={item.name}
                   >
@@ -149,11 +149,11 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
                   </Link>
                 ))}
             </nav>
-            <div className="p-2 border-t border-rose-gold/20">
+            <div className="p-2 border-t border-sidebar-border">
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-full text-cream hover:bg-rose-gold/10 hover:text-rose-gold"
+                className="w-full text-sidebar-foreground"
                 onClick={handleSignOut}
                 title="Sign Out"
               >
@@ -166,7 +166,7 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
 
       {/* Mobile Sidebar */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <SheetContent side="left" className="w-72 p-0 bg-charcoal text-cream border-none">
+        <SheetContent side="left" className="w-72 p-0 bg-sidebar text-sidebar-foreground border-none">
           <div className="h-full flex flex-col">
             <NavContent />
           </div>
@@ -183,7 +183,7 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
               variant="ghost"
               size="icon"
               onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden hover:bg-rose-gold/10"
+              className="md:hidden"
             >
               <Menu className="h-5 w-5" />
             </Button>
@@ -192,7 +192,7 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
               variant="ghost"
               size="icon"
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="hidden md:flex hover:bg-rose-gold/10"
+              className="hidden md:flex"
             >
               <Menu className="h-5 w-5" />
             </Button>
