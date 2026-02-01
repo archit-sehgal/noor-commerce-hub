@@ -268,7 +268,7 @@ const AdminSalesman = () => {
               <UserCheck className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total Salesmen</p>
+              <p className="text-sm text-foreground">Total Salesmen</p>
               <p className="text-2xl font-semibold">{totalSalesmen}</p>
             </div>
           </div>
@@ -279,7 +279,7 @@ const AdminSalesman = () => {
               <TrendingUp className="h-5 w-5 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Active</p>
+              <p className="text-sm text-foreground">Active</p>
               <p className="text-2xl font-semibold">{activeSalesmen}</p>
             </div>
           </div>
@@ -290,7 +290,7 @@ const AdminSalesman = () => {
               <IndianRupee className="h-5 w-5 text-gold" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total Revenue</p>
+              <p className="text-sm text-foreground">Total Revenue</p>
               <p className="text-2xl font-semibold">{formatCurrency(totalRevenue)}</p>
             </div>
           </div>
@@ -301,7 +301,7 @@ const AdminSalesman = () => {
               <ShoppingBag className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total Orders</p>
+              <p className="text-sm text-foreground">Total Orders</p>
               <p className="text-2xl font-semibold">{totalOrders}</p>
             </div>
           </div>
@@ -311,7 +311,7 @@ const AdminSalesman = () => {
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
           <Input
             placeholder="Search by name, phone, or email..."
             value={searchQuery}
@@ -332,8 +332,8 @@ const AdminSalesman = () => {
         </div>
       ) : filteredSalesmen.length === 0 ? (
         <div className="text-center py-12 bg-background rounded-lg shadow-sm">
-          <UserCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">No salesmen found</p>
+          <UserCheck className="h-12 w-12 text-foreground mx-auto mb-4" />
+          <p className="text-foreground">No salesmen found</p>
         </div>
       ) : (
         <>
@@ -347,7 +347,7 @@ const AdminSalesman = () => {
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <p className="font-semibold">{salesman.name}</p>
-                    <p className="text-sm text-muted-foreground">{salesman.phone || salesman.email || "No contact"}</p>
+                    <p className="text-sm text-foreground">{salesman.phone || salesman.email || "No contact"}</p>
                   </div>
                   <Badge variant={salesman.is_active ? "default" : "secondary"}>
                     {salesman.is_active ? "Active" : "Inactive"}
@@ -355,21 +355,21 @@ const AdminSalesman = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm mb-3">
                   <div>
-                    <p className="text-muted-foreground">Commission Rate</p>
+                    <p className="text-foreground">Commission Rate</p>
                     <p className="font-medium">{Number(salesman.commission_rate || 0)}%</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Total Sales</p>
+                    <p className="text-foreground">Total Sales</p>
                     <p className="font-semibold text-primary">{formatCurrency(Number(salesman.total_sales || 0))}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Commission Earned</p>
+                    <p className="text-foreground">Commission Earned</p>
                     <p className="font-semibold text-green-600">
                       {formatCurrency((Number(salesman.total_sales || 0) * Number(salesman.commission_rate || 0)) / 100)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Orders</p>
+                    <p className="text-foreground">Orders</p>
                     <p className="font-medium">{salesman.total_orders || 0}</p>
                   </div>
                 </div>
@@ -412,7 +412,7 @@ const AdminSalesman = () => {
                         <div className="text-sm">
                           {salesman.phone && <p>{salesman.phone}</p>}
                           {salesman.email && (
-                            <p className="text-muted-foreground">{salesman.email}</p>
+                            <p className="text-foreground">{salesman.email}</p>
                           )}
                         </div>
                       </TableCell>

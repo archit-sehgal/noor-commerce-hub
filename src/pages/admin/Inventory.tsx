@@ -233,7 +233,7 @@ const AdminInventory = () => {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-background rounded-lg p-4 shadow-sm border border-border">
-          <p className="text-sm text-muted-foreground">Total Products</p>
+          <p className="text-sm text-foreground">Total Products</p>
           <p className="text-2xl font-display font-bold">{products.length}</p>
         </div>
         <div className="bg-yellow-50 rounded-lg p-4 shadow-sm border border-yellow-200">
@@ -259,7 +259,7 @@ const AdminInventory = () => {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
           <Input
             placeholder="Search by name or SKU..."
             value={searchQuery}
@@ -285,7 +285,7 @@ const AdminInventory = () => {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : filteredProducts.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground border rounded-lg">
+        <div className="text-center py-12 text-foreground border rounded-lg">
           No products found
         </div>
       ) : (
@@ -294,25 +294,25 @@ const AdminInventory = () => {
             <table className="w-full">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-foreground">
                     Product
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground hidden md:table-cell">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-foreground hidden md:table-cell">
                     SKU
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground hidden lg:table-cell">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-foreground hidden lg:table-cell">
                     Category
                   </th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-muted-foreground">
+                  <th className="text-center py-3 px-4 text-sm font-medium text-foreground">
                     Stock
                   </th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-muted-foreground hidden sm:table-cell">
+                  <th className="text-center py-3 px-4 text-sm font-medium text-foreground hidden sm:table-cell">
                     Min Alert
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground hidden sm:table-cell">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-foreground hidden sm:table-cell">
                     Status
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-foreground">
                     Actions
                   </th>
                 </tr>
@@ -330,7 +330,7 @@ const AdminInventory = () => {
                       className="border-b border-border/50 hover:bg-muted/30"
                     >
                       <td className="py-3 px-4 font-medium text-sm">{product.name}</td>
-                      <td className="py-3 px-4 text-muted-foreground text-sm hidden md:table-cell">
+                      <td className="py-3 px-4 text-foreground text-sm hidden md:table-cell">
                         {product.sku || "-"}
                       </td>
                       <td className="py-3 px-4 text-sm hidden lg:table-cell">{product.category_name || "-"}</td>
@@ -339,7 +339,7 @@ const AdminInventory = () => {
                           {product.stock_quantity}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-center text-muted-foreground hidden sm:table-cell">
+                      <td className="py-3 px-4 text-center text-foreground hidden sm:table-cell">
                         {product.min_stock_alert || 10}
                       </td>
                       <td className="py-3 px-4 hidden sm:table-cell">
@@ -386,7 +386,7 @@ const AdminInventory = () => {
 
           <div className="space-y-4">
             <div className="bg-muted/50 rounded-lg p-4 text-center">
-              <p className="text-sm text-muted-foreground">Current Stock</p>
+              <p className="text-sm text-foreground">Current Stock</p>
               <p className="text-4xl font-display font-bold text-gold">
                 {selectedProduct?.stock_quantity}
               </p>

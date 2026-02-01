@@ -109,7 +109,7 @@ const AdminCategories = () => {
     <AdminLayout title="Categories">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <p className="text-muted-foreground">
+        <p className="text-foreground">
           Manage product categories
         </p>
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
@@ -262,13 +262,13 @@ const AdminCategories = () => {
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <Tags className="h-6 w-6 text-muted-foreground" />
+                          <Tags className="h-6 w-6 text-foreground" />
                         </div>
                       )}
                     </div>
                   </TableCell>
                   <TableCell className="font-medium">{category.name}</TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell className="text-foreground">
                     {category.slug}
                   </TableCell>
                   <TableCell>{category.sort_order}</TableCell>
@@ -327,8 +327,8 @@ const AdminCategories = () => {
         </div>
       ) : (
         <div className="text-center py-16 border rounded-lg">
-          <Tags className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground mb-4">No categories found</p>
+          <Tags className="h-12 w-12 text-foreground mx-auto mb-4" />
+          <p className="text-foreground mb-4">No categories found</p>
           <Button onClick={() => setIsDialogOpen(true)}>
             Add Your First Category
           </Button>

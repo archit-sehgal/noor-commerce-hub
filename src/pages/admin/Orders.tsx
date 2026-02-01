@@ -197,13 +197,13 @@ const AdminOrders = () => {
     
     return (
       <>
-        <TableRow className="cursor-pointer hover:bg-muted/50" onClick={() => toggleExpand(order.id)}>
+        <TableRow className="cursor-pointer" onClick={() => toggleExpand(order.id)}>
           <TableCell>
             <div className="flex items-center gap-2">
               {isExpanded ? (
-                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                <ChevronUp className="h-4 w-4 text-foreground" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <ChevronDown className="h-4 w-4 text-foreground" />
               )}
               <span className="font-medium text-sm">{order.order_number}</span>
             </div>
@@ -211,7 +211,7 @@ const AdminOrders = () => {
           <TableCell>
             <div>
               <p className="text-sm font-medium">{order.customer?.name || "Walk-in"}</p>
-              <p className="text-xs text-muted-foreground">{order.customer?.phone || order.customer?.email || "-"}</p>
+              <p className="text-xs text-foreground">{order.customer?.phone || order.customer?.email || "-"}</p>
             </div>
           </TableCell>
           <TableCell className="hidden lg:table-cell text-sm">
@@ -282,27 +282,25 @@ const AdminOrders = () => {
           <TableRow className="bg-muted/30">
             <TableCell colSpan={8} className="p-0">
               <div className="p-4 space-y-4">
-                {/* Order Details Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
-                    <p className="text-muted-foreground text-xs">Subtotal</p>
+                    <p className="text-foreground text-xs">Subtotal</p>
                     <p className="font-medium">{formatCurrency(order.subtotal)}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-xs">Discount</p>
+                    <p className="text-foreground text-xs">Discount</p>
                     <p className="font-medium text-green-600">-{formatCurrency(order.discount_amount || 0)}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-xs">Tax</p>
+                    <p className="text-foreground text-xs">Tax</p>
                     <p className="font-medium">{formatCurrency(order.tax_amount || 0)}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-xs">Shipping</p>
+                    <p className="text-foreground text-xs">Shipping</p>
                     <p className="font-medium">{formatCurrency(order.shipping_amount || 0)}</p>
                   </div>
                 </div>
 
-                {/* Items Table */}
                 {order.order_items && order.order_items.length > 0 && (
                   <div className="border rounded-lg overflow-hidden">
                     <table className="w-full text-sm">
@@ -319,7 +317,7 @@ const AdminOrders = () => {
                         {order.order_items.map((item) => (
                           <tr key={item.id} className="border-t border-border/50">
                             <td className="py-2 px-3 font-medium">{item.product_name}</td>
-                            <td className="py-2 px-3 text-center text-muted-foreground">
+                            <td className="py-2 px-3 text-center text-foreground">
                               {[item.size, item.color].filter(Boolean).join(" / ") || "-"}
                             </td>
                             <td className="py-2 px-3 text-center">{item.quantity}</td>
@@ -332,11 +330,10 @@ const AdminOrders = () => {
                   </div>
                 )}
 
-                {/* Additional Info */}
                 <div className="flex flex-wrap gap-4 text-sm">
                   {order.salesman && (
                     <div>
-                      <span className="text-muted-foreground">Salesman:</span>
+                      <span className="text-foreground">Salesman:</span>
                       <span className="ml-1 font-medium">{order.salesman.name}</span>
                     </div>
                   )}
@@ -347,7 +344,7 @@ const AdminOrders = () => {
                   )}
                   {order.shipping_address && (
                     <div>
-                      <span className="text-muted-foreground">Ship to:</span>
+                      <span className="text-foreground">Ship to:</span>
                       <span className="ml-1">{order.shipping_address}, {order.shipping_city}</span>
                     </div>
                   )}
@@ -355,7 +352,7 @@ const AdminOrders = () => {
 
                 {order.notes && (
                   <div className="text-sm">
-                    <span className="text-muted-foreground">Notes:</span>
+                    <span className="text-foreground">Notes:</span>
                     <span className="ml-1">{order.notes}</span>
                   </div>
                 )}
@@ -373,8 +370,8 @@ const AdminOrders = () => {
     if (filtered.length === 0) {
       return (
         <div className="text-center py-16 border rounded-lg bg-muted/20">
-          <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">{emptyMessage}</p>
+          <Package className="h-12 w-12 text-foreground mx-auto mb-4" />
+          <p className="text-foreground">{emptyMessage}</p>
         </div>
       );
     }
@@ -391,7 +388,7 @@ const AdminOrders = () => {
                     <div className="flex justify-between items-start mb-2">
                       <div>
                         <p className="font-semibold text-sm">{order.order_number}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-foreground">
                           {format(new Date(order.created_at), "MMM dd, HH:mm")}
                         </p>
                       </div>
@@ -478,20 +475,20 @@ const AdminOrders = () => {
         <div className="bg-card border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-1">
             <Globe className="h-4 w-4 text-blue-500" />
-            <span className="text-sm text-muted-foreground">Online Orders</span>
+            <span className="text-sm text-foreground">Online Orders</span>
           </div>
           <p className="text-2xl font-display font-bold">{onlineOrders.length}</p>
         </div>
         <div className="bg-card border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-1">
             <Store className="h-4 w-4 text-green-500" />
-            <span className="text-sm text-muted-foreground">Walk-in Orders</span>
+            <span className="text-sm text-foreground">Walk-in Orders</span>
           </div>
           <p className="text-2xl font-display font-bold">{posOrders.length}</p>
         </div>
         <div className="bg-card border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm text-muted-foreground">Pending</span>
+            <span className="text-sm text-foreground">Pending</span>
           </div>
           <p className="text-2xl font-display font-bold text-yellow-600">
             {orders.filter((o) => o.status === "pending").length}
@@ -499,7 +496,7 @@ const AdminOrders = () => {
         </div>
         <div className="bg-card border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm text-muted-foreground">Today's Revenue</span>
+            <span className="text-sm text-foreground">Today's Revenue</span>
           </div>
           <p className="text-2xl font-display font-bold text-gold">
             {formatCurrency(
@@ -514,7 +511,7 @@ const AdminOrders = () => {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
           <Input
             placeholder="Search orders..."
             value={searchQuery}
