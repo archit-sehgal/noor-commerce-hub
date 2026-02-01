@@ -23,11 +23,18 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import AdminLayout from "@/components/admin/AdminLayout";
 import OrderDetailDialog from "@/components/admin/OrderDetailDialog";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Loader2, ShoppingCart, Eye, Store, Globe, ChevronDown, ChevronUp, Package } from "lucide-react";
-import { format } from "date-fns";
+import { Search, Loader2, ShoppingCart, Eye, Store, Globe, ChevronDown, ChevronUp, Package, Download, CalendarIcon, X } from "lucide-react";
+import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface OrderItem {
   id: string;
@@ -78,6 +85,8 @@ const AdminOrders = () => {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     fetchOrders();
@@ -163,8 +172,69 @@ const AdminOrders = () => {
       const matchesStatus =
         statusFilter === "all" || order.status === statusFilter;
 
-      return matchesSearch && matchesStatus;
+      // Date filter
+      const orderDate = new Date(order.created_at);
+      let matchesDate = true;
+      if (dateFrom && dateTo) {
+        matchesDate = isWithinInterval(orderDate, {
+          start: startOfDay(dateFrom),
+          end: endOfDay(dateTo),
+        });
+      } else if (dateFrom) {
+        matchesDate = orderDate >= startOfDay(dateFrom);
+      } else if (dateTo) {
+        matchesDate = orderDate <= endOfDay(dateTo);
+      }
+
+      return matchesSearch && matchesStatus && matchesDate;
     });
+  };
+
+  const exportToCSV = () => {
+    const filtered = filterOrders(orders);
+    
+    if (filtered.length === 0) {
+      return;
+    }
+
+    const headers = ["Customer Name", "Order ID", "Amount", "Date"];
+    const csvRows = [headers.join(",")];
+
+    filtered.forEach((order) => {
+      const customerName = order.customer?.name || "Walk-in";
+      const orderId = order.order_number;
+      const amount = order.total_amount;
+      const date = format(new Date(order.created_at), "yyyy-MM-dd HH:mm");
+      
+      // Escape values that might contain commas
+      const escapedName = `"${customerName.replace(/"/g, '""')}"`;
+      csvRows.push([escapedName, orderId, amount, date].join(","));
+    });
+
+    const csvContent = csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    
+    const dateRange = dateFrom && dateTo 
+      ? `_${format(dateFrom, "yyyyMMdd")}-${format(dateTo, "yyyyMMdd")}`
+      : dateFrom 
+      ? `_from_${format(dateFrom, "yyyyMMdd")}`
+      : dateTo
+      ? `_to_${format(dateTo, "yyyyMMdd")}`
+      : "";
+    
+    link.setAttribute("download", `orders${dateRange}_${format(new Date(), "yyyyMMdd_HHmmss")}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const clearDateFilters = () => {
+    setDateFrom(undefined);
+    setDateTo(undefined);
   };
 
   const getStatusColor = (status: string) => {
@@ -509,30 +579,98 @@ const AdminOrders = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
-          <Input
-            placeholder="Search orders..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
+            <Input
+              placeholder="Search orders..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="confirmed">Confirmed</SelectItem>
+              <SelectItem value="processing">Processing</SelectItem>
+              <SelectItem value="shipped">Shipped</SelectItem>
+              <SelectItem value="delivered">Delivered</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="confirmed">Confirmed</SelectItem>
-            <SelectItem value="processing">Processing</SelectItem>
-            <SelectItem value="shipped">Shipped</SelectItem>
-            <SelectItem value="delivered">Delivered</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
+
+        {/* Date Filters & Export */}
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <div className="flex flex-wrap gap-2 items-center">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-[160px] justify-start text-left font-normal",
+                    !dateFrom && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateFrom ? format(dateFrom, "MMM dd, yyyy") : "From Date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dateFrom}
+                  onSelect={setDateFrom}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-[160px] justify-start text-left font-normal",
+                    !dateTo && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateTo ? format(dateTo, "MMM dd, yyyy") : "To Date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dateTo}
+                  onSelect={setDateTo}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+
+            {(dateFrom || dateTo) && (
+              <Button variant="ghost" size="icon" onClick={clearDateFilters}>
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+
+          <div className="ml-auto">
+            <Button onClick={exportToCSV} variant="outline" className="gap-2">
+              <Download className="h-4 w-4" />
+              Export CSV
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Orders Tabs */}
