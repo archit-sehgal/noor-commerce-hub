@@ -111,15 +111,15 @@ const NotificationsPanel = ({ triggerClassName }: NotificationsPanelProps) => {
         <ScrollArea className="h-[calc(100vh-120px)]">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <Loader2 className="h-6 w-6 animate-spin text-foreground" />
             </div>
           ) : notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center px-4">
               <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                <Bell className="h-8 w-8 text-muted-foreground" />
+                <Bell className="h-8 w-8 text-foreground" />
               </div>
-              <p className="text-muted-foreground font-medium">No notifications yet</p>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-foreground font-medium">No notifications yet</p>
+              <p className="text-sm text-foreground mt-1">
                 You'll be notified when new orders come in
               </p>
             </div>
@@ -140,13 +140,13 @@ const NotificationsPanel = ({ triggerClassName }: NotificationsPanelProps) => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
-                          <p className={`text-sm font-medium ${!notification.is_read ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          <p className={`text-sm font-medium ${!notification.is_read ? 'text-foreground' : 'text-foreground'}`}>
                             {notification.title}
                           </p>
-                          <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">
+                          <p className="text-sm text-foreground mt-0.5 line-clamp-2">
                             {notification.message}
                           </p>
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-xs text-foreground mt-1">
                             {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                           </p>
                         </div>
@@ -167,7 +167,7 @@ const NotificationsPanel = ({ triggerClassName }: NotificationsPanelProps) => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                            className="h-7 w-7 text-foreground hover:text-destructive"
                             onClick={(e) => {
                               e.stopPropagation();
                               deleteNotification(notification.id);

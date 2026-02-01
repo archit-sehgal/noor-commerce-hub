@@ -258,7 +258,7 @@ const AdminCustomers = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between mb-6">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
           <Input
             placeholder="Search customers..."
             value={searchQuery}
@@ -417,7 +417,7 @@ const AdminCustomers = () => {
                 <Users className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Customers</p>
+                <p className="text-sm text-foreground">Total Customers</p>
                 <p className="text-2xl font-serif font-bold">{customers.length}</p>
               </div>
             </div>
@@ -430,7 +430,7 @@ const AdminCustomers = () => {
                 <IndianRupee className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Revenue</p>
+                <p className="text-sm text-foreground">Total Revenue</p>
                 <p className="text-2xl font-serif font-bold">
                   ₹{customers.reduce((sum, c) => sum + Number(c.total_spent || 0), 0).toLocaleString()}
                 </p>
@@ -445,7 +445,7 @@ const AdminCustomers = () => {
                 <ShoppingBag className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Orders</p>
+                <p className="text-sm text-foreground">Total Orders</p>
                 <p className="text-2xl font-serif font-bold">
                   {customers.reduce((sum, c) => sum + (c.total_orders || 0), 0)}
                 </p>
@@ -472,7 +472,7 @@ const AdminCustomers = () => {
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <p className="font-semibold">{customer.name}</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-foreground">
                       {customer.phone || customer.email || "No contact"}
                     </p>
                   </div>
@@ -495,11 +495,11 @@ const AdminCustomers = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <p className="text-muted-foreground">Orders</p>
+                      <p className="text-foreground">Orders</p>
                     <p className="font-medium">{customer.total_orders || 0}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Total Spent</p>
+                      <p className="text-foreground">Total Spent</p>
                     <p className="font-semibold text-gold">₹{Number(customer.total_spent || 0).toLocaleString()}</p>
                   </div>
                 </div>
@@ -526,7 +526,7 @@ const AdminCustomers = () => {
                 <TableBody>
                   {filteredCustomers.map((customer) => (
                     <TableRow key={customer.id}>
-                      <TableCell className="hidden xl:table-cell font-mono text-xs text-muted-foreground">
+                      <TableCell className="hidden xl:table-cell font-mono text-xs text-foreground">
                         {customer.id.substring(0, 8)}...
                       </TableCell>
                       <TableCell className="font-medium">{customer.name}</TableCell>
@@ -534,10 +534,10 @@ const AdminCustomers = () => {
                         <div className="text-sm">
                           {customer.email && <p className="truncate max-w-[150px]">{customer.email}</p>}
                           {customer.phone && (
-                            <p className="text-muted-foreground">{customer.phone}</p>
+                            <p className="text-foreground">{customer.phone}</p>
                           )}
                           {!customer.email && !customer.phone && (
-                            <p className="text-muted-foreground">-</p>
+                            <p className="text-foreground">-</p>
                           )}
                         </div>
                       </TableCell>
@@ -578,8 +578,8 @@ const AdminCustomers = () => {
         </>
       ) : (
         <div className="text-center py-16 border rounded-lg">
-          <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground mb-4">No customers found</p>
+          <Users className="h-12 w-12 text-foreground mx-auto mb-4" />
+          <p className="text-foreground mb-4">No customers found</p>
           <Button onClick={() => setIsDialogOpen(true)}>
             Add Your First Customer
           </Button>
@@ -604,7 +604,7 @@ const AdminCustomers = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <Card className="border-none shadow-sm bg-primary/5">
                     <CardContent className="pt-4">
-                      <p className="text-sm text-muted-foreground">Total Spent</p>
+                      <p className="text-sm text-foreground">Total Spent</p>
                       <p className="text-2xl font-serif font-bold text-gold">
                         ₹{Number(selectedCustomer.total_spent || 0).toLocaleString()}
                       </p>
@@ -612,7 +612,7 @@ const AdminCustomers = () => {
                   </Card>
                   <Card className="border-none shadow-sm bg-primary/5">
                     <CardContent className="pt-4">
-                      <p className="text-sm text-muted-foreground">Total Orders</p>
+                      <p className="text-sm text-foreground">Total Orders</p>
                       <p className="text-2xl font-serif font-bold">
                         {selectedCustomer.total_orders || 0}
                       </p>
@@ -623,19 +623,19 @@ const AdminCustomers = () => {
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-muted-foreground">Name</Label>
+                      <Label className="text-foreground">Name</Label>
                       <p className="font-medium">{selectedCustomer.name}</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground">Email</Label>
+                      <Label className="text-foreground">Email</Label>
                       <p className="font-medium">{selectedCustomer.email || "-"}</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground">Phone</Label>
+                      <Label className="text-foreground">Phone</Label>
                       <p className="font-medium">{selectedCustomer.phone || "-"}</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground">Last Purchase</Label>
+                      <Label className="text-foreground">Last Purchase</Label>
                       <p className="font-medium">
                         {selectedCustomer.last_purchase_date
                           ? new Date(selectedCustomer.last_purchase_date).toLocaleDateString()
@@ -645,7 +645,7 @@ const AdminCustomers = () => {
                   </div>
                   
                   <div>
-                    <Label className="text-muted-foreground">Address</Label>
+                    <Label className="text-foreground">Address</Label>
                     <p className="font-medium">
                       {[
                         selectedCustomer.address,
@@ -660,13 +660,13 @@ const AdminCustomers = () => {
 
                   {selectedCustomer.notes && (
                     <div>
-                      <Label className="text-muted-foreground">Notes</Label>
+                      <Label className="text-foreground">Notes</Label>
                       <p className="font-medium">{selectedCustomer.notes}</p>
                     </div>
                   )}
 
                   <div>
-                    <Label className="text-muted-foreground">Customer Since</Label>
+                    <Label className="text-foreground">Customer Since</Label>
                     <p className="font-medium">
                       {new Date(selectedCustomer.created_at).toLocaleDateString()}
                     </p>
@@ -704,9 +704,9 @@ const AdminCustomers = () => {
                         <div>
                           <div className="flex items-center gap-2">
                             <p className="font-medium">{order.order_number}</p>
-                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                            <ExternalLink className="h-3 w-3 text-foreground" />
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2 text-sm text-foreground">
                             <Calendar className="h-3 w-3" />
                             {new Date(order.created_at).toLocaleDateString()}
                           </div>
@@ -722,8 +722,8 @@ const AdminCustomers = () => {
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <ShoppingBag className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-muted-foreground">No orders yet</p>
+                    <ShoppingBag className="h-12 w-12 text-foreground mx-auto mb-3" />
+                    <p className="text-foreground">No orders yet</p>
                   </div>
                 )}
               </TabsContent>
