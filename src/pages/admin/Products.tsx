@@ -40,7 +40,7 @@ const AdminProducts = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between mb-6">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
           <Input
             placeholder="Search products..."
             value={searchQuery}
@@ -89,13 +89,13 @@ const AdminProducts = () => {
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <Package className="h-6 w-6 text-muted-foreground" />
+                          <Package className="h-6 w-6 text-foreground" />
                         </div>
                       )}
                     </div>
                   </TableCell>
                   <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell className="text-foreground">
                     {product.sku || "-"}
                   </TableCell>
                   <TableCell>{product.category?.name || "-"}</TableCell>
@@ -172,8 +172,8 @@ const AdminProducts = () => {
         </div>
       ) : (
         <div className="text-center py-16 border rounded-lg">
-          <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground mb-4">No products found</p>
+          <Package className="h-12 w-12 text-foreground mx-auto mb-4" />
+          <p className="text-foreground mb-4">No products found</p>
           <Link to="/admin/products/new">
             <Button>Add Your First Product</Button>
           </Link>

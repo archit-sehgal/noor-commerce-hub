@@ -228,7 +228,7 @@ const AdminInvoices = () => {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
         <div className="bg-background rounded-lg p-4 shadow-sm">
-          <p className="text-sm text-muted-foreground">Total Invoices</p>
+          <p className="text-sm text-foreground">Total Invoices</p>
           <p className="text-2xl font-serif font-bold">{invoices.length}</p>
         </div>
         <div className="bg-green-50 rounded-lg p-4 shadow-sm">
@@ -244,7 +244,7 @@ const AdminInvoices = () => {
           </p>
         </div>
         <div className="bg-primary/5 rounded-lg p-4 shadow-sm">
-          <p className="text-sm text-muted-foreground">Total Revenue</p>
+          <p className="text-sm text-foreground">Total Revenue</p>
           <p className="text-2xl font-serif font-bold text-primary">
             {formatCurrency(
               invoices
@@ -258,7 +258,7 @@ const AdminInvoices = () => {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
           <Input
             placeholder="Search by invoice #, customer, or order..."
             value={searchQuery}
@@ -287,8 +287,8 @@ const AdminInvoices = () => {
         </div>
       ) : filteredInvoices.length === 0 ? (
         <div className="text-center py-12">
-          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">No invoices found</p>
+          <FileText className="h-12 w-12 text-foreground mx-auto mb-4" />
+          <p className="text-foreground">No invoices found</p>
         </div>
       ) : (
         <div className="bg-background rounded-lg shadow-sm overflow-hidden">
@@ -417,7 +417,7 @@ const AdminInvoices = () => {
                     )}
                   </>
                 ) : (
-                  <p className="text-muted-foreground">Walk-in Customer</p>
+                  <p className="text-foreground">Walk-in Customer</p>
                 )}
               </div>
             </div>
@@ -438,7 +438,7 @@ const AdminInvoices = () => {
                       <td className="p-2">
                         <p className="font-medium">{item.product_name}</p>
                         {(item.size || item.color) && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-foreground">
                             {[item.size, item.color].filter(Boolean).join(", ")}
                           </p>
                         )}
@@ -458,20 +458,20 @@ const AdminInvoices = () => {
 
             <div className="space-y-1 text-right">
               <p>
-                <span className="text-muted-foreground">Subtotal:</span>{" "}
+                <span className="text-foreground">Subtotal:</span>{" "}
                 <span className="font-medium">
                   {formatCurrency(selectedInvoice?.subtotal || 0)}
                 </span>
               </p>
               <p>
-                <span className="text-muted-foreground">Tax:</span>{" "}
+                <span className="text-foreground">Tax:</span>{" "}
                 <span className="font-medium">
                   {formatCurrency(selectedInvoice?.tax_amount || 0)}
                 </span>
               </p>
               {(selectedInvoice?.discount_amount || 0) > 0 && (
                 <p>
-                  <span className="text-muted-foreground">Discount:</span>{" "}
+                  <span className="text-foreground">Discount:</span>{" "}
                   <span className="font-medium text-green-600">
                     -{formatCurrency(selectedInvoice?.discount_amount || 0)}
                   </span>
