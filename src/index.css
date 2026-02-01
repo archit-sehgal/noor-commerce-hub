@@ -116,7 +116,7 @@
   .admin-theme {
     /* High-contrast CRM palette: white surfaces, dark text, maroon accents */
     --background: 0 0% 100%;
-    --foreground: 30 15% 10%;
+    --foreground: 0 0% 0%;
 
     --card: 0 0% 100%;
     --card-foreground: 30 15% 10%;
@@ -134,7 +134,8 @@
 
     /* Keep muted close to background to avoid visible hover highlights */
     --muted: 0 0% 100%;
-    --muted-foreground: 30 10% 35%;
+    /* Force all secondary/label text to be clearly visible */
+    --muted-foreground: 0 0% 0%;
 
     --accent: 350 55% 96%;
     --accent-foreground: 350 55% 28%;
