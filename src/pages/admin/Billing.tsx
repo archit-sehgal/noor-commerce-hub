@@ -533,7 +533,7 @@ const AdminBilling = () => {
                 <Barcode className="h-5 w-5 text-primary" />
               </div>
               <div className="flex-1">
-                <Label className="text-sm text-muted-foreground">
+                <Label className="text-sm text-foreground">
                   Barcode Scanner (SKU)
                 </Label>
                 <Input
@@ -551,7 +551,7 @@ const AdminBilling = () => {
           {/* Product Search */}
           <div className="bg-background rounded-lg p-4 shadow-sm">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
               <Input
                 placeholder="Search products by name or SKU..."
                 value={searchQuery}
@@ -581,12 +581,12 @@ const AdminBilling = () => {
                     className="p-3 border border-border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors text-left"
                   >
                     <p className="font-medium text-sm truncate">{product.name}</p>
-                    <p className="text-xs text-muted-foreground">{product.sku || "-"}</p>
+                    <p className="text-xs text-foreground">{product.sku || "-"}</p>
                     <div className="flex justify-between items-center mt-2">
                       <span className="text-primary font-semibold text-sm">
                         {formatCurrency(product.discount_price || product.price)}
                       </span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-foreground">
                         Stock: {product.stock_quantity}
                       </span>
                     </div>
@@ -610,7 +610,7 @@ const AdminBilling = () => {
               <div className="flex items-center justify-between p-3 bg-gold/10 rounded-lg">
                 <div>
                   <p className="font-medium">{selectedSalesman.name}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-foreground">
                     {selectedSalesman.phone || "No phone"}
                   </p>
                 </div>
@@ -655,7 +655,7 @@ const AdminBilling = () => {
               <div className="flex items-center justify-between p-3 bg-primary/5 rounded-lg">
                 <div>
                   <p className="font-medium">{selectedCustomer.name}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-foreground">
                     {selectedCustomer.phone || selectedCustomer.email || "Walk-in"}
                   </p>
                 </div>
@@ -686,7 +686,7 @@ const AdminBilling = () => {
                         className="w-full p-2 text-left hover:bg-muted/50 text-sm"
                       >
                         <p className="font-medium">{customer.name}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-foreground">
                           {customer.phone || customer.email}
                         </p>
                       </button>
@@ -714,7 +714,7 @@ const AdminBilling = () => {
             </h3>
 
             {cart.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
+              <p className="text-center text-foreground py-8">
                 No items in cart
               </p>
             ) : (
@@ -727,7 +727,7 @@ const AdminBilling = () => {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <p className="font-medium text-sm">{item.product.name}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-foreground">
                           {formatCurrency(item.unitPrice)} each
                         </p>
                       </div>
@@ -826,15 +826,15 @@ const AdminBilling = () => {
           <div className="bg-background rounded-lg p-4 shadow-sm space-y-4">
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal</span>
+                  <span className="text-foreground">Subtotal</span>
                 <span>{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">GST (18%)</span>
+                  <span className="text-foreground">GST (18%)</span>
                 <span>{formatCurrency(taxAmount)}</span>
               </div>
               <div className="flex justify-between items-center">
-                <Label className="text-sm text-muted-foreground">Discount</Label>
+                  <Label className="text-sm text-foreground">Discount</Label>
                 <Input
                   type="number"
                   min="0"
@@ -992,10 +992,10 @@ const AdminBilling = () => {
               <h1 className="text-2xl font-serif font-bold text-primary">
                 NOOR CREATIONS
               </h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-foreground">
                 Premium Ethnic Fashion
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-foreground">
                 123 Fashion Street, Mumbai - 400001
               </p>
             </div>
@@ -1029,7 +1029,7 @@ const AdminBilling = () => {
                     )}
                   </>
                 ) : (
-                  <p className="text-muted-foreground">Walk-in Customer</p>
+                  <p className="text-foreground">Walk-in Customer</p>
                 )}
               </div>
             </div>
@@ -1049,7 +1049,7 @@ const AdminBilling = () => {
                     <td className="p-2">
                       <p className="font-medium">{item.product.name}</p>
                       {(item.size || item.color) && (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-foreground">
                           {[item.size, item.color].filter(Boolean).join(", ")}
                         </p>
                       )}
@@ -1068,20 +1068,20 @@ const AdminBilling = () => {
 
             <div className="space-y-1 text-right">
               <p>
-                <span className="text-muted-foreground">Subtotal:</span>{" "}
+                <span className="text-foreground">Subtotal:</span>{" "}
                 <span className="font-medium">
                   {formatCurrency(generatedInvoice?.subtotal || 0)}
                 </span>
               </p>
               <p>
-                <span className="text-muted-foreground">GST (18%):</span>{" "}
+                <span className="text-foreground">GST (18%):</span>{" "}
                 <span className="font-medium">
                   {formatCurrency(generatedInvoice?.taxAmount || 0)}
                 </span>
               </p>
               {generatedInvoice?.discountAmount > 0 && (
                 <p>
-                  <span className="text-muted-foreground">Discount:</span>{" "}
+                  <span className="text-foreground">Discount:</span>{" "}
                   <span className="font-medium text-green-600">
                     -{formatCurrency(generatedInvoice?.discountAmount || 0)}
                   </span>
@@ -1093,7 +1093,7 @@ const AdminBilling = () => {
               </p>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-border text-center text-xs text-muted-foreground">
+            <div className="mt-6 pt-4 border-t border-border text-center text-xs text-foreground">
               <p>Payment Method: {generatedInvoice?.paymentMethod?.toUpperCase()}</p>
               {generatedInvoice?.salesman && (
                 <p className="mt-1">Served by: {generatedInvoice.salesman.name}</p>
