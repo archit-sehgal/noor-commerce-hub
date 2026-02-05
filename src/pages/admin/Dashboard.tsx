@@ -38,18 +38,24 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [showWelcomeLoader, setShowWelcomeLoader] = useState(false);
 
-  // Check for fresh login and show welcome loader
+  // Check for fresh login and show welcome loader until data loads
   useEffect(() => {
     const isFreshLogin = sessionStorage.getItem("freshLogin");
     if (isFreshLogin === "true") {
       setShowWelcomeLoader(true);
       sessionStorage.removeItem("freshLogin");
-      const timer = setTimeout(() => {
-        setShowWelcomeLoader(false);
-      }, 3000);
-      return () => clearTimeout(timer);
     }
   }, []);
+
+  // Hide welcome loader once data has loaded
+  useEffect(() => {
+    if (showWelcomeLoader && !loading) {
+      const timer = setTimeout(() => {
+        setShowWelcomeLoader(false);
+      }, 500); // Small delay for smooth transition
+      return () => clearTimeout(timer);
+    }
+  }, [loading, showWelcomeLoader]);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -108,16 +114,23 @@ const AdminDashboard = () => {
   // Show welcome loader for first login after logout
   if (showWelcomeLoader) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
-        <div className="text-center space-y-6">
-          <Loader2 className="h-12 w-12 animate-spin text-gold mx-auto" />
-          <div className="space-y-2">
-            <h2 className="text-2xl font-display font-semibold text-foreground">
-              Setting things up for you
-            </h2>
-            <p className="text-muted-foreground">Please wait a moment...</p>
-          </div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background relative">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-10 w-10 animate-spin text-gold mx-auto" />
+          <p className="text-lg text-foreground">Setting things up for you...</p>
         </div>
+        {/* Loading line at bottom */}
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted overflow-hidden">
+          <div className="h-full bg-gold animate-pulse w-full origin-left" 
+               style={{ animation: 'loading-line 1.5s ease-in-out infinite' }} />
+        </div>
+        <style>{`
+          @keyframes loading-line {
+            0% { transform: translateX(-100%); }
+            50% { transform: translateX(0%); }
+            100% { transform: translateX(100%); }
+          }
+        `}</style>
       </div>
     );
   }
