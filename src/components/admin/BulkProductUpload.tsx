@@ -93,6 +93,7 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
   };
 
   // Category detection from item name prefix (before "-")
+  // Categories are matched case-insensitively and with flexible matching
   const CATEGORY_MAP: Record<string, string> = {
     "LEHENGA": "LEHENGA",
     "RM DRESS": "RM DRESS", 
@@ -101,15 +102,27 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
   };
 
   const detectCategory = (itemDetails: string): string | null => {
-    const prefix = itemDetails.split("-")[0]?.trim().toUpperCase();
+    if (!itemDetails) return null;
+    
+    // Get prefix before first hyphen, handle case where no hyphen exists
+    const parts = itemDetails.split("-");
+    const prefix = parts[0]?.trim().toUpperCase();
     if (!prefix) return null;
     
     // Check for exact match first
     if (CATEGORY_MAP[prefix]) return CATEGORY_MAP[prefix];
     
-    // Check if prefix starts with any known category
+    // Check if prefix starts with any known category (handles variations like "LEHENGA SET")
     for (const category of Object.keys(CATEGORY_MAP)) {
-      if (prefix.startsWith(category) || prefix === category) {
+      if (prefix.startsWith(category) || prefix.includes(category)) {
+        return CATEGORY_MAP[category];
+      }
+    }
+    
+    // Also check if any category keyword exists anywhere in the item details
+    const upperDetails = itemDetails.toUpperCase();
+    for (const category of Object.keys(CATEGORY_MAP)) {
+      if (upperDetails.startsWith(category + " ") || upperDetails.startsWith(category + "-")) {
         return CATEGORY_MAP[category];
       }
     }
@@ -175,9 +188,35 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
         // Validate
         if (!itemDetails) errors.push("Missing product name");
         
-        const mrp = typeof mrpRaw === "number" ? mrpRaw : parseFloat(mrpRaw?.toString() || "0");
-        const salePrice = typeof salePriceRaw === "number" ? salePriceRaw : parseFloat(salePriceRaw?.toString() || "0");
-        const closingQty = typeof closingQtyRaw === "number" ? closingQtyRaw : parseFloat(closingQtyRaw?.toString() || "0");
+        // CRITICAL: Preserve exact values from file without transformation
+        // Use Number() and store raw values - no parseFloat which can introduce precision issues
+        let mrp: number;
+        let salePrice: number;
+        let closingQty: number;
+
+        // Handle MRP - preserve exact value
+        if (typeof mrpRaw === "number") {
+          mrp = mrpRaw;
+        } else {
+          const mrpStr = (mrpRaw?.toString() || "0").trim().replace(/,/g, "");
+          mrp = Number(mrpStr);
+        }
+
+        // Handle Sale Price - preserve exact value
+        if (typeof salePriceRaw === "number") {
+          salePrice = salePriceRaw;
+        } else {
+          const salePriceStr = (salePriceRaw?.toString() || "0").trim().replace(/,/g, "");
+          salePrice = Number(salePriceStr);
+        }
+
+        // Handle Closing Qty - preserve exact value (no rounding until database insert)
+        if (typeof closingQtyRaw === "number") {
+          closingQty = closingQtyRaw;
+        } else {
+          const qtyStr = (closingQtyRaw?.toString() || "0").trim().replace(/,/g, "");
+          closingQty = Number(qtyStr);
+        }
 
         if (isNaN(mrp) || mrp < 0) errors.push("Invalid MRP");
         if (isNaN(salePrice) || salePrice < 0) errors.push("Invalid Sale Price");
@@ -190,7 +229,7 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
           mrp,
           salePrice,
           unit,
-          closingQty: Math.floor(closingQty),
+          closingQty: Math.round(closingQty), // Round to nearest integer for stock (integers only in DB)
           isValid: errors.length === 0,
           errors,
           detectedCategory: detectCategory(itemDetails),
