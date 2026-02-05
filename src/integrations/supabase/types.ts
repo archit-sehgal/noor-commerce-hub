@@ -336,6 +336,75 @@ export type Database = {
         }
         Relationships: []
       }
+      online_store_products: {
+        Row: {
+          category_id: string | null
+          colors: string[] | null
+          created_at: string
+          description: string | null
+          discount_price: number | null
+          id: string
+          images: string[] | null
+          is_active: boolean | null
+          is_featured: boolean | null
+          name: string
+          price: number
+          product_id: string
+          sizes: string[] | null
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          category_id?: string | null
+          colors?: string[] | null
+          created_at?: string
+          description?: string | null
+          discount_price?: number | null
+          id?: string
+          images?: string[] | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          name: string
+          price: number
+          product_id: string
+          sizes?: string[] | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string | null
+          colors?: string[] | null
+          created_at?: string
+          description?: string | null
+          discount_price?: number | null
+          id?: string
+          images?: string[] | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          name?: string
+          price?: number
+          product_id?: string
+          sizes?: string[] | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "online_store_products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_store_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           color: string | null

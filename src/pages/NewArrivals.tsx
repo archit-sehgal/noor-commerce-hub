@@ -2,13 +2,13 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import PageHero from "@/components/layout/PageHero";
 import ProductCard from "@/components/product/ProductCard";
-import { useProducts } from "@/hooks/useProducts";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import { Link } from "react-router-dom";
 import { Sparkles } from "lucide-react";
 import heroProducts from "@/assets/hero-products.jpg";
 
 const NewArrivals = () => {
-  const { data: products, isLoading } = useProducts({ limit: 5 });
+  const { data: products, isLoading } = useStorefrontProducts({ limit: 5 });
 
   return (
     <div className="min-h-screen bg-background">
@@ -55,6 +55,7 @@ const NewArrivals = () => {
                     key={product.id}
                     product={{
                       id: product.id,
+                      inventoryId: product.product_id,
                       slug: product.slug,
                       name: product.name,
                       price: product.price,

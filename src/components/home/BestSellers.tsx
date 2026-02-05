@@ -1,10 +1,10 @@
 import ProductCard from "@/components/product/ProductCard";
 import { Link } from "react-router-dom";
-import { useProducts } from "@/hooks/useProducts";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import { Loader2, Crown } from "lucide-react";
 
 const BestSellers = () => {
-  const { data: products, isLoading } = useProducts({ featured: true, limit: 4 });
+  const { data: products, isLoading } = useStorefrontProducts({ featured: true, limit: 4 });
 
   if (isLoading) {
     return (
@@ -51,6 +51,7 @@ const BestSellers = () => {
               key={product.id} 
               product={{
                 id: product.id,
+                inventoryId: product.product_id,
                 slug: product.slug,
                 name: product.name,
                 price: product.price,

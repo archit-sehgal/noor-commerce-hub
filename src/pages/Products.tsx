@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useProducts } from "@/hooks/useProducts";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import { useCategories } from "@/hooks/useCategories";
 import { Search, Filter, X, Loader2 } from "lucide-react";
 import heroProducts from "@/assets/hero-products.jpg";
@@ -26,7 +26,7 @@ const Products = () => {
   const [sortBy, setSortBy] = useState("newest");
   const [showFilters, setShowFilters] = useState(false);
 
-  const { data: products, isLoading: productsLoading } = useProducts({
+  const { data: products, isLoading: productsLoading } = useStorefrontProducts({
     categorySlug: selectedCategory !== "all" ? selectedCategory : undefined,
   });
 
@@ -179,6 +179,7 @@ const Products = () => {
                     key={product.id}
                     product={{
                       id: product.id,
+                      inventoryId: product.product_id,
                       slug: product.slug,
                       name: product.name,
                       price: product.price,

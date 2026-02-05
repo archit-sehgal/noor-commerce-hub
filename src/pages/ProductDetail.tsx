@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { useProduct } from "@/hooks/useProducts";
+import { useStorefrontProduct } from "@/hooks/useStorefrontProducts";
 import { useAddToCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSounds } from "@/hooks/useSounds";
@@ -135,7 +135,7 @@ const getColorStyle = (colorName: string): React.CSSProperties => {
 
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { data: product, isLoading, error } = useProduct(slug || "");
+  const { data: product, isLoading, error } = useStorefrontProduct(slug || "");
   const { user } = useAuth();
   const addToCart = useAddToCart();
   const { playAddToCart } = useSounds();
@@ -196,7 +196,7 @@ const ProductDetail = () => {
 
   const handleAddToCart = () => {
     addToCart.mutate({
-      productId: product.id,
+      productId: product.product_id, // Use inventory product ID for cart
       quantity,
       size: selectedSize || undefined,
       color: selectedColor || undefined,
@@ -496,31 +496,25 @@ const ProductDetail = () => {
                   Product Details
                 </h2>
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                  {product.sku && (
+                  {product.category && (
                     <div className="flex justify-between py-2 border-b border-gold/10">
-                      <span className="text-muted-foreground">SKU</span>
-                      <span className="text-foreground font-medium">{product.sku}</span>
+                      <span className="text-muted-foreground">Category</span>
+                      <span className="text-foreground font-medium">{product.category.name}</span>
                     </div>
                   )}
-                  {product.fabric_type && (
+                  {product.sizes && product.sizes.length > 0 && (
                     <div className="flex justify-between py-2 border-b border-gold/10">
-                      <span className="text-muted-foreground">Fabric</span>
-                      <span className="text-foreground font-medium">{product.fabric_type}</span>
+                      <span className="text-muted-foreground">Available Sizes</span>
+                      <span className="text-foreground font-medium">{product.sizes.join(", ")}</span>
+                    </div>
+                  )}
+                  {product.colors && product.colors.length > 0 && (
+                    <div className="flex justify-between py-2 border-b border-gold/10">
+                      <span className="text-muted-foreground">Available Colors</span>
+                      <span className="text-foreground font-medium">{product.colors.join(", ")}</span>
                     </div>
                   )}
                 </div>
-                {product.tags && product.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 pt-4">
-                    {product.tags.map((tag) => (
-                      <span 
-                        key={tag} 
-                        className="px-3 py-1 text-xs bg-secondary border border-gold/20 text-gold font-display tracking-wider"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           </div>

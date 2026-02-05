@@ -22,6 +22,7 @@ import {
   UserCheck,
   Scissors,
   Truck,
+  Store,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -51,6 +52,7 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
     { name: "Alterations", icon: Scissors, href: "/admin/alterations", show: isAdmin || hasPermission("permission_alterations") },
     { name: "Products", icon: Package, href: "/admin/products", show: isAdmin || hasPermission("permission_products") },
     { name: "Categories", icon: Tags, href: "/admin/categories", show: isAdmin || hasPermission("permission_categories") },
+    { name: "Online Store", icon: Store, href: "/admin/online-store", show: isAdmin },
     { name: "Orders", icon: ShoppingCart, href: "/admin/orders", show: isAdmin || hasPermission("permission_orders") },
     { name: "Customers", icon: Users, href: "/admin/customers", show: isAdmin || hasPermission("permission_customers") },
     { name: "Salesmen", icon: UserCheck, href: "/admin/salesmen", show: isAdmin || hasPermission("permission_salesmen") },
