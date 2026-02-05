@@ -44,6 +44,7 @@ interface ParsedProduct {
   closingQty: number;
   isValid: boolean;
   errors: string[];
+  detectedCategory: string | null;
 }
 
 interface ImportResult {
@@ -89,6 +90,31 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
     return `${baseSlug}-${bcn.toLowerCase()}`;
+  };
+
+  // Category detection from item name prefix (before "-")
+  const CATEGORY_MAP: Record<string, string> = {
+    "LEHENGA": "LEHENGA",
+    "RM DRESS": "RM DRESS", 
+    "SAREE": "SAREE",
+    "SUIT": "SUIT",
+  };
+
+  const detectCategory = (itemDetails: string): string | null => {
+    const prefix = itemDetails.split("-")[0]?.trim().toUpperCase();
+    if (!prefix) return null;
+    
+    // Check for exact match first
+    if (CATEGORY_MAP[prefix]) return CATEGORY_MAP[prefix];
+    
+    // Check if prefix starts with any known category
+    for (const category of Object.keys(CATEGORY_MAP)) {
+      if (prefix.startsWith(category) || prefix === category) {
+        return CATEGORY_MAP[category];
+      }
+    }
+    
+    return null; // No category match
   };
 
   const parseExcelFile = useCallback(async (selectedFile: File) => {
@@ -167,6 +193,7 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
           closingQty: Math.floor(closingQty),
           isValid: errors.length === 0,
           errors,
+          detectedCategory: detectCategory(itemDetails),
         });
       }
 
@@ -228,10 +255,25 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
           (batchIndex + 1) * batchSize
         );
 
+        // Fetch categories once per batch to reduce queries
+        const { data: categories } = await supabase
+          .from("categories")
+          .select("id, name");
+        
+        const categoryMap = new Map<string, string>();
+        categories?.forEach(cat => {
+          categoryMap.set(cat.name.toUpperCase(), cat.id);
+        });
+
         await Promise.all(
           batch.map(async (product, idx) => {
             const rowNumber = batchIndex * batchSize + idx + 2; // +2 for 1-indexed + header
             try {
+              // Get category_id if detected
+              const categoryId = product.detectedCategory 
+                ? categoryMap.get(product.detectedCategory) || null
+                : null;
+
               // Check if product exists by SKU
               const { data: existing } = await supabase
                 .from("products")
@@ -252,6 +294,7 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
                     price: product.mrp,
                     discount_price: product.salePrice !== product.mrp ? product.salePrice : null,
                     stock_quantity: newQty,
+                    category_id: categoryId,
                     updated_at: new Date().toISOString(),
                   })
                   .eq("id", existing.id);
@@ -286,6 +329,7 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
                     price: product.mrp,
                     discount_price: product.salePrice !== product.mrp ? product.salePrice : null,
                     stock_quantity: product.closingQty,
+                    category_id: categoryId,
                     is_active: true,
                     is_featured: false,
                   })
@@ -429,6 +473,7 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
                     <TableHead className="w-12">Status</TableHead>
                     <TableHead>Product Name</TableHead>
                     <TableHead>BCN (SKU)</TableHead>
+                    <TableHead>Category</TableHead>
                     <TableHead>Design No.</TableHead>
                     <TableHead className="text-right">MRP</TableHead>
                     <TableHead className="text-right">Sale Price</TableHead>
@@ -457,6 +502,15 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
                         )}
                       </TableCell>
                       <TableCell className="font-mono text-sm">{product.bcn}</TableCell>
+                      <TableCell>
+                        {product.detectedCategory ? (
+                          <span className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
+                            {product.detectedCategory}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
                       <TableCell>{product.designNumber || "-"}</TableCell>
                       <TableCell className="text-right">₹{product.mrp.toLocaleString()}</TableCell>
                       <TableCell className="text-right">₹{product.salePrice.toLocaleString()}</TableCell>

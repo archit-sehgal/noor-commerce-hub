@@ -25,19 +25,50 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import BulkProductUpload from "@/components/admin/BulkProductUpload";
 import ImportHistory from "@/components/admin/ImportHistory";
 import { useProducts, useDeleteProduct } from "@/hooks/useProducts";
-import { Plus, Search, Edit, Trash2, Loader2, Package, Upload, History } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import { Plus, Search, Edit, Trash2, Loader2, Package, Upload, History, AlertTriangle } from "lucide-react";
 
 const AdminProducts = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
   const { data: products, isLoading } = useProducts();
   const deleteProduct = useDeleteProduct();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const filteredProducts = products?.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     product.sku?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleRemoveAllInventory = async () => {
+    setIsClearing(true);
+    try {
+      // Delete stock history first (foreign key constraint)
+      await supabase.from("stock_history").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      // Delete all products
+      await supabase.from("products").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast({
+        title: "Inventory Cleared",
+        description: "All products have been removed successfully.",
+      });
+    } catch (error) {
+      console.error("Error clearing inventory:", error);
+      toast({
+        title: "Error",
+        description: "Failed to clear inventory.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsClearing(false);
+    }
+  };
 
   return (
     <AdminLayout title="Products">
@@ -53,6 +84,32 @@ const AdminProducts = () => {
           />
         </div>
         <div className="flex gap-2 flex-wrap">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" disabled={isClearing || !products?.length}>
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                {isClearing ? "Clearing..." : "Remove All Inventory"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Remove All Inventory</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete ALL {products?.length || 0} products from your inventory.
+                  This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleRemoveAllInventory}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Yes, Remove All
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <Button variant="outline" onClick={() => setHistoryOpen(true)}>
             <History className="h-4 w-4 mr-2" />
             Import History
