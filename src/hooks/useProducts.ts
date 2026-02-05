@@ -21,6 +21,7 @@ export interface Product {
   images: string[];
   is_active: boolean | null;
   is_featured: boolean | null;
+  design_number: string | null;
   created_at: string;
   updated_at: string;
   category?: {
