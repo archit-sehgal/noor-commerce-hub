@@ -293,89 +293,114 @@ const AdminBilling = () => {
     return `POS-${dateStr}-${random}`;
   };
 
-  // Fast print function - generates HTML and prints immediately
+  // Fast print function - uses iframe for reliable printing
   const printInvoiceDirectly = useCallback((invoiceData: any) => {
-    const printWindow = window.open("", "_blank");
-    if (printWindow) {
-      const itemsHtml = invoiceData.items
-        .map(
-          (item: CartItem) => `
-          <tr>
-            <td>${item.product.name}${item.size ? ` (${item.size})` : ""}${item.color ? ` - ${item.color}` : ""}</td>
-            <td style="text-align: center;">${item.quantity}</td>
-            <td style="text-align: right;">${formatCurrency(item.unitPrice)}</td>
-            <td style="text-align: right;">${formatCurrency(item.unitPrice * item.quantity)}</td>
-          </tr>
-        `
-        )
-        .join("");
+    const itemsHtml = invoiceData.items
+      .map(
+        (item: CartItem) => `
+        <tr>
+          <td>${item.product.name}${item.size ? ` (${item.size})` : ""}${item.color ? ` - ${item.color}` : ""}</td>
+          <td style="text-align: center;">${item.quantity}</td>
+          <td style="text-align: right;">${formatCurrency(item.unitPrice)}</td>
+          <td style="text-align: right;">${formatCurrency(item.unitPrice * item.quantity)}</td>
+        </tr>
+      `
+      )
+      .join("");
 
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>Invoice - ${invoiceData.invoiceNumber}</title>
-            <style>
-              body { font-family: 'Georgia', serif; padding: 40px; max-width: 800px; margin: 0 auto; }
-              .header { text-align: center; border-bottom: 2px solid #8B4513; padding-bottom: 20px; margin-bottom: 20px; }
-              .header h1 { color: #8B4513; margin: 0; font-size: 28px; }
-              .header p { margin: 5px 0; color: #666; }
-              .invoice-details { display: flex; justify-content: space-between; margin-bottom: 30px; }
-              .invoice-details strong { color: #8B4513; }
-              table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-              th { background: #8B4513; color: white; padding: 12px; text-align: left; }
-              td { padding: 10px; border-bottom: 1px solid #ddd; }
-              .totals { text-align: right; margin-top: 20px; }
-              .totals div { margin: 5px 0; }
-              .totals .total { font-size: 24px; color: #8B4513; font-weight: bold; }
-              .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; }
-              .salesman-info { margin-top: 10px; font-size: 14px; }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <h1>NOOR CREATIONS</h1>
-              <p>Tax Invoice</p>
+    const printContent = `
+      <html>
+        <head>
+          <title>Invoice - ${invoiceData.invoiceNumber}</title>
+          <style>
+            body { font-family: 'Georgia', serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+            .header { text-align: center; border-bottom: 2px solid #8B4513; padding-bottom: 20px; margin-bottom: 20px; }
+            .header h1 { color: #8B4513; margin: 0; font-size: 28px; }
+            .header p { margin: 5px 0; color: #666; }
+            .invoice-details { display: flex; justify-content: space-between; margin-bottom: 30px; }
+            .invoice-details strong { color: #8B4513; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            th { background: #8B4513; color: white; padding: 12px; text-align: left; }
+            td { padding: 10px; border-bottom: 1px solid #ddd; }
+            .totals { text-align: right; margin-top: 20px; }
+            .totals div { margin: 5px 0; }
+            .totals .total { font-size: 24px; color: #8B4513; font-weight: bold; }
+            .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; }
+            @media print { body { padding: 20px; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>NOOR CREATIONS</h1>
+            <p>Tax Invoice</p>
+          </div>
+          <div class="invoice-details">
+            <div>
+              <p><strong>Invoice No:</strong> ${invoiceData.invoiceNumber}</p>
+              <p><strong>Date:</strong> ${new Date().toLocaleDateString("en-IN")}</p>
+              ${invoiceData.customer ? `<p><strong>Customer:</strong> ${invoiceData.customer.name}</p>` : ""}
+              ${invoiceData.salesman ? `<p><strong>Salesman:</strong> ${invoiceData.salesman.name}</p>` : ""}
             </div>
-            <div class="invoice-details">
-              <div>
-                <p><strong>Invoice No:</strong> ${invoiceData.invoiceNumber}</p>
-                <p><strong>Date:</strong> ${new Date().toLocaleDateString("en-IN")}</p>
-                ${invoiceData.customer ? `<p><strong>Customer:</strong> ${invoiceData.customer.name}</p>` : ""}
-                ${invoiceData.salesman ? `<p><strong>Salesman:</strong> ${invoiceData.salesman.name}</p>` : ""}
-              </div>
-              <div>
-                <p><strong>Payment:</strong> ${invoiceData.paymentMethod.toUpperCase()}</p>
-              </div>
+            <div>
+              <p><strong>Payment:</strong> ${invoiceData.paymentMethod.toUpperCase()}</p>
             </div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th style="text-align: center;">Qty</th>
-                  <th style="text-align: right;">Price</th>
-                  <th style="text-align: right;">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${itemsHtml}
-              </tbody>
-            </table>
-            <div class="totals">
-              <div>Subtotal: ${formatCurrency(invoiceData.subtotal)}</div>
-              <div>GST (18%): ${formatCurrency(invoiceData.taxAmount)}</div>
-              ${invoiceData.discountAmount > 0 ? `<div>Discount: -${formatCurrency(invoiceData.discountAmount)}</div>` : ""}
-              <div class="total">Total: ${formatCurrency(invoiceData.totalAmount)}</div>
-            </div>
-            <div class="footer">
-              <p>Thank you for shopping with us!</p>
-            </div>
-          </body>
-        </html>
-      `);
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th style="text-align: center;">Qty</th>
+                <th style="text-align: right;">Price</th>
+                <th style="text-align: right;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+          <div class="totals">
+            <div>Subtotal: ${formatCurrency(invoiceData.subtotal)}</div>
+            <div>GST (18%): ${formatCurrency(invoiceData.taxAmount)}</div>
+            ${invoiceData.discountAmount > 0 ? `<div>Discount: -${formatCurrency(invoiceData.discountAmount)}</div>` : ""}
+            <div class="total">Total: ${formatCurrency(invoiceData.totalAmount)}</div>
+          </div>
+          <div class="footer">
+            <p>Thank you for shopping with us!</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    // Try popup first, fallback to iframe
+    const printWindow = window.open("", "_blank", "width=800,height=600");
+    if (printWindow) {
+      printWindow.document.write(printContent);
       printWindow.document.close();
       printWindow.focus();
-      printWindow.print();
-      printWindow.close();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 100);
+    } else {
+      // Fallback: use hidden iframe
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "absolute";
+      iframe.style.top = "-10000px";
+      iframe.style.left = "-10000px";
+      document.body.appendChild(iframe);
+      
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (iframeDoc) {
+        iframeDoc.open();
+        iframeDoc.write(printContent);
+        iframeDoc.close();
+        
+        iframe.onload = () => {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+          setTimeout(() => document.body.removeChild(iframe), 1000);
+        };
+      }
     }
   }, []);
 
