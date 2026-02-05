@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,6 +70,7 @@ interface Salesman {
 }
 
 const AdminBilling = () => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [salesmen, setSalesmen] = useState<Salesman[]>([]);
@@ -291,6 +293,92 @@ const AdminBilling = () => {
     return `POS-${dateStr}-${random}`;
   };
 
+  // Fast print function - generates HTML and prints immediately
+  const printInvoiceDirectly = useCallback((invoiceData: any) => {
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      const itemsHtml = invoiceData.items
+        .map(
+          (item: CartItem) => `
+          <tr>
+            <td>${item.product.name}${item.size ? ` (${item.size})` : ""}${item.color ? ` - ${item.color}` : ""}</td>
+            <td style="text-align: center;">${item.quantity}</td>
+            <td style="text-align: right;">${formatCurrency(item.unitPrice)}</td>
+            <td style="text-align: right;">${formatCurrency(item.unitPrice * item.quantity)}</td>
+          </tr>
+        `
+        )
+        .join("");
+
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Invoice - ${invoiceData.invoiceNumber}</title>
+            <style>
+              body { font-family: 'Georgia', serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+              .header { text-align: center; border-bottom: 2px solid #8B4513; padding-bottom: 20px; margin-bottom: 20px; }
+              .header h1 { color: #8B4513; margin: 0; font-size: 28px; }
+              .header p { margin: 5px 0; color: #666; }
+              .invoice-details { display: flex; justify-content: space-between; margin-bottom: 30px; }
+              .invoice-details strong { color: #8B4513; }
+              table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+              th { background: #8B4513; color: white; padding: 12px; text-align: left; }
+              td { padding: 10px; border-bottom: 1px solid #ddd; }
+              .totals { text-align: right; margin-top: 20px; }
+              .totals div { margin: 5px 0; }
+              .totals .total { font-size: 24px; color: #8B4513; font-weight: bold; }
+              .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; }
+              .salesman-info { margin-top: 10px; font-size: 14px; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>NOOR CREATIONS</h1>
+              <p>Tax Invoice</p>
+            </div>
+            <div class="invoice-details">
+              <div>
+                <p><strong>Invoice No:</strong> ${invoiceData.invoiceNumber}</p>
+                <p><strong>Date:</strong> ${new Date().toLocaleDateString("en-IN")}</p>
+                ${invoiceData.customer ? `<p><strong>Customer:</strong> ${invoiceData.customer.name}</p>` : ""}
+                ${invoiceData.salesman ? `<p><strong>Salesman:</strong> ${invoiceData.salesman.name}</p>` : ""}
+              </div>
+              <div>
+                <p><strong>Payment:</strong> ${invoiceData.paymentMethod.toUpperCase()}</p>
+              </div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th style="text-align: center;">Qty</th>
+                  <th style="text-align: right;">Price</th>
+                  <th style="text-align: right;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+              </tbody>
+            </table>
+            <div class="totals">
+              <div>Subtotal: ${formatCurrency(invoiceData.subtotal)}</div>
+              <div>GST (18%): ${formatCurrency(invoiceData.taxAmount)}</div>
+              ${invoiceData.discountAmount > 0 ? `<div>Discount: -${formatCurrency(invoiceData.discountAmount)}</div>` : ""}
+              <div class="total">Total: ${formatCurrency(invoiceData.totalAmount)}</div>
+            </div>
+            <div class="footer">
+              <p>Thank you for shopping with us!</p>
+            </div>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    }
+  }, []);
+
   const handleGenerateBill = async () => {
     if (cart.length === 0) {
       toast({
@@ -302,12 +390,13 @@ const AdminBilling = () => {
     }
 
     setSubmitting(true);
+    const startTime = Date.now();
 
     try {
       const orderNumber = generateOrderNumber();
 
-      // Create order with salesman and alteration details
-      const { data: order, error: orderError } = await supabase
+      // Run order creation and items preparation in parallel
+      const orderPromise = supabase
         .from("orders")
         .insert({
           order_number: orderNumber,
@@ -331,9 +420,29 @@ const AdminBilling = () => {
         .select()
         .single();
 
+      const { data: order, error: orderError } = await orderPromise;
       if (orderError) throw orderError;
 
-      // Create order items
+      // Prepare invoice data immediately for printing
+      const invoiceNumber = orderNumber.replace("POS", "INV");
+      const invoiceData = {
+        invoiceNumber,
+        orderNumber,
+        customer: selectedCustomer,
+        salesman: selectedSalesman,
+        items: [...cart],
+        subtotal,
+        taxAmount,
+        discountAmount,
+        totalAmount,
+        paymentMethod,
+        date: new Date(),
+      };
+
+      // Print immediately while DB operations continue
+      printInvoiceDirectly(invoiceData);
+
+      // Run remaining operations in parallel
       const orderItems = cart.map((item) => ({
         order_id: order.id,
         product_id: item.product.id,
@@ -345,38 +454,13 @@ const AdminBilling = () => {
         color: item.color,
       }));
 
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(orderItems);
-
-      if (itemsError) throw itemsError;
-
-      // Update stock for each product
-      for (const item of cart) {
-        const newStock = item.product.stock_quantity - item.quantity;
-        await supabase
-          .from("products")
-          .update({ stock_quantity: newStock })
-          .eq("id", item.product.id);
-
-        // Record stock history
-        await supabase.from("stock_history").insert({
-          product_id: item.product.id,
-          change_type: "sale",
-          change_amount: -item.quantity,
-          previous_quantity: item.product.stock_quantity,
-          new_quantity: newStock,
-          notes: `In-store sale - Order ${orderNumber}`,
-          reference_id: order.id,
-          created_by: user?.id,
-        });
-      }
-
-      // Create invoice with salesman
-      const { data: invoice, error: invoiceError } = await supabase
-        .from("invoices")
-        .insert({
-          invoice_number: orderNumber.replace("POS", "INV"),
+      // Execute all remaining DB operations in parallel
+      await Promise.all([
+        // Insert order items
+        supabase.from("order_items").insert(orderItems),
+        // Create invoice
+        supabase.from("invoices").insert({
+          invoice_number: invoiceNumber,
           order_id: order.id,
           customer_id: selectedCustomer?.id || null,
           salesman_id: selectedSalesman?.id || null,
@@ -387,83 +471,71 @@ const AdminBilling = () => {
           payment_status: paymentMethod === "cash" ? "paid" : "pending",
           notes: notes,
           created_by: user?.id,
-        })
-        .select()
-        .single();
-
-      if (invoiceError) throw invoiceError;
-
-      // Update customer stats if customer selected
-      if (selectedCustomer) {
-        await supabase
-          .from("customers")
-          .update({
-            total_orders: (selectedCustomer as any).total_orders
-              ? (selectedCustomer as any).total_orders + 1
-              : 1,
-            total_spent: (selectedCustomer as any).total_spent
-              ? (selectedCustomer as any).total_spent + totalAmount
-              : totalAmount,
-            last_purchase_date: new Date().toISOString(),
+        }),
+        // Update stock for each product (batch)
+        ...cart.map((item) =>
+          supabase
+            .from("products")
+            .update({ stock_quantity: item.product.stock_quantity - item.quantity })
+            .eq("id", item.product.id)
+        ),
+        // Record stock history (batch)
+        ...cart.map((item) =>
+          supabase.from("stock_history").insert({
+            product_id: item.product.id,
+            change_type: "sale",
+            change_amount: -item.quantity,
+            previous_quantity: item.product.stock_quantity,
+            new_quantity: item.product.stock_quantity - item.quantity,
+            notes: `In-store sale - Order ${orderNumber}`,
+            reference_id: order.id,
+            created_by: user?.id,
           })
-          .eq("id", selectedCustomer.id);
-      }
+        ),
+        // Update customer stats if selected
+        selectedCustomer
+          ? supabase
+              .from("customers")
+              .update({
+                total_orders: ((selectedCustomer as any).total_orders || 0) + 1,
+                total_spent: ((selectedCustomer as any).total_spent || 0) + totalAmount,
+                last_purchase_date: new Date().toISOString(),
+              })
+              .eq("id", selectedCustomer.id)
+          : Promise.resolve(),
+        // Update salesman stats if selected
+        selectedSalesman
+          ? (async () => {
+              const { data: currentSalesman } = await supabase
+                .from("salesman")
+                .select("total_sales, total_orders")
+                .eq("id", selectedSalesman.id)
+                .single();
+              if (currentSalesman) {
+                await supabase
+                  .from("salesman")
+                  .update({
+                    total_sales: Number(currentSalesman.total_sales || 0) + totalAmount,
+                    total_orders: (currentSalesman.total_orders || 0) + 1,
+                  })
+                  .eq("id", selectedSalesman.id);
+              }
+            })()
+          : Promise.resolve(),
+        // Create notification
+        createOrderNotification(orderNumber, totalAmount, "pos"),
+      ]);
 
-      // Update salesman stats if salesman selected
-      if (selectedSalesman) {
-        // Fetch current salesman data to update correctly
-        const { data: currentSalesman } = await supabase
-          .from("salesman")
-          .select("total_sales, total_orders")
-          .eq("id", selectedSalesman.id)
-          .single();
-
-        if (currentSalesman) {
-          await supabase
-            .from("salesman")
-            .update({
-              total_sales: Number(currentSalesman.total_sales || 0) + totalAmount,
-              total_orders: (currentSalesman.total_orders || 0) + 1,
-            })
-            .eq("id", selectedSalesman.id);
-        }
-      }
-
-      // Generate invoice for display
-      setGeneratedInvoice({
-        invoiceNumber: invoice.invoice_number,
-        orderNumber: order.order_number,
-        customer: selectedCustomer,
-        salesman: selectedSalesman,
-        items: cart,
-        subtotal,
-        taxAmount,
-        discountAmount,
-        totalAmount,
-        paymentMethod,
-        date: new Date(),
-      });
-
-      setInvoiceDialogOpen(true);
-
-      // Reset form
-      setCart([]);
-      setSelectedCustomer(null);
-      setSelectedSalesman(null);
-      setDiscountAmount(0);
-      setNotes("");
-      setNeedsAlteration(false);
-      setAlterationDueDate("");
-      setAlterationNotes("");
-      fetchProducts(); // Refresh stock
-
-      // Create notification for the new order
-      await createOrderNotification(orderNumber, totalAmount, 'pos');
+      const elapsed = Date.now() - startTime;
+      console.log(`Bill generated in ${elapsed}ms`);
 
       toast({
         title: "Success",
-        description: "Bill generated successfully!",
+        description: `Bill generated in ${elapsed}ms!`,
       });
+
+      // Navigate to dashboard immediately
+      navigate("/admin");
     } catch (error) {
       console.error("Error generating bill:", error);
       toast({
@@ -471,7 +543,6 @@ const AdminBilling = () => {
         description: "Failed to generate bill",
         variant: "destructive",
       });
-    } finally {
       setSubmitting(false);
     }
   };
