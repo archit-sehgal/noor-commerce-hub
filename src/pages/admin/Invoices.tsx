@@ -24,8 +24,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Printer, Eye, Loader2, FileText } from "lucide-react";
+import { Search, Printer, Eye, Loader2, FileText, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import EditInvoiceDialog from "@/components/admin/EditInvoiceDialog";
 
 interface Invoice {
   id: string;
@@ -60,6 +61,8 @@ const AdminInvoices = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -343,13 +346,27 @@ const AdminInvoices = () => {
                     </Select>
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleViewInvoice(invoice)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditInvoiceId(invoice.id);
+                          setEditDialogOpen(true);
+                        }}
+                        title="Edit Invoice"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleViewInvoice(invoice)}
+                        title="View Invoice"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -496,6 +513,14 @@ const AdminInvoices = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Invoice Dialog */}
+      <EditInvoiceDialog
+        invoiceId={editInvoiceId}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onInvoiceUpdated={fetchInvoices}
+      />
     </AdminLayout>
   );
 };
