@@ -53,7 +53,7 @@ const AddToStoreDialog = ({
   const [isActive, setIsActive] = useState(true);
   const [isFeatured, setIsFeatured] = useState(false);
 
-  const { data: inventoryProducts, isLoading: productsLoading } = useProducts();
+  const { data: inventoryProducts, isLoading: productsLoading } = useProducts({ includeInactive: true });
   const { data: categories } = useCategories();
   const createProduct = useCreateOnlineStoreProduct();
   const updateProduct = useUpdateOnlineStoreProduct();
