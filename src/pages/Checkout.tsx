@@ -139,11 +139,12 @@ const Checkout = () => {
 
       if (orderError) throw orderError;
 
-      // Create order items
+      // Create order items with SKU for inventory tracking
       const orderItems = cartItems.map((item) => ({
         order_id: order.id,
         product_id: item.product_id,
         product_name: item.product?.name || "Unknown Product",
+        product_sku: item.product?.sku || null,
         quantity: item.quantity,
         unit_price: item.product?.discount_price || item.product?.price || 0,
         total_price: (item.product?.discount_price || item.product?.price || 0) * item.quantity,

@@ -16,6 +16,7 @@ export interface CartItem {
     id: string;
     name: string;
     slug: string;
+    sku: string | null;
     price: number;
     discount_price: number | null;
     images: string[];
@@ -56,7 +57,7 @@ export const useCart = () => {
         .from("cart_items")
         .select(`
           *,
-          product:products(id, name, slug, price, discount_price, images, stock_quantity)
+          product:products(id, name, slug, sku, price, discount_price, images, stock_quantity)
         `)
         .eq("cart_id", cart.id);
 
