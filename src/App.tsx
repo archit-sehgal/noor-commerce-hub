@@ -36,6 +36,7 @@ import AdminSalesman from "./pages/admin/Salesman";
 import AdminSettings from "./pages/admin/Settings";
 import AdminAlterations from "./pages/admin/Alterations";
 import AdminPurchases from "./pages/admin/Purchases";
+import AdminOnlineStore from "./pages/admin/OnlineStore";
 
 const queryClient = new QueryClient();
 
@@ -203,6 +204,14 @@ const App = () => (
               element={
                 <ProtectedRoute requireStaff>
                   <AdminPurchases />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/online-store"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <AdminOnlineStore />
                 </ProtectedRoute>
               }
             />

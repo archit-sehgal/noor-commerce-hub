@@ -10,6 +10,7 @@ import QuickAddDialog from "./QuickAddDialog";
 
 interface Product {
   id: string;
+  inventoryId?: string; // inventory product ID for cart operations
   slug: string;
   name: string;
   price: number;
@@ -50,6 +51,9 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const hasColorOptions = product.colors && product.colors.length > 0;
   const needsOptionsSelection = hasSizeOptions || hasColorOptions;
 
+  // Use inventoryId for cart if available, otherwise fall back to id
+  const cartProductId = product.inventoryId || product.id;
+
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -57,7 +61,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
       if (needsOptionsSelection) {
         setShowQuickAdd(true);
       } else {
-        addToCart.mutate({ productId: product.id, quantity: 1 });
+        addToCart.mutate({ productId: cartProductId, quantity: 1 });
         playAddToCart();
       }
     }
@@ -65,7 +69,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
   const handleConfirmQuickAdd = (size?: string, color?: string) => {
     addToCart.mutate({ 
-      productId: product.id, 
+      productId: cartProductId, 
       quantity: 1,
       size,
       color
