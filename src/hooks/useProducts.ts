@@ -55,6 +55,7 @@ export const useProducts = (options?: {
   categorySlug?: string; 
   featured?: boolean;
   limit?: number;
+  includeInactive?: boolean;
 }) => {
   return useQuery({
     queryKey: ["products", options],
@@ -65,8 +66,12 @@ export const useProducts = (options?: {
           *,
           category:categories(id, name, slug)
         `)
-        .eq("is_active", true)
         .order("created_at", { ascending: false });
+
+      // Only filter by is_active if includeInactive is not true
+      if (!options?.includeInactive) {
+        query = query.eq("is_active", true);
+      }
 
       if (options?.featured) {
         query = query.eq("is_featured", true);
