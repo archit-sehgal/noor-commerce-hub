@@ -22,11 +22,15 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import AdminLayout from "@/components/admin/AdminLayout";
+import BulkProductUpload from "@/components/admin/BulkProductUpload";
+import ImportHistory from "@/components/admin/ImportHistory";
 import { useProducts, useDeleteProduct } from "@/hooks/useProducts";
-import { Plus, Search, Edit, Trash2, Loader2, Package } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Loader2, Package, Upload, History } from "lucide-react";
 
 const AdminProducts = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const { data: products, isLoading } = useProducts();
   const deleteProduct = useDeleteProduct();
 
@@ -48,12 +52,22 @@ const AdminProducts = () => {
             className="pl-10"
           />
         </div>
-        <Link to="/admin/products/new">
-          <Button className="bg-charcoal hover:bg-charcoal/90 text-cream">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Product
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={() => setHistoryOpen(true)}>
+            <History className="h-4 w-4 mr-2" />
+            Import History
           </Button>
-        </Link>
+          <Button variant="outline" onClick={() => setBulkUploadOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Bulk Upload
+          </Button>
+          <Link to="/admin/products/new">
+            <Button className="bg-charcoal hover:bg-charcoal/90 text-cream">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Product
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Products Table */}
@@ -179,6 +193,12 @@ const AdminProducts = () => {
           </Link>
         </div>
       )}
+
+      {/* Bulk Upload Dialog */}
+      <BulkProductUpload open={bulkUploadOpen} onOpenChange={setBulkUploadOpen} />
+
+      {/* Import History Dialog */}
+      <ImportHistory open={historyOpen} onOpenChange={setHistoryOpen} />
     </AdminLayout>
   );
 };

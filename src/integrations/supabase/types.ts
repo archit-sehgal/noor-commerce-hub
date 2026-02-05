@@ -489,6 +489,42 @@ export type Database = {
           },
         ]
       }
+      product_imports: {
+        Row: {
+          created_at: string
+          error_details: Json | null
+          errors: number
+          file_name: string
+          id: string
+          imported_by: string | null
+          products_created: number
+          products_updated: number
+          total_rows: number
+        }
+        Insert: {
+          created_at?: string
+          error_details?: Json | null
+          errors?: number
+          file_name: string
+          id?: string
+          imported_by?: string | null
+          products_created?: number
+          products_updated?: number
+          total_rows?: number
+        }
+        Update: {
+          created_at?: string
+          error_details?: Json | null
+          errors?: number
+          file_name?: string
+          id?: string
+          imported_by?: string | null
+          products_created?: number
+          products_updated?: number
+          total_rows?: number
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category_id: string | null
@@ -496,6 +532,7 @@ export type Database = {
           cost_price: number | null
           created_at: string
           description: string | null
+          design_number: string | null
           discount_price: number | null
           fabric_type: string | null
           id: string
@@ -518,6 +555,7 @@ export type Database = {
           cost_price?: number | null
           created_at?: string
           description?: string | null
+          design_number?: string | null
           discount_price?: number | null
           fabric_type?: string | null
           id?: string
@@ -540,6 +578,7 @@ export type Database = {
           cost_price?: number | null
           created_at?: string
           description?: string | null
+          design_number?: string | null
           discount_price?: number | null
           fabric_type?: string | null
           id?: string
