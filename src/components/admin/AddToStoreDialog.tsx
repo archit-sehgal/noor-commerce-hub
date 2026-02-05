@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -21,8 +21,10 @@ import { Switch } from "@/components/ui/switch";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
 import { useCreateOnlineStoreProduct, useUpdateOnlineStoreProduct, OnlineStoreProduct } from "@/hooks/useOnlineStoreProducts";
-import { Loader2, Search, Package } from "lucide-react";
+import { Loader2, Search, Package, Upload, X, ImageIcon } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface AddToStoreDialogProps {
   open: boolean;
@@ -50,13 +52,17 @@ const AddToStoreDialog = ({
   const [sizes, setSizes] = useState("");
   const [colors, setColors] = useState("");
   const [images, setImages] = useState("");
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [isFeatured, setIsFeatured] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: inventoryProducts, isLoading: productsLoading } = useProducts({ includeInactive: true });
   const { data: categories } = useCategories();
   const createProduct = useCreateOnlineStoreProduct();
   const updateProduct = useUpdateOnlineStoreProduct();
+  const { toast } = useToast();
 
   // Filter out products already in the online store
   const availableProducts = inventoryProducts?.filter(
@@ -101,8 +107,80 @@ const AddToStoreDialog = ({
     setSizes("");
     setColors("");
     setImages("");
+    setUploadedImages([]);
     setIsActive(true);
     setIsFeatured(false);
+  };
+
+  const handleImageUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    
+    setIsUploading(true);
+    const newUrls: string[] = [];
+    
+    try {
+      for (const file of Array.from(files)) {
+        // Validate file type
+        if (!file.type.startsWith("image/")) {
+          toast({
+            title: "Invalid file type",
+            description: `${file.name} is not an image file`,
+            variant: "destructive",
+          });
+          continue;
+        }
+
+        // Generate unique filename
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `online-store/${fileName}`;
+
+        // Upload to Supabase Storage
+        const { error: uploadError } = await supabase.storage
+          .from("product-images")
+          .upload(filePath, file);
+
+        if (uploadError) {
+          toast({
+            title: "Upload failed",
+            description: uploadError.message,
+            variant: "destructive",
+          });
+          continue;
+        }
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from("product-images")
+          .getPublicUrl(filePath);
+
+        newUrls.push(urlData.publicUrl);
+      }
+
+      if (newUrls.length > 0) {
+        setUploadedImages((prev) => [...prev, ...newUrls]);
+        toast({
+          title: "Images uploaded",
+          description: `${newUrls.length} image(s) uploaded successfully`,
+        });
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast({
+        title: "Upload error",
+        description: "Failed to upload images",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const removeUploadedImage = (url: string) => {
+    setUploadedImages((prev) => prev.filter((u) => u !== url));
   };
 
   const handleSelectProduct = (product: Product) => {
@@ -119,6 +197,10 @@ const AddToStoreDialog = ({
   };
 
   const handleSubmit = async () => {
+    // Combine URL images and uploaded images
+    const urlImages = images ? images.split("\n").map((i) => i.trim()).filter(Boolean) : [];
+    const allImages = [...urlImages, ...uploadedImages];
+
     const productData = {
       name,
       description: description || undefined,
@@ -127,7 +209,7 @@ const AddToStoreDialog = ({
       category_id: categoryId || undefined,
       sizes: sizes ? sizes.split(",").map((s) => s.trim()).filter(Boolean) : [],
       colors: colors ? colors.split(",").map((c) => c.trim()).filter(Boolean) : [],
-      images: images ? images.split("\n").map((i) => i.trim()).filter(Boolean) : [],
+      images: allImages,
       is_active: isActive,
       is_featured: isFeatured,
     };
@@ -305,15 +387,82 @@ const AddToStoreDialog = ({
                   />
                 </div>
 
-                <div className="col-span-2">
-                  <Label htmlFor="images">Image URLs (one per line)</Label>
-                  <Textarea
-                    id="images"
-                    value={images}
-                    onChange={(e) => setImages(e.target.value)}
-                    placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
-                    rows={3}
-                  />
+                <div className="col-span-2 space-y-3">
+                  <Label>Product Images</Label>
+                  
+                  {/* Upload Section */}
+                  <div className="border-2 border-dashed rounded-lg p-4 text-center">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => handleImageUpload(e.target.files)}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="w-full"
+                    >
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload Images
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Click to upload or drag and drop images
+                    </p>
+                  </div>
+
+                  {/* Uploaded Images Preview */}
+                  {uploadedImages.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Uploaded Images</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {uploadedImages.map((url, idx) => (
+                          <div key={idx} className="relative group">
+                            <img
+                              src={url}
+                              alt={`Uploaded ${idx + 1}`}
+                              className="w-16 h-16 object-cover rounded border"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeUploadedImage(url)}
+                              className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* URL Input (Optional) */}
+                  <div>
+                    <Label htmlFor="images" className="text-xs text-muted-foreground">
+                      Or paste image URLs (one per line)
+                    </Label>
+                    <Textarea
+                      id="images"
+                      value={images}
+                      onChange={(e) => setImages(e.target.value)}
+                      placeholder="https://example.com/image1.jpg"
+                      rows={2}
+                      className="mt-1"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between">
