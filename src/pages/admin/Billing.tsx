@@ -472,6 +472,7 @@ const AdminBilling = () => {
         order_id: order.id,
         product_id: item.product.id,
         product_name: item.product.name,
+        product_sku: item.product.sku || null,
         quantity: item.quantity,
         unit_price: item.unitPrice,
         total_price: item.unitPrice * item.quantity,

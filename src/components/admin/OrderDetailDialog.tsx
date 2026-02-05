@@ -36,6 +36,7 @@ import {
 interface OrderItem {
   id: string;
   product_name: string;
+  product_sku: string | null;
   quantity: number;
   unit_price: number;
   total_price: number;
@@ -228,6 +229,7 @@ const OrderDetailDialog = ({ orderId, open, onOpenChange, onOrderUpdated }: Prop
     <thead>
       <tr>
         <th>Item</th>
+        <th>SKU</th>
         <th>Size</th>
         <th>Color</th>
         <th>Qty</th>
@@ -236,16 +238,17 @@ const OrderDetailDialog = ({ orderId, open, onOpenChange, onOrderUpdated }: Prop
       </tr>
     </thead>
     <tbody>
-      ${items.map(item => `
+      \${items.map(item => \`
         <tr>
-          <td>${item.product_name}</td>
-          <td>${item.size || "-"}</td>
-          <td>${item.color || "-"}</td>
-          <td>${item.quantity}</td>
-          <td>₹${Number(item.unit_price).toLocaleString()}</td>
-          <td>₹${Number(item.total_price).toLocaleString()}</td>
+          <td>\${item.product_name}</td>
+          <td>\${item.product_sku || "-"}</td>
+          <td>\${item.size || "-"}</td>
+          <td>\${item.color || "-"}</td>
+          <td>\${item.quantity}</td>
+          <td>₹\${Number(item.unit_price).toLocaleString()}</td>
+          <td>₹\${Number(item.total_price).toLocaleString()}</td>
         </tr>
-      `).join("")}
+      \`).join("")}
     </tbody>
   </table>
 
@@ -400,6 +403,7 @@ const OrderDetailDialog = ({ orderId, open, onOpenChange, onOrderUpdated }: Prop
                 <TableHeader>
                   <TableRow>
                     <TableHead>Product</TableHead>
+                    <TableHead>SKU</TableHead>
                     <TableHead>Size</TableHead>
                     <TableHead>Color</TableHead>
                     <TableHead className="text-right">Qty</TableHead>
@@ -411,6 +415,9 @@ const OrderDetailDialog = ({ orderId, open, onOpenChange, onOrderUpdated }: Prop
                   {items.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.product_name}</TableCell>
+                      <TableCell className="text-muted-foreground font-mono text-sm">
+                        {item.product_sku || "-"}
+                      </TableCell>
                       <TableCell>{item.size || "-"}</TableCell>
                       <TableCell>{item.color || "-"}</TableCell>
                       <TableCell className="text-right">{item.quantity}</TableCell>
