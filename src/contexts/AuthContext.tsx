@@ -102,6 +102,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       email,
       password,
     });
+    if (!error) {
+      // Mark as fresh login for first-time loading screen
+      sessionStorage.setItem("freshLogin", "true");
+    }
     return { error };
   };
 
