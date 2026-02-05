@@ -31,8 +31,9 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import AdminLayout from "@/components/admin/AdminLayout";
 import OrderDetailDialog from "@/components/admin/OrderDetailDialog";
+import EditOrderDialog from "@/components/admin/EditOrderDialog";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Loader2, ShoppingCart, Eye, Store, Globe, ChevronDown, ChevronUp, Package, Download, CalendarIcon, X } from "lucide-react";
+import { Search, Loader2, ShoppingCart, Eye, Store, Globe, ChevronDown, ChevronUp, Package, Download, CalendarIcon, X, Pencil } from "lucide-react";
 import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -84,6 +85,8 @@ const AdminOrders = () => {
   const [sourceFilter, setSourceFilter] = useState("all");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editOrderId, setEditOrderId] = useState<string | null>(null);
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
@@ -355,16 +358,30 @@ const AdminOrders = () => {
             </Select>
           </TableCell>
           <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => {
-                setSelectedOrderId(order.id);
-                setDetailDialogOpen(true);
-              }}
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center justify-end gap-1">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => {
+                  setEditOrderId(order.id);
+                  setEditDialogOpen(true);
+                }}
+                title="Edit Order"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => {
+                  setSelectedOrderId(order.id);
+                  setDetailDialogOpen(true);
+                }}
+                title="View Details"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+            </div>
           </TableCell>
         </TableRow>
         {isExpanded && (
@@ -511,7 +528,18 @@ const AdminOrders = () => {
                         <span className="font-medium">{formatCurrency(item.total_price)}</span>
                       </div>
                     ))}
-                    <div className="pt-2 border-t flex justify-between">
+                    <div className="pt-2 border-t flex justify-between gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setEditOrderId(order.id);
+                          setEditDialogOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
                       <Button 
                         variant="outline" 
                         size="sm"
@@ -521,7 +549,7 @@ const AdminOrders = () => {
                         }}
                       >
                         <Eye className="h-4 w-4 mr-1" />
-                        View Details
+                        View
                       </Button>
                     </div>
                   </div>
@@ -737,6 +765,14 @@ const AdminOrders = () => {
         orderId={selectedOrderId}
         open={detailDialogOpen}
         onOpenChange={setDetailDialogOpen}
+        onOrderUpdated={fetchOrders}
+      />
+
+      {/* Edit Order Dialog */}
+      <EditOrderDialog
+        orderId={editOrderId}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
         onOrderUpdated={fetchOrders}
       />
     </AdminLayout>
