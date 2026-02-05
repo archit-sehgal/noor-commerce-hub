@@ -182,6 +182,19 @@ const OrderDetailDialog = ({ orderId, open, onOpenChange, onOrderUpdated }: Prop
   const handleDownloadInvoice = async () => {
     if (!order) return;
 
+    // Generate items HTML separately to avoid template literal issues
+    const itemsHTML = items.map(item => `
+      <tr>
+        <td>${item.product_name}</td>
+        <td>${item.product_sku || "-"}</td>
+        <td>${item.size || "-"}</td>
+        <td>${item.color || "-"}</td>
+        <td>${item.quantity}</td>
+        <td>₹${Number(item.unit_price).toLocaleString()}</td>
+        <td>₹${Number(item.total_price).toLocaleString()}</td>
+      </tr>
+    `).join("");
+
     // Generate a simple invoice HTML and download as a file
     const invoiceHTML = `
 <!DOCTYPE html>
@@ -238,17 +251,7 @@ const OrderDetailDialog = ({ orderId, open, onOpenChange, onOrderUpdated }: Prop
       </tr>
     </thead>
     <tbody>
-      \${items.map(item => \`
-        <tr>
-          <td>\${item.product_name}</td>
-          <td>\${item.product_sku || "-"}</td>
-          <td>\${item.size || "-"}</td>
-          <td>\${item.color || "-"}</td>
-          <td>\${item.quantity}</td>
-          <td>₹\${Number(item.unit_price).toLocaleString()}</td>
-          <td>₹\${Number(item.total_price).toLocaleString()}</td>
-        </tr>
-      \`).join("")}
+      ${itemsHTML}
     </tbody>
   </table>
 
