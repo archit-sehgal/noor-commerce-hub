@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   TrendingUp,
   FileText,
+  Loader2,
 } from "lucide-react";
 
 interface DashboardStats {
@@ -35,6 +36,20 @@ const AdminDashboard = () => {
     pendingOrders: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [showWelcomeLoader, setShowWelcomeLoader] = useState(false);
+
+  // Check for fresh login and show welcome loader
+  useEffect(() => {
+    const isFreshLogin = sessionStorage.getItem("freshLogin");
+    if (isFreshLogin === "true") {
+      setShowWelcomeLoader(true);
+      sessionStorage.removeItem("freshLogin");
+      const timer = setTimeout(() => {
+        setShowWelcomeLoader(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -89,6 +104,23 @@ const AdminDashboard = () => {
 
     fetchStats();
   }, []);
+
+  // Show welcome loader for first login after logout
+  if (showWelcomeLoader) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+        <div className="text-center space-y-6">
+          <Loader2 className="h-12 w-12 animate-spin text-gold mx-auto" />
+          <div className="space-y-2">
+            <h2 className="text-2xl font-display font-semibold text-foreground">
+              Setting things up for you
+            </h2>
+            <p className="text-muted-foreground">Please wait a moment...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AdminLayout title="Dashboard">
