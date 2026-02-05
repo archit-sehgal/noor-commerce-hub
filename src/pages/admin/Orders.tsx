@@ -40,6 +40,7 @@ import { cn } from "@/lib/utils";
 interface OrderItem {
   id: string;
   product_name: string;
+  product_sku: string | null;
   quantity: number;
   unit_price: number;
   total_price: number;
@@ -103,7 +104,7 @@ const AdminOrders = () => {
           *,
           customer:customers(name, email, phone),
           salesman:salesman(name),
-          order_items(id, product_name, quantity, unit_price, total_price, size, color)
+          order_items(id, product_name, product_sku, quantity, unit_price, total_price, size, color)
         `)
         .order("created_at", { ascending: false });
 
@@ -286,6 +287,8 @@ const AdminOrders = () => {
 
   const OrderRow = ({ order }: { order: Order }) => {
     const isExpanded = expandedOrders.has(order.id);
+    // Get all SKUs from order items
+    const skuList = order.order_items?.map(item => item.product_sku).filter(Boolean).join(", ") || "-";
     
     return (
       <>
@@ -299,6 +302,11 @@ const AdminOrders = () => {
               )}
               <span className="font-medium text-sm">{order.order_number}</span>
             </div>
+          </TableCell>
+          <TableCell className="hidden md:table-cell">
+            <span className="font-mono text-xs text-muted-foreground max-w-[150px] truncate block" title={skuList}>
+              {skuList}
+            </span>
           </TableCell>
           <TableCell>
             <div>
@@ -386,7 +394,7 @@ const AdminOrders = () => {
         </TableRow>
         {isExpanded && (
           <TableRow className="bg-muted/30">
-            <TableCell colSpan={8} className="p-0">
+            <TableCell colSpan={9} className="p-0">
               <div className="p-4 space-y-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
@@ -413,6 +421,7 @@ const AdminOrders = () => {
                       <thead className="bg-muted/50">
                         <tr>
                           <th className="text-left py-2 px-3 text-xs font-medium">Product</th>
+                          <th className="text-left py-2 px-3 text-xs font-medium">SKU</th>
                           <th className="text-center py-2 px-3 text-xs font-medium">Size/Color</th>
                           <th className="text-center py-2 px-3 text-xs font-medium">Qty</th>
                           <th className="text-right py-2 px-3 text-xs font-medium">Price</th>
@@ -423,6 +432,7 @@ const AdminOrders = () => {
                         {order.order_items.map((item) => (
                           <tr key={item.id} className="border-t border-border/50">
                             <td className="py-2 px-3 font-medium">{item.product_name}</td>
+                            <td className="py-2 px-3 font-mono text-xs text-muted-foreground">{item.product_sku || "-"}</td>
                             <td className="py-2 px-3 text-center text-foreground">
                               {[item.size, item.color].filter(Boolean).join(" / ") || "-"}
                             </td>
@@ -565,6 +575,7 @@ const AdminOrders = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Order #</TableHead>
+                <TableHead className="hidden md:table-cell">SKU(s)</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead className="hidden lg:table-cell">Date</TableHead>
                 <TableHead className="hidden md:table-cell">Items</TableHead>
