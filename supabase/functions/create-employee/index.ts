@@ -74,20 +74,34 @@ Deno.serve(async (req) => {
     }
 
     const userId = newUser.user.id
+    console.log('User created successfully:', userId)
 
-    // Update role to sales_staff (service role bypasses RLS)
-    const { error: roleError } = await adminClient
+    // Wait briefly for the trigger to create default role
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    // Delete any existing roles (e.g., 'customer' from handle_new_user trigger)
+    const { error: deleteRoleError } = await adminClient
       .from('user_roles')
-      .update({ role: 'sales_staff' })
+      .delete()
       .eq('user_id', userId)
 
+    if (deleteRoleError) {
+      console.error('Error deleting existing roles:', deleteRoleError)
+    }
+
+    // Insert the sales_staff role
+    const { error: roleError } = await adminClient
+      .from('user_roles')
+      .insert({ user_id: userId, role: 'sales_staff' })
+
     if (roleError) {
-      console.error('Error updating role:', roleError)
+      console.error('Error inserting role:', roleError)
       return new Response(
-        JSON.stringify({ error: 'Failed to set employee role' }),
+        JSON.stringify({ error: 'Failed to set employee role: ' + roleError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+    console.log('Role set to sales_staff for user:', userId)
 
     // Add employee permissions
     const { error: permError } = await adminClient
@@ -101,6 +115,7 @@ Deno.serve(async (req) => {
       console.error('Error adding permissions:', permError)
       // Non-critical - continue anyway
     }
+    console.log('Employee permissions set for user:', userId)
 
     return new Response(
       JSON.stringify({ 
