@@ -167,18 +167,18 @@ const AdminInvoices = () => {
             <head>
               <title>Invoice - ${selectedInvoice?.invoice_number}</title>
               <style>
-                body { font-family: 'Georgia', serif; padding: 40px; max-width: 800px; margin: 0 auto; }
-                .header { text-align: center; border-bottom: 2px solid #8B4513; padding-bottom: 20px; margin-bottom: 20px; }
-                .header h1 { color: #8B4513; margin: 0; font-size: 28px; }
-                .header p { margin: 5px 0; color: #666; }
+                body { font-family: 'Georgia', serif; padding: 40px; max-width: 800px; margin: 0 auto; color: #000; }
+                .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 20px; margin-bottom: 20px; }
+                .header h1 { color: #000; margin: 0; font-size: 28px; font-weight: 800; }
+                .header p { margin: 5px 0; color: #000; font-weight: 600; }
                 .invoice-details { display: flex; justify-content: space-between; margin-bottom: 30px; }
                 table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-                th { background: #8B4513; color: white; padding: 12px; text-align: left; }
-                td { padding: 10px; border-bottom: 1px solid #ddd; }
+                th { background: #000; color: white; padding: 12px; text-align: left; font-weight: 700; }
+                td { padding: 10px; border-bottom: 2px solid #333; color: #000; font-weight: 600; }
                 .totals { text-align: right; margin-top: 20px; }
-                .totals div { margin: 5px 0; }
-                .totals .total { font-size: 24px; color: #8B4513; font-weight: bold; }
-                .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; }
+                .totals div { margin: 5px 0; color: #000; font-weight: 600; }
+                .totals .total { font-size: 24px; color: #000; font-weight: 900; }
+                .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #333; color: #000; font-weight: 500; }
               </style>
             </head>
             <body>
@@ -391,13 +391,13 @@ const AdminInvoices = () => {
           <div id="invoice-view-content" className="p-4">
             <div className="header text-center border-b-2 border-primary pb-4 mb-4">
               <h1 className="text-2xl font-serif font-bold text-primary">
-                VASTRA ELEGANCE
+                NOOR CREATIONS
               </h1>
               <p className="text-sm text-muted-foreground">
-                Premium Ethnic Fashion
+                Premium Ethnic Wear
               </p>
               <p className="text-xs text-muted-foreground">
-                123 Fashion Street, Mumbai - 400001
+                Jammu, J&K
               </p>
             </div>
 
