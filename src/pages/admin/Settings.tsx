@@ -128,32 +128,24 @@ const Settings = () => {
   // Add new employee mutation - uses edge function to properly set role
   const addEmployeeMutation = useMutation({
     mutationFn: async () => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-employee`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${sessionData.session?.access_token}`,
-          },
-          body: JSON.stringify({
-            email: newEmployeeEmail,
-            password: newEmployeePassword,
-            fullName: newEmployeeName,
-            permissions: selectedPermissions,
-          }),
-        }
-      );
+      const { data, error } = await supabase.functions.invoke('create-employee', {
+        body: {
+          email: newEmployeeEmail,
+          password: newEmployeePassword,
+          fullName: newEmployeeName,
+          permissions: selectedPermissions,
+        },
+      });
 
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to create employee');
+      if (error) {
+        throw new Error(error.message || 'Failed to create employee');
       }
 
-      return result.user;
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      return data.user;
     },
     onSuccess: () => {
       toast.success("Employee added successfully");
