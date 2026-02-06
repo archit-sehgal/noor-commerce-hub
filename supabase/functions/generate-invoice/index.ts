@@ -52,34 +52,36 @@ const generateInvoiceHTML = (order: any, orderItems: any[], customer: any) => {
   <meta charset="UTF-8">
   <title>Invoice ${order.invoice_number || order.order_number}</title>
   <style>
-    body { font-family: 'Georgia', serif; margin: 0; padding: 40px; color: #1a1a1a; background: #faf9f7; }
+    body { font-family: 'Georgia', serif; margin: 0; padding: 40px; color: #000; background: #faf9f7; }
     .invoice { max-width: 800px; margin: 0 auto; background: white; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; border-bottom: 2px solid #c9a961; padding-bottom: 20px; }
-    .logo { font-size: 28px; font-weight: 500; }
-    .logo span { color: #c9a961; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; border-bottom: 3px solid #000; padding-bottom: 20px; }
+    .logo { font-size: 28px; font-weight: 800; color: #000; letter-spacing: 2px; }
+    .logo span { color: #000; }
     .invoice-title { text-align: right; }
-    .invoice-title h1 { font-size: 32px; margin: 0; color: #1a1a1a; font-weight: 400; }
-    .invoice-title p { color: #666; margin: 5px 0 0; }
+    .invoice-title h1 { font-size: 32px; margin: 0; color: #000; font-weight: 800; }
+    .invoice-title p { color: #000; margin: 5px 0 0; font-weight: 600; }
     .details { display: flex; justify-content: space-between; margin-bottom: 40px; }
     .details-section { width: 45%; }
-    .details-section h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: #c9a961; margin-bottom: 10px; }
-    .details-section p { margin: 5px 0; color: #444; line-height: 1.6; }
+    .details-section h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: #000; margin-bottom: 10px; font-weight: 700; }
+    .details-section p { margin: 5px 0; color: #000; line-height: 1.6; font-weight: 500; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-    th { background: #1a1a1a; color: white; padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+    th { background: #000; color: white; padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
     th:last-child, th:nth-child(5), th:nth-child(4) { text-align: right; }
     th:nth-child(2), th:nth-child(3), th:nth-child(4) { text-align: center; }
+    td { color: #000; font-weight: 600; }
     .totals { text-align: right; margin-top: 20px; }
-    .totals p { margin: 8px 0; }
-    .totals .total { font-size: 20px; font-weight: 600; color: #c9a961; border-top: 2px solid #1a1a1a; padding-top: 10px; margin-top: 10px; }
-    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e5e5; text-align: center; color: #666; font-size: 14px; }
+    .totals p { margin: 8px 0; color: #000; font-weight: 600; }
+    .totals .total { font-size: 20px; font-weight: 900; color: #000; border-top: 3px solid #000; padding-top: 10px; margin-top: 10px; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 2px solid #333; text-align: center; color: #000; font-size: 14px; font-weight: 500; }
     .footer p { margin: 5px 0; }
-    .thank-you { font-style: italic; color: #c9a961; font-size: 18px; margin-bottom: 10px; }
+    .thank-you { font-style: italic; color: #000; font-size: 18px; margin-bottom: 10px; font-weight: 600; }
+    .gst-note { font-size: 11px; font-style: italic; margin-top: 10px; color: #000; }
   </style>
 </head>
 <body>
   <div class="invoice">
     <div class="header">
-      <div class="logo">NOOR <span>CREATIONS</span></div>
+      <div class="logo">NOOR - <span>A HAND CRAFTED HERITAGE</span></div>
       <div class="invoice-title">
         <h1>Invoice</h1>
         <p>${order.invoice_number || order.order_number}</p>
@@ -124,15 +126,15 @@ const generateInvoiceHTML = (order: any, orderItems: any[], customer: any) => {
     <div class="totals">
       <p><strong>Subtotal:</strong> ${formatCurrency(order.subtotal)}</p>
       ${order.discount_amount ? `<p><strong>Discount:</strong> -${formatCurrency(order.discount_amount)}</p>` : ''}
-      ${order.tax_amount ? `<p><strong>Tax (GST):</strong> ${formatCurrency(order.tax_amount)}</p>` : ''}
       <p><strong>Shipping:</strong> ${order.shipping_amount === 0 ? 'Free' : formatCurrency(order.shipping_amount || 0)}</p>
       <p class="total"><strong>Total:</strong> ${formatCurrency(order.total_amount)}</p>
+      <p class="gst-note">* All prices are inclusive of GST</p>
     </div>
     
     <div class="footer">
       <p class="thank-you">Thank you for shopping with us!</p>
       <p>For any queries, please contact us at support@noorcreations.com</p>
-      <p>NOOR CREATIONS | Premium Ethnic Wear</p>
+      <p>NOOR - A Hand Crafted Heritage | Premium Ethnic Wear</p>
     </div>
   </div>
 </body>

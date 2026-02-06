@@ -237,8 +237,8 @@ const AdminBilling = () => {
   };
 
   const subtotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  const taxAmount = subtotal * 0.18; // 18% GST
-  const totalAmount = subtotal + taxAmount - discountAmount;
+  const taxAmount = 0; // All prices are GST inclusive
+  const totalAmount = subtotal - discountAmount;
 
   const createNewCustomer = async () => {
     if (!newCustomerName.trim()) {
@@ -312,26 +312,28 @@ const AdminBilling = () => {
       <html>
         <head>
           <title>Invoice - ${invoiceData.invoiceNumber}</title>
-          <style>
-            body { font-family: 'Georgia', serif; padding: 40px; max-width: 800px; margin: 0 auto; }
-            .header { text-align: center; border-bottom: 2px solid #8B4513; padding-bottom: 20px; margin-bottom: 20px; }
-            .header h1 { color: #8B4513; margin: 0; font-size: 28px; }
-            .header p { margin: 5px 0; color: #666; }
-            .invoice-details { display: flex; justify-content: space-between; margin-bottom: 30px; }
-            .invoice-details strong { color: #8B4513; }
+           <style>
+            body { font-family: 'Georgia', serif; padding: 40px; max-width: 800px; margin: 0 auto; color: #000; }
+            .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 20px; margin-bottom: 20px; }
+            .header h1 { color: #000; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: 2px; }
+            .header p { margin: 5px 0; color: #000; font-weight: 600; }
+            .invoice-details { display: flex; justify-content: space-between; margin-bottom: 30px; color: #000; }
+            .invoice-details p { color: #000; font-weight: 500; }
+            .invoice-details strong { color: #000; font-weight: 800; }
             table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-            th { background: #8B4513; color: white; padding: 12px; text-align: left; }
-            td { padding: 10px; border-bottom: 1px solid #ddd; }
-            .totals { text-align: right; margin-top: 20px; }
-            .totals div { margin: 5px 0; }
-            .totals .total { font-size: 24px; color: #8B4513; font-weight: bold; }
-            .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; }
+            th { background: #000; color: white; padding: 12px; text-align: left; font-weight: 700; }
+            td { padding: 10px; border-bottom: 2px solid #333; color: #000; font-weight: 600; }
+            .totals { text-align: right; margin-top: 20px; color: #000; }
+            .totals div { margin: 5px 0; font-weight: 600; color: #000; }
+            .totals .total { font-size: 24px; color: #000; font-weight: 900; }
+            .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #333; color: #000; font-weight: 500; }
+            .gst-note { font-size: 12px; color: #000; font-style: italic; margin-top: 10px; }
             @media print { body { padding: 20px; } }
           </style>
         </head>
         <body>
           <div class="header">
-            <h1>NOOR CREATIONS</h1>
+            <h1>NOOR - A HAND CRAFTED HERITAGE</h1>
             <p>Tax Invoice</p>
           </div>
           <div class="invoice-details">
@@ -360,9 +362,9 @@ const AdminBilling = () => {
           </table>
           <div class="totals">
             <div>Subtotal: ${formatCurrency(invoiceData.subtotal)}</div>
-            <div>GST (18%): ${formatCurrency(invoiceData.taxAmount)}</div>
             ${invoiceData.discountAmount > 0 ? `<div>Discount: -${formatCurrency(invoiceData.discountAmount)}</div>` : ""}
             <div class="total">Total: ${formatCurrency(invoiceData.totalAmount)}</div>
+            <div class="gst-note">* All prices are inclusive of GST</div>
           </div>
           <div class="footer">
             <p>Thank you for shopping with us!</p>
@@ -583,20 +585,21 @@ const AdminBilling = () => {
             <head>
               <title>Invoice - ${generatedInvoice?.invoiceNumber}</title>
               <style>
-                body { font-family: 'Georgia', serif; padding: 40px; max-width: 800px; margin: 0 auto; }
-                .header { text-align: center; border-bottom: 2px solid #8B4513; padding-bottom: 20px; margin-bottom: 20px; }
-                .header h1 { color: #8B4513; margin: 0; font-size: 28px; }
-                .header p { margin: 5px 0; color: #666; }
+                body { font-family: 'Georgia', serif; padding: 40px; max-width: 800px; margin: 0 auto; color: #000; }
+                .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 20px; margin-bottom: 20px; }
+                .header h1 { color: #000; margin: 0; font-size: 28px; font-weight: 800; }
+                .header p { margin: 5px 0; color: #000; font-weight: 600; }
                 .invoice-details { display: flex; justify-content: space-between; margin-bottom: 30px; }
                 .invoice-details div { }
-                .invoice-details strong { color: #8B4513; }
+                .invoice-details strong { color: #000; font-weight: 800; }
+                .invoice-details p { color: #000; font-weight: 500; }
                 table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-                th { background: #8B4513; color: white; padding: 12px; text-align: left; }
-                td { padding: 10px; border-bottom: 1px solid #ddd; }
-                .totals { text-align: right; margin-top: 20px; }
-                .totals div { margin: 5px 0; }
-                .totals .total { font-size: 24px; color: #8B4513; font-weight: bold; }
-                .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; }
+                th { background: #000; color: white; padding: 12px; text-align: left; font-weight: 700; }
+                td { padding: 10px; border-bottom: 2px solid #333; color: #000; font-weight: 600; }
+                .totals { text-align: right; margin-top: 20px; color: #000; }
+                .totals div { margin: 5px 0; font-weight: 600; color: #000; }
+                .totals .total { font-size: 24px; color: #000; font-weight: 900; }
+                .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #333; color: #000; font-weight: 500; }
                 .salesman-info { margin-top: 10px; font-size: 14px; }
               </style>
             </head>
@@ -927,8 +930,8 @@ const AdminBilling = () => {
                 <span>{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                  <span className="text-foreground">GST (18%)</span>
-                <span>{formatCurrency(taxAmount)}</span>
+                  <span className="text-foreground">Subtotal (GST Inclusive)</span>
+                <span>{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex justify-between items-center">
                   <Label className="text-sm text-foreground">Discount</Label>
@@ -1087,7 +1090,7 @@ const AdminBilling = () => {
           <div id="invoice-print-content" className="p-4">
             <div className="header text-center border-b-2 border-primary pb-4 mb-4">
               <h1 className="text-2xl font-serif font-bold text-primary">
-                NOOR CREATIONS
+                NOOR - A HAND CRAFTED HERITAGE
               </h1>
               <p className="text-sm text-foreground">
                 Premium Ethnic Fashion
@@ -1170,11 +1173,8 @@ const AdminBilling = () => {
                   {formatCurrency(generatedInvoice?.subtotal || 0)}
                 </span>
               </p>
-              <p>
-                <span className="text-foreground">GST (18%):</span>{" "}
-                <span className="font-medium">
-                  {formatCurrency(generatedInvoice?.taxAmount || 0)}
-                </span>
+              <p className="text-xs text-foreground italic">
+                * All prices are inclusive of GST
               </p>
               {generatedInvoice?.discountAmount > 0 && (
                 <p>

@@ -1,6 +1,7 @@
 import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import noorLogo from "@/assets/noor-logo.png";
 import { useEmployeePermissions } from "@/hooks/useEmployeePermissions";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
@@ -72,9 +73,7 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
     <>
       <div className="p-4 border-b border-sidebar-border">
         <Link to="/" className="block">
-          <h1 className="font-display font-medium tracking-wide text-xl">
-            NOOR <span className="text-rose-gold">CREATIONS</span>
-          </h1>
+          <img src={noorLogo} alt="Noor" className="h-12 w-auto object-contain" />
         </Link>
       </div>
 
@@ -129,7 +128,7 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
           <>
             <div className="p-4 border-b border-sidebar-border text-center">
               <Link to="/" className="block">
-                <span className="font-display font-medium text-lg">NC</span>
+                <img src={noorLogo} alt="Noor" className="h-10 w-auto object-contain mx-auto" />
               </Link>
             </div>
             <nav className="flex-1 p-2 space-y-1 overflow-y-auto">

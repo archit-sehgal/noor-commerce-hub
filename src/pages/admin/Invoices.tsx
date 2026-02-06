@@ -480,11 +480,8 @@ const AdminInvoices = () => {
                   {formatCurrency(selectedInvoice?.subtotal || 0)}
                 </span>
               </p>
-              <p>
-                <span className="text-foreground">Tax:</span>{" "}
-                <span className="font-medium">
-                  {formatCurrency(selectedInvoice?.tax_amount || 0)}
-                </span>
+              <p className="text-xs text-foreground italic">
+                * All prices are inclusive of GST
               </p>
               {(selectedInvoice?.discount_amount || 0) > 0 && (
                 <p>
