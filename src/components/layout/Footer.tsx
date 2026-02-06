@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { Crown, Sparkles, MapPin, Phone, Mail, Instagram, Facebook, Twitter } from "lucide-react";
+import { Sparkles, MapPin, Phone, Mail, Instagram, Facebook, Twitter } from "lucide-react";
+import noorLogo from "@/assets/noor-logo.png";
 
 const Footer = () => {
   return (
@@ -22,11 +23,11 @@ const Footer = () => {
           {/* Brand Column */}
           <div className="lg:col-span-1">
             <Link to="/" className="inline-block mb-6">
-              <div className="flex flex-col items-start">
-                <Crown className="h-6 w-6 text-gold mb-2" />
-                <h2 className="font-display text-2xl tracking-[0.3em] text-foreground">NOOR</h2>
-                <span className="text-xs tracking-[0.4em] text-gold font-accent italic">Creations</span>
-              </div>
+              <img 
+                src={noorLogo} 
+                alt="Noor - A Hand Crafted Heritage" 
+                className="h-24 w-auto object-contain"
+              />
             </Link>
             <p className="text-muted-foreground font-body text-sm leading-relaxed mb-6">
               Where tradition meets timeless beauty. Handcrafted Pakistani & Punjabi ethnic wear 
@@ -155,7 +156,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="py-6 border-t border-gold/20 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-muted-foreground font-body">
-            © 2024 Noor Creations. All rights reserved.
+            © {new Date().getFullYear()} Noor - A Hand Crafted Heritage. All rights reserved.
           </p>
           <div className="flex items-center gap-6 text-xs text-muted-foreground font-body">
             <Link to="/privacy" className="hover:text-gold transition-colors">Privacy Policy</Link>

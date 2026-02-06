@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, ShoppingBag, User, Search, LogOut, Crown } from "lucide-react";
+import { Menu, X, ShoppingBag, User, Search, LogOut } from "lucide-react";
+import noorLogo from "@/assets/noor-logo.png";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/hooks/useCart";
@@ -77,15 +78,11 @@ const Navbar = () => {
             to="/" 
             className="absolute left-1/2 -translate-x-1/2 lg:relative lg:left-0 lg:translate-x-0 group"
           >
-            <div className="flex flex-col items-center">
-              <Crown className="h-5 w-5 text-gold mb-1 opacity-60 group-hover:opacity-100 transition-opacity animate-float" />
-              <h1 className="font-display text-xl lg:text-2xl font-medium tracking-[0.3em] text-foreground">
-                NOOR
-              </h1>
-              <span className="text-[10px] tracking-[0.4em] text-gold font-accent italic">
-                Creations
-              </span>
-            </div>
+            <img 
+              src={noorLogo} 
+              alt="Noor - A Hand Crafted Heritage" 
+              className="h-14 lg:h-18 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+            />
           </Link>
 
           {/* Desktop Navigation - Jewelry Box Style */}
@@ -196,7 +193,7 @@ const Navbar = () => {
                       onClick={() => setIsOpen(false)}
                       className="flex items-center gap-3 text-lg font-display tracking-wide text-foreground/80 hover:text-gold transition-colors"
                     >
-                      <Crown className="h-5 w-5 text-gold/60" />
+                      <User className="h-5 w-5 text-gold/60" />
                       Admin Panel
                     </Link>
                   )}

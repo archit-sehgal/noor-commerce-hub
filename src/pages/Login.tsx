@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, Loader2, Crown, Sparkles } from "lucide-react";
+import { Eye, EyeOff, Loader2, Sparkles } from "lucide-react";
 import heroLogin from "@/assets/hero-login.jpg";
+import noorLogo from "@/assets/noor-logo.png";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -59,11 +60,7 @@ const Login = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-background/80 to-background/40" />
         <div className="absolute inset-0 flex items-center justify-center p-12">
           <div className="text-center">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="w-12 h-px bg-gradient-to-r from-transparent to-gold/60" />
-              <Crown className="h-6 w-6 text-gold" />
-              <div className="w-12 h-px bg-gradient-to-l from-transparent to-gold/60" />
-            </div>
+            <img src={noorLogo} alt="Noor" className="h-24 w-auto object-contain mx-auto mb-4" />
             <h3 className="font-display text-4xl mb-4 tracking-wider text-foreground">
               Elegance Redefined
             </h3>
@@ -85,9 +82,7 @@ const Login = () => {
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
             <Link to="/">
-              <h1 className="font-display text-3xl font-medium tracking-wider">
-                NOOR <span className="text-gold">CREATIONS</span>
-              </h1>
+              <img src={noorLogo} alt="Noor - A Hand Crafted Heritage" className="h-20 w-auto object-contain mx-auto" />
             </Link>
             <div className="w-16 h-px bg-gradient-to-r from-transparent via-gold/50 to-transparent mx-auto mt-4" />
             <h2 className="mt-6 text-2xl font-display text-foreground tracking-wider">

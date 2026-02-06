@@ -202,19 +202,20 @@ const OrderDetailDialog = ({ orderId, open, onOpenChange, onOrderUpdated }: Prop
 <head>
   <title>Invoice - ${order.order_number}</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; color: #000; }
     .header { text-align: center; margin-bottom: 30px; }
-    .header h1 { margin: 0; color: #333; }
+    .header h1 { margin: 0; color: #000; font-weight: 800; }
     .info-row { display: flex; justify-content: space-between; margin-bottom: 20px; }
     .info-box { flex: 1; }
-    .info-box h3 { margin: 0 0 10px; color: #666; font-size: 14px; }
+    .info-box h3 { margin: 0 0 10px; color: #000; font-size: 14px; font-weight: 700; }
+    .info-box p { color: #000; font-weight: 500; }
     table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-    th { background-color: #f5f5f5; font-weight: 600; }
+    th, td { padding: 12px; text-align: left; border-bottom: 2px solid #333; color: #000; font-weight: 600; }
+    th { background-color: #000; font-weight: 700; color: white; }
     .totals { text-align: right; margin-top: 20px; }
-    .totals p { margin: 5px 0; }
-    .total-amount { font-size: 20px; font-weight: bold; color: #333; }
-    .footer { margin-top: 40px; text-align: center; color: #999; font-size: 12px; }
+    .totals p { margin: 5px 0; color: #000; font-weight: 600; }
+    .total-amount { font-size: 20px; font-weight: 900; color: #000; }
+    .footer { margin-top: 40px; text-align: center; color: #000; font-size: 12px; font-weight: 500; }
   </style>
 </head>
 <body>
@@ -255,12 +256,12 @@ const OrderDetailDialog = ({ orderId, open, onOpenChange, onOrderUpdated }: Prop
     </tbody>
   </table>
 
-  <div class="totals">
+   <div class="totals">
     <p>Subtotal: ₹${Number(order.subtotal).toLocaleString()}</p>
     ${order.discount_amount ? `<p>Discount: -₹${Number(order.discount_amount).toLocaleString()}</p>` : ""}
-    ${order.tax_amount ? `<p>Tax: ₹${Number(order.tax_amount).toLocaleString()}</p>` : ""}
     ${order.shipping_amount ? `<p>Shipping: ₹${Number(order.shipping_amount).toLocaleString()}</p>` : ""}
     <p class="total-amount">Total: ₹${Number(order.total_amount).toLocaleString()}</p>
+    <p style="font-size:11px; font-style:italic; margin-top:10px;">* All prices are inclusive of GST</p>
   </div>
 
   <div class="footer">
@@ -451,12 +452,7 @@ const OrderDetailDialog = ({ orderId, open, onOpenChange, onOrderUpdated }: Prop
                     <span>-₹{Number(order.discount_amount).toLocaleString()}</span>
                   </div>
                 )}
-                {order.tax_amount && order.tax_amount > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Tax</span>
-                    <span>₹{Number(order.tax_amount).toLocaleString()}</span>
-                  </div>
-                )}
+                {/* GST inclusive - no separate tax line */}
                 {order.shipping_amount && order.shipping_amount > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Shipping</span>

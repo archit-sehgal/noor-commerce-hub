@@ -1,4 +1,5 @@
-import { Crown, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
+import noorLogo from "@/assets/noor-logo.png";
 
 interface PageHeroProps {
   title: string;
@@ -46,10 +47,8 @@ const PageHero = ({
       {/* Content - Added more padding-top for centering */}
       <div className="relative z-10 text-center px-4 pt-16">
         {/* Decorative top element */}
-        <div className="flex items-center justify-center gap-3 mb-3">
-          <div className="w-10 h-px bg-gradient-to-r from-transparent to-gold/60" />
-          <Crown className="h-4 w-4 text-gold animate-pulse" />
-          <div className="w-10 h-px bg-gradient-to-l from-transparent to-gold/60" />
+        <div className="flex items-center justify-center mb-3">
+          <img src={noorLogo} alt="Noor" className="h-12 w-auto object-contain opacity-80" />
         </div>
         
         {/* Title - Reduced size */}

@@ -406,8 +406,8 @@ const AdminOrders = () => {
                     <p className="font-medium text-green-600">-{formatCurrency(order.discount_amount || 0)}</p>
                   </div>
                   <div>
-                    <p className="text-foreground text-xs">Tax</p>
-                    <p className="font-medium">{formatCurrency(order.tax_amount || 0)}</p>
+                    <p className="text-foreground text-xs">Tax (GST Incl.)</p>
+                    <p className="font-medium">Included</p>
                   </div>
                   <div>
                     <p className="text-foreground text-xs">Shipping</p>
