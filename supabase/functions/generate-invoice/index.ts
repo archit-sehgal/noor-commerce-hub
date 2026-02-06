@@ -81,7 +81,8 @@ const generateInvoiceHTML = (order: any, orderItems: any[], customer: any) => {
 <body>
   <div class="invoice">
     <div class="header">
-      <div class="logo">NOOR - <span>A HAND CRAFTED HERITAGE</span></div>
+      <div class="logo">NOOR CREATIONS</div>
+      <div style="font-size: 12px; color: #000; font-weight: 500; margin-top: 4px;">Premium Ethnic Wear | Jammu, J&K</div>
       <div class="invoice-title">
         <h1>Invoice</h1>
         <p>${order.invoice_number || order.order_number}</p>
@@ -134,7 +135,7 @@ const generateInvoiceHTML = (order: any, orderItems: any[], customer: any) => {
     <div class="footer">
       <p class="thank-you">Thank you for shopping with us!</p>
       <p>For any queries, please contact us at support@noorcreations.com</p>
-      <p>NOOR - A Hand Crafted Heritage | Premium Ethnic Wear</p>
+      <p>NOOR CREATIONS | Premium Ethnic Wear | Jammu, J&K</p>
     </div>
   </div>
 </body>

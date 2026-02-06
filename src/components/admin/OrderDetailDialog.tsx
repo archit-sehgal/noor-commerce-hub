@@ -202,42 +202,59 @@ const OrderDetailDialog = ({ orderId, open, onOpenChange, onOrderUpdated }: Prop
 <head>
   <title>Invoice - ${order.order_number}</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; color: #000; }
-    .header { text-align: center; margin-bottom: 30px; }
-    .header h1 { margin: 0; color: #000; font-weight: 800; }
+    body { font-family: 'Georgia', serif; max-width: 800px; margin: 0 auto; padding: 40px; color: #000; }
+    .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #000; padding-bottom: 20px; }
+    .header img { height: 80px; margin-bottom: 10px; }
+    .header h1 { margin: 0; color: #000; font-weight: 900; font-size: 28px; letter-spacing: 2px; }
+    .header .tagline { color: #000; font-weight: 600; font-size: 14px; margin: 4px 0; }
+    .header .address { color: #000; font-weight: 500; font-size: 12px; }
     .info-row { display: flex; justify-content: space-between; margin-bottom: 20px; }
     .info-box { flex: 1; }
-    .info-box h3 { margin: 0 0 10px; color: #000; font-size: 14px; font-weight: 700; }
-    .info-box p { color: #000; font-weight: 500; }
+    .info-box h3 { margin: 0 0 10px; color: #000; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+    .info-box p { color: #000; font-weight: 600; margin: 4px 0; }
     table { width: 100%; border-collapse: collapse; margin: 20px 0; }
     th, td { padding: 12px; text-align: left; border-bottom: 2px solid #333; color: #000; font-weight: 600; }
     th { background-color: #000; font-weight: 700; color: white; }
     .totals { text-align: right; margin-top: 20px; }
-    .totals p { margin: 5px 0; color: #000; font-weight: 600; }
-    .total-amount { font-size: 20px; font-weight: 900; color: #000; }
-    .footer { margin-top: 40px; text-align: center; color: #000; font-size: 12px; font-weight: 500; }
+    .totals p { margin: 5px 0; color: #000; font-weight: 700; }
+    .total-amount { font-size: 22px; font-weight: 900; color: #000; border-top: 3px solid #000; padding-top: 10px; margin-top: 10px; }
+    .gst-note { font-size: 11px; font-style: italic; margin-top: 10px; color: #000; }
+    .footer { margin-top: 40px; text-align: center; color: #000; font-size: 12px; font-weight: 600; padding-top: 20px; border-top: 2px solid #333; }
+    .footer .thanks { font-size: 16px; font-style: italic; font-weight: 700; margin-bottom: 8px; }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>INVOICE</h1>
-    <p>Order: ${order.order_number}</p>
-    <p>Date: ${new Date(order.created_at).toLocaleDateString()}</p>
+    <img src="${window.location.origin}/noor-logo-invoice.png" alt="Noor Creations" onerror="this.style.display='none'" />
+    <h1>NOOR CREATIONS</h1>
+    <p class="tagline">Premium Ethnic Wear</p>
+    <p class="address">Jammu, J&K</p>
   </div>
   
   <div class="info-row">
     <div class="info-box">
-      <h3>BILL TO</h3>
+      <h3>Bill To</h3>
       <p><strong>${order.customer?.name || "Walk-in Customer"}</strong></p>
       ${order.customer?.email ? `<p>${order.customer.email}</p>` : ""}
       ${order.customer?.phone ? `<p>${order.customer.phone}</p>` : ""}
     </div>
-    <div class="info-box">
-      <h3>SHIP TO</h3>
-      <p>${order.shipping_address || "-"}</p>
-      <p>${[order.shipping_city, order.shipping_state, order.shipping_pincode].filter(Boolean).join(", ") || "-"}</p>
+    <div class="info-box" style="text-align: right;">
+      <h3>Invoice Details</h3>
+      <p><strong>Order:</strong> ${order.order_number}</p>
+      <p><strong>Date:</strong> ${new Date(order.created_at).toLocaleDateString("en-IN")}</p>
+      <p><strong>Payment:</strong> ${order.payment_status?.toUpperCase() || "N/A"}</p>
     </div>
   </div>
+
+  ${order.shipping_address ? `
+  <div class="info-row">
+    <div class="info-box">
+      <h3>Ship To</h3>
+      <p>${order.shipping_address}</p>
+      <p>${[order.shipping_city, order.shipping_state, order.shipping_pincode].filter(Boolean).join(", ") || ""}</p>
+    </div>
+  </div>
+  ` : ""}
 
   <table>
     <thead>
@@ -256,16 +273,17 @@ const OrderDetailDialog = ({ orderId, open, onOpenChange, onOrderUpdated }: Prop
     </tbody>
   </table>
 
-   <div class="totals">
+  <div class="totals">
     <p>Subtotal: ₹${Number(order.subtotal).toLocaleString()}</p>
     ${order.discount_amount ? `<p>Discount: -₹${Number(order.discount_amount).toLocaleString()}</p>` : ""}
     ${order.shipping_amount ? `<p>Shipping: ₹${Number(order.shipping_amount).toLocaleString()}</p>` : ""}
     <p class="total-amount">Total: ₹${Number(order.total_amount).toLocaleString()}</p>
-    <p style="font-size:11px; font-style:italic; margin-top:10px;">* All prices are inclusive of GST</p>
+    <p class="gst-note">* All prices are inclusive of GST</p>
   </div>
 
   <div class="footer">
-    <p>Thank you for your business!</p>
+    <p class="thanks">Thank you for shopping with us!</p>
+    <p>NOOR CREATIONS | Premium Ethnic Wear | Jammu, J&K</p>
   </div>
 </body>
 </html>

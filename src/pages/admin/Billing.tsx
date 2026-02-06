@@ -1090,13 +1090,13 @@ const AdminBilling = () => {
           <div id="invoice-print-content" className="p-4">
             <div className="header text-center border-b-2 border-primary pb-4 mb-4">
               <h1 className="text-2xl font-serif font-bold text-primary">
-                NOOR - A HAND CRAFTED HERITAGE
+                NOOR CREATIONS
               </h1>
               <p className="text-sm text-foreground">
-                Premium Ethnic Fashion
+                Premium Ethnic Wear
               </p>
               <p className="text-xs text-foreground">
-                123 Fashion Street, Mumbai - 400001
+                Jammu, J&K
               </p>
             </div>
 
