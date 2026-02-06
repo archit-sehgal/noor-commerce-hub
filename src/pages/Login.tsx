@@ -60,7 +60,10 @@ const Login = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-background/80 to-background/40" />
         <div className="absolute inset-0 flex items-center justify-center p-12">
           <div className="text-center">
-            <img src={noorLogo} alt="Noor" className="h-24 w-auto object-contain mx-auto mb-4" />
+            <div className="relative inline-block mb-4">
+              <div className="absolute inset-0 bg-white/10 rounded-full blur-2xl scale-125" />
+              <img src={noorLogo} alt="Noor" className="relative h-32 w-auto object-contain mx-auto" />
+            </div>
             <h3 className="font-display text-4xl mb-4 tracking-wider text-foreground">
               Elegance Redefined
             </h3>
@@ -82,7 +85,10 @@ const Login = () => {
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
             <Link to="/">
-              <img src={noorLogo} alt="Noor - A Hand Crafted Heritage" className="h-20 w-auto object-contain mx-auto" />
+              <div className="relative inline-block">
+                <div className="absolute inset-0 bg-white/8 rounded-full blur-xl scale-150" />
+                <img src={noorLogo} alt="Noor - A Hand Crafted Heritage" className="relative h-28 w-auto object-contain mx-auto" />
+              </div>
             </Link>
             <div className="w-16 h-px bg-gradient-to-r from-transparent via-gold/50 to-transparent mx-auto mt-4" />
             <h2 className="mt-6 text-2xl font-display text-foreground tracking-wider">
