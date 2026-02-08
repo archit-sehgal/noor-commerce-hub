@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Search, Scissors, Clock, CheckCircle, Package, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
+import NewAlterationForm from "@/components/admin/NewAlterationForm";
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -97,6 +98,9 @@ const Alterations = () => {
   return (
     <AdminLayout title="Alterations">
       <div className="space-y-6">
+        {/* New Alteration Form */}
+        <NewAlterationForm />
+
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="border-gold/20">

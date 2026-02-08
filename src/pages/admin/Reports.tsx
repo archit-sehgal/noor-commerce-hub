@@ -93,7 +93,12 @@ const AdminReports = () => {
     try {
       const daysAgo = parseInt(period);
       const startDate = new Date();
-      startDate.setDate(startDate.getDate() - daysAgo);
+      if (daysAgo === 0) {
+        // "Today" — start of today
+        startDate.setHours(0, 0, 0, 0);
+      } else {
+        startDate.setDate(startDate.getDate() - daysAgo);
+      }
 
       const prevStartDate = new Date();
       prevStartDate.setDate(prevStartDate.getDate() - daysAgo * 2);
@@ -303,6 +308,7 @@ const AdminReports = () => {
               <SelectValue placeholder="Select period" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="0">Today</SelectItem>
               <SelectItem value="7">Last 7 days</SelectItem>
               <SelectItem value="30">Last 30 days</SelectItem>
               <SelectItem value="90">Last 90 days</SelectItem>
