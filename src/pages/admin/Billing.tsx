@@ -85,7 +85,7 @@ const AdminBilling = () => {
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
   const [newCustomerEmail, setNewCustomerEmail] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
-  const [discountPercent, setDiscountPercent] = useState<number>(0);
+  const [discountPercent, setDiscountPercent] = useState<number>(10);
   const [creditAmount, setCreditAmount] = useState<number>(0);
   const [cashAmount, setCashAmount] = useState<number>(0);
   const [cardUpiAmount, setCardUpiAmount] = useState<number>(0);
@@ -961,9 +961,17 @@ const AdminBilling = () => {
                     type="number"
                     min="0"
                     max="100"
-                    value={discountPercent}
-                    onChange={(e) => setDiscountPercent(Math.min(100, Number(e.target.value) || 0))}
+                    value={discountPercent === 0 ? "" : discountPercent}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "") {
+                        setDiscountPercent(0);
+                      } else {
+                        setDiscountPercent(Math.min(100, Math.max(0, Number(val))));
+                      }
+                    }}
                     className="w-20 h-8 text-right"
+                    placeholder="0"
                   />
                   <span className="text-sm text-muted-foreground">%</span>
                 </div>

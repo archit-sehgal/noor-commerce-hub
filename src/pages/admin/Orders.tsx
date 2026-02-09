@@ -961,10 +961,9 @@ const AdminOrders = () => {
             <div className="space-y-4">
               <Label>Search order by number or customer name</Label>
               <Input placeholder="Order number or customer..." value={exchangeOrderSearch} onChange={(e) => setExchangeOrderSearch(e.target.value)} />
-              <div className="max-h-60 overflow-y-auto space-y-2">
+              <div className="max-h-[300px] overflow-y-auto space-y-2 border rounded-lg p-2">
                 {orders
-                  .filter(o => exchangeOrderSearch && (o.order_number.toLowerCase().includes(exchangeOrderSearch.toLowerCase()) || o.customer?.name?.toLowerCase().includes(exchangeOrderSearch.toLowerCase())))
-                  .slice(0, 10)
+                  .filter(o => !exchangeOrderSearch || o.order_number.toLowerCase().includes(exchangeOrderSearch.toLowerCase()) || o.customer?.name?.toLowerCase().includes(exchangeOrderSearch.toLowerCase()))
                   .map(order => (
                     <button key={order.id} onClick={() => selectExchangeOrder(order)} className="w-full p-3 border rounded-lg text-left hover:bg-muted/50 transition-colors">
                       <div className="flex justify-between">
@@ -974,6 +973,9 @@ const AdminOrders = () => {
                       <p className="text-xs text-muted-foreground">{order.customer?.name || "Walk-in"} • {order.order_items?.length || 0} items</p>
                     </button>
                   ))}
+                {orders.filter(o => !exchangeOrderSearch || o.order_number.toLowerCase().includes(exchangeOrderSearch.toLowerCase()) || o.customer?.name?.toLowerCase().includes(exchangeOrderSearch.toLowerCase())).length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">No orders found</p>
+                )}
               </div>
             </div>
           )}
@@ -1007,21 +1009,21 @@ const AdminOrders = () => {
           {exchangeStep === 3 && (
             <div className="space-y-4">
               <Label>Add replacement products</Label>
-              <Input placeholder="Search products..." value={exchangeProductSearch} onChange={(e) => setExchangeProductSearch(e.target.value)} />
-              {exchangeProductSearch && (
-                <div className="max-h-40 overflow-y-auto border rounded-lg">
-                  {allProducts
-                    .filter(p => p.name.toLowerCase().includes(exchangeProductSearch.toLowerCase()) || p.sku?.toLowerCase().includes(exchangeProductSearch.toLowerCase()))
-                    .slice(0, 8)
-                    .map(product => (
-                      <button key={product.id} onClick={() => addExchangeProduct(product)} className="w-full p-2 text-left hover:bg-muted/50 text-sm border-b last:border-0">
-                        <span className="font-medium">{product.name}</span>
-                        <span className="text-xs text-muted-foreground ml-2">SKU: {product.sku || "-"}</span>
-                        <span className="float-right font-medium">{formatCurrency(product.discount_price || product.price)}</span>
-                      </button>
-                    ))}
-                </div>
-              )}
+              <Input placeholder="Search products by name or SKU..." value={exchangeProductSearch} onChange={(e) => setExchangeProductSearch(e.target.value)} />
+              <div className="max-h-[200px] overflow-y-auto border rounded-lg">
+                {allProducts
+                  .filter(p => !exchangeProductSearch || p.name.toLowerCase().includes(exchangeProductSearch.toLowerCase()) || p.sku?.toLowerCase().includes(exchangeProductSearch.toLowerCase()))
+                  .map(product => (
+                    <button key={product.id} onClick={() => addExchangeProduct(product)} className="w-full p-2 text-left hover:bg-muted/50 text-sm border-b last:border-0">
+                      <span className="font-medium">{product.name}</span>
+                      <span className="text-xs text-muted-foreground ml-2">SKU: {product.sku || "-"}</span>
+                      <span className="float-right font-medium">{formatCurrency(product.discount_price || product.price)}</span>
+                    </button>
+                  ))}
+                {allProducts.filter(p => !exchangeProductSearch || p.name.toLowerCase().includes(exchangeProductSearch.toLowerCase()) || p.sku?.toLowerCase().includes(exchangeProductSearch.toLowerCase())).length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">No products found</p>
+                )}
+              </div>
 
               {exchangeNewProducts.length > 0 && (
                 <div className="space-y-2">
