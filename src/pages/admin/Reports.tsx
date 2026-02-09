@@ -86,6 +86,9 @@ const AdminReports = () => {
     totalCustomers: 0,
     conversionRate: 0,
     repeatCustomerRate: 0,
+    cashRevenue: 0,
+    cardUpiRevenue: 0,
+    creditRevenue: 0,
   });
   const [previousPeriod, setPreviousPeriod] = useState({
     revenue: 0,
@@ -130,7 +133,7 @@ const AdminReports = () => {
       // Fetch orders for the period
       let ordersQuery = supabase
         .from("orders")
-        .select("id, total_amount, created_at, customer_id, order_source, status")
+        .select("id, total_amount, created_at, customer_id, order_source, status, notes, payment_status")
         .gte("created_at", startDate.toISOString());
       if (endDate) ordersQuery = ordersQuery.lte("created_at", endDate.toISOString());
       const { data: orders } = await ordersQuery;
@@ -149,6 +152,29 @@ const AdminReports = () => {
       const onlineRevenue = orders?.filter(o => o.order_source === 'online').reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
       const posRevenue = orders?.filter(o => o.order_source !== 'online').reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
       const pendingOrders = orders?.filter(o => o.status === 'pending').length || 0;
+
+      // Calculate payment method breakdowns from notes
+      let cashRevenue = 0;
+      let cardUpiRevenue = 0;
+      let creditRevenue = 0;
+      orders?.forEach((o) => {
+        const amount = Number(o.total_amount);
+        const notesLower = (o.notes || '').toLowerCase();
+        if (notesLower.includes('- double') || notesLower.includes('- double ')) {
+          // Double/split payment — parse cash and card amounts from notes
+          const cashMatch = notesLower.match(/cash:\s*₹?([\d,]+)/);
+          const cardMatch = notesLower.match(/card\/upi:\s*₹?([\d,]+)/);
+          cashRevenue += cashMatch ? Number(cashMatch[1].replace(/,/g, '')) : 0;
+          cardUpiRevenue += cardMatch ? Number(cardMatch[1].replace(/,/g, '')) : 0;
+        } else if (notesLower.includes('- credit')) {
+          creditRevenue += amount;
+        } else if (notesLower.includes('- card') || notesLower.includes('- card/upi')) {
+          cardUpiRevenue += amount;
+        } else {
+          // Default to cash (includes "- cash" and legacy orders)
+          cashRevenue += amount;
+        }
+      });
 
       // Fetch new customers
       const { data: newCustomersData } = await supabase
@@ -189,8 +215,11 @@ const AdminReports = () => {
         totalProducts: products?.length || 0,
         lowStockProducts,
         totalCustomers: allCustomers?.length || 0,
-        conversionRate: 12.5, // Placeholder - would need actual visitor data
+        conversionRate: 12.5,
         repeatCustomerRate,
+        cashRevenue,
+        cardUpiRevenue,
+        creditRevenue,
       });
 
       // Group sales by date with source breakdown
@@ -466,6 +495,48 @@ const AdminReports = () => {
             <p className="text-xs text-red-700 mb-1">Low Stock Items</p>
             <p className="text-xl font-display font-bold text-red-700">{summary.lowStockProducts}</p>
             <p className="text-xs text-red-600 mt-1">of {summary.totalProducts} products</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* KPI Cards - Row 3: Payment Method Breakdown */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <Card className="bg-emerald-50/50 border-emerald-100">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs text-emerald-700">Cash Payments</p>
+              <DollarSign className="h-4 w-4 text-emerald-600" />
+            </div>
+            <p className="text-xl font-display font-bold text-emerald-700">{formatCurrency(summary.cashRevenue)}</p>
+            <p className="text-xs text-emerald-600 mt-1">
+              {summary.totalRevenue > 0 ? ((summary.cashRevenue / summary.totalRevenue) * 100).toFixed(1) : 0}% of total
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-indigo-50/50 border-indigo-100">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs text-indigo-700">Card/UPI Payments</p>
+              <DollarSign className="h-4 w-4 text-indigo-600" />
+            </div>
+            <p className="text-xl font-display font-bold text-indigo-700">{formatCurrency(summary.cardUpiRevenue)}</p>
+            <p className="text-xs text-indigo-600 mt-1">
+              {summary.totalRevenue > 0 ? ((summary.cardUpiRevenue / summary.totalRevenue) * 100).toFixed(1) : 0}% of total
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-orange-50/50 border-orange-100">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs text-orange-700">Credit (Pay Later)</p>
+              <DollarSign className="h-4 w-4 text-orange-600" />
+            </div>
+            <p className="text-xl font-display font-bold text-orange-700">{formatCurrency(summary.creditRevenue)}</p>
+            <p className="text-xs text-orange-600 mt-1">
+              {summary.totalRevenue > 0 ? ((summary.creditRevenue / summary.totalRevenue) * 100).toFixed(1) : 0}% of total
+            </p>
           </CardContent>
         </Card>
       </div>
