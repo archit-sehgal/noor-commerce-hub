@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { format } from "date-fns";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,9 +10,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { Download, Loader2, TrendingUp, TrendingDown, DollarSign, Users, ShoppingCart, Package, ArrowUpRight, Percent, Target, Calendar } from "lucide-react";
+import { Download, Loader2, TrendingUp, TrendingDown, DollarSign, Users, ShoppingCart, Package, ArrowUpRight, Percent, Target, Calendar, CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   BarChart,
   Bar,
@@ -60,6 +68,7 @@ const COLORS = ['hsl(38, 75%, 52%)', 'hsl(15, 55%, 60%)', 'hsl(160, 45%, 35%)', 
 const AdminReports = () => {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState("30");
+  const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
   const [salesData, setSalesData] = useState<SalesData[]>([]);
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [topCustomers, setTopCustomers] = useState<TopCustomer[]>([]);
@@ -86,28 +95,45 @@ const AdminReports = () => {
 
   useEffect(() => {
     fetchReportData();
-  }, [period]);
+  }, [period, customDate]);
 
   const fetchReportData = async () => {
     setLoading(true);
     try {
-      const daysAgo = parseInt(period);
-      const startDate = new Date();
-      if (daysAgo === 0) {
-        // "Today" — start of today
+      let startDate: Date;
+      
+      if (period === "custom" && customDate) {
+        // Custom date — start/end of that specific day
+        startDate = new Date(customDate);
         startDate.setHours(0, 0, 0, 0);
       } else {
-        startDate.setDate(startDate.getDate() - daysAgo);
+        const daysAgo = parseInt(period);
+        startDate = new Date();
+        if (daysAgo === 0) {
+          startDate.setHours(0, 0, 0, 0);
+        } else {
+          startDate.setDate(startDate.getDate() - daysAgo);
+        }
       }
 
+      const daysAgo = period === "custom" ? 1 : parseInt(period);
       const prevStartDate = new Date();
       prevStartDate.setDate(prevStartDate.getDate() - daysAgo * 2);
 
+      // For custom date, set end of day
+      let endDate: Date | null = null;
+      if (period === "custom" && customDate) {
+        endDate = new Date(customDate);
+        endDate.setHours(23, 59, 59, 999);
+      }
+
       // Fetch orders for the period
-      const { data: orders } = await supabase
+      let ordersQuery = supabase
         .from("orders")
         .select("id, total_amount, created_at, customer_id, order_source, status")
         .gte("created_at", startDate.toISOString());
+      if (endDate) ordersQuery = ordersQuery.lte("created_at", endDate.toISOString());
+      const { data: orders } = await ordersQuery;
 
       // Fetch previous period orders for comparison
       const { data: prevOrders } = await supabase
@@ -301,8 +327,11 @@ const AdminReports = () => {
     <AdminLayout title="Analytics & Reports">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div className="flex items-center gap-4">
-          <Select value={period} onValueChange={setPeriod}>
+        <div className="flex items-center gap-3 flex-wrap">
+          <Select value={period} onValueChange={(v) => {
+            setPeriod(v);
+            if (v !== "custom") setCustomDate(undefined);
+          }}>
             <SelectTrigger className="w-[180px]">
               <Calendar className="h-4 w-4 mr-2" />
               <SelectValue placeholder="Select period" />
@@ -313,8 +342,35 @@ const AdminReports = () => {
               <SelectItem value="30">Last 30 days</SelectItem>
               <SelectItem value="90">Last 90 days</SelectItem>
               <SelectItem value="365">Last year</SelectItem>
+              <SelectItem value="custom">Pick a date</SelectItem>
             </SelectContent>
           </Select>
+
+          {period === "custom" && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-[200px] justify-start text-left font-normal",
+                    !customDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="h-4 w-4 mr-2" />
+                  {customDate ? format(customDate, "PPP") : "Select date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={customDate}
+                  onSelect={setCustomDate}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          )}
         </div>
         <Button variant="outline" onClick={exportToCSV}>
           <Download className="h-4 w-4 mr-2" />

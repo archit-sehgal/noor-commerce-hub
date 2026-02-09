@@ -85,7 +85,10 @@ const AdminBilling = () => {
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
   const [newCustomerEmail, setNewCustomerEmail] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
-  const [discountAmount, setDiscountAmount] = useState<number>(0);
+  const [discountPercent, setDiscountPercent] = useState<number>(0);
+  const [creditAmount, setCreditAmount] = useState<number>(0);
+  const [cashAmount, setCashAmount] = useState<number>(0);
+  const [cardUpiAmount, setCardUpiAmount] = useState<number>(0);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
@@ -238,6 +241,7 @@ const AdminBilling = () => {
 
   const subtotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const taxAmount = 0; // All prices are GST inclusive
+  const discountAmount = Math.round((subtotal * discountPercent) / 100);
   const totalAmount = subtotal - discountAmount;
 
   const createNewCustomer = async () => {
@@ -362,7 +366,7 @@ const AdminBilling = () => {
           </table>
           <div class="totals">
             <div>Subtotal: ${formatCurrency(invoiceData.subtotal)}</div>
-            ${invoiceData.discountAmount > 0 ? `<div>Discount: -${formatCurrency(invoiceData.discountAmount)}</div>` : ""}
+            ${invoiceData.discountAmount > 0 ? `<div>Discount (${invoiceData.discountPercent}%): -${formatCurrency(invoiceData.discountAmount)}</div>` : ""}
             <div class="total">Total: ${formatCurrency(invoiceData.totalAmount)}</div>
             <div class="gst-note">* All prices are inclusive of GST</div>
           </div>
@@ -431,12 +435,12 @@ const AdminBilling = () => {
           user_id: null,
           salesman_id: selectedSalesman?.id || null,
           status: needsAlteration ? "processing" : "delivered",
-          payment_status: paymentMethod === "cash" ? "paid" : "pending",
+          payment_status: paymentMethod === "credit" ? "pending" : "paid",
           subtotal: subtotal,
           tax_amount: taxAmount,
           discount_amount: discountAmount,
           total_amount: totalAmount,
-          notes: notes || `In-store purchase - ${paymentMethod}`,
+          notes: notes || `In-store purchase - ${paymentMethod}${paymentMethod === "double" ? ` (Cash: ₹${cashAmount}, Card/UPI: ₹${cardUpiAmount})` : ""}${paymentMethod === "credit" ? ` (Credit: ₹${creditAmount || totalAmount})` : ""}`,
           created_by: user?.id,
           needs_alteration: needsAlteration,
           alteration_due_date: needsAlteration && alterationDueDate ? alterationDueDate : null,
@@ -461,8 +465,12 @@ const AdminBilling = () => {
         subtotal,
         taxAmount,
         discountAmount,
+        discountPercent,
         totalAmount,
         paymentMethod,
+        cashAmount,
+        cardUpiAmount,
+        creditAmount,
         date: new Date(),
       };
 
@@ -496,7 +504,7 @@ const AdminBilling = () => {
           tax_amount: taxAmount,
           discount_amount: discountAmount,
           total_amount: totalAmount,
-          payment_status: paymentMethod === "cash" ? "paid" : "pending",
+          payment_status: paymentMethod === "credit" ? "pending" : "paid",
           notes: notes,
           created_by: user?.id,
         }),
@@ -934,15 +942,25 @@ const AdminBilling = () => {
                 <span>{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex justify-between items-center">
-                  <Label className="text-sm text-foreground">Discount</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={discountAmount}
-                  onChange={(e) => setDiscountAmount(Number(e.target.value) || 0)}
-                  className="w-24 h-8 text-right"
-                />
+                <Label className="text-sm text-foreground">Discount (%)</Label>
+                <div className="flex items-center gap-1">
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={discountPercent}
+                    onChange={(e) => setDiscountPercent(Math.min(100, Number(e.target.value) || 0))}
+                    className="w-20 h-8 text-right"
+                  />
+                  <span className="text-sm text-muted-foreground">%</span>
+                </div>
               </div>
+              {discountAmount > 0 && (
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>Discount Amount</span>
+                  <span>-{formatCurrency(discountAmount)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-lg font-bold pt-2 border-t border-border">
                 <span>Total</span>
                 <span className="text-primary">{formatCurrency(totalAmount)}</span>
@@ -952,18 +970,89 @@ const AdminBilling = () => {
             <div className="space-y-3">
               <div>
                 <Label className="text-sm">Payment Method</Label>
-                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <Select value={paymentMethod} onValueChange={(v) => {
+                  setPaymentMethod(v);
+                  setCreditAmount(0);
+                  setCashAmount(0);
+                  setCardUpiAmount(0);
+                }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="card">Card</SelectItem>
-                    <SelectItem value="upi">UPI</SelectItem>
+                    <SelectItem value="card_upi">Card / UPI</SelectItem>
                     <SelectItem value="credit">Credit (Pay Later)</SelectItem>
+                    <SelectItem value="double">Double (Cash + Card/UPI)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
+              {paymentMethod === "credit" && (
+                <div className="space-y-2 p-3 border border-border rounded-lg bg-muted/30">
+                  <Label className="text-sm">Amount to Pay Later</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      max={totalAmount}
+                      value={creditAmount}
+                      onChange={(e) => setCreditAmount(Number(e.target.value) || 0)}
+                      className="h-8 text-right"
+                      placeholder="Enter amount..."
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 whitespace-nowrap"
+                      onClick={() => setCreditAmount(totalAmount)}
+                    >
+                      Full Amount
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Credit: {formatCurrency(creditAmount || totalAmount)} — Payment will show as pending
+                  </p>
+                </div>
+              )}
+
+              {paymentMethod === "double" && (
+                <div className="space-y-2 p-3 border border-border rounded-lg bg-muted/30">
+                  <div>
+                    <Label className="text-sm">Cash Amount</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={cashAmount}
+                      onChange={(e) => {
+                        const val = Number(e.target.value) || 0;
+                        setCashAmount(val);
+                        setCardUpiAmount(Math.max(0, totalAmount - val));
+                      }}
+                      className="h-8 text-right mt-1"
+                      placeholder="Cash..."
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm">Card / UPI Amount</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={cardUpiAmount}
+                      onChange={(e) => {
+                        const val = Number(e.target.value) || 0;
+                        setCardUpiAmount(val);
+                        setCashAmount(Math.max(0, totalAmount - val));
+                      }}
+                      className="h-8 text-right mt-1"
+                      placeholder="Card/UPI..."
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Total: {formatCurrency(cashAmount + cardUpiAmount)} of {formatCurrency(totalAmount)}
+                  </p>
+                </div>
+              )}
 
               <div>
                 <Label className="text-sm">Notes</Label>
