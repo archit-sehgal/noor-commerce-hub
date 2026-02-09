@@ -69,6 +69,8 @@ const AdminReports = () => {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState("30");
   const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
+  const [dateRangeFrom, setDateRangeFrom] = useState<Date | undefined>(undefined);
+  const [dateRangeTo, setDateRangeTo] = useState<Date | undefined>(undefined);
   const [salesData, setSalesData] = useState<SalesData[]>([]);
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [topCustomers, setTopCustomers] = useState<TopCustomer[]>([]);
@@ -98,17 +100,26 @@ const AdminReports = () => {
 
   useEffect(() => {
     fetchReportData();
-  }, [period, customDate]);
+  }, [period, customDate, dateRangeFrom, dateRangeTo]);
 
   const fetchReportData = async () => {
     setLoading(true);
     try {
       let startDate: Date;
+      let endDate: Date | null = null;
       
-      if (period === "custom" && customDate) {
-        // Custom date — start/end of that specific day
+      if (period === "range" && dateRangeFrom) {
+        startDate = new Date(dateRangeFrom);
+        startDate.setHours(0, 0, 0, 0);
+        if (dateRangeTo) {
+          endDate = new Date(dateRangeTo);
+          endDate.setHours(23, 59, 59, 999);
+        }
+      } else if (period === "custom" && customDate) {
         startDate = new Date(customDate);
         startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(customDate);
+        endDate.setHours(23, 59, 59, 999);
       } else {
         const daysAgo = parseInt(period);
         startDate = new Date();
@@ -119,16 +130,9 @@ const AdminReports = () => {
         }
       }
 
-      const daysAgo = period === "custom" ? 1 : parseInt(period);
+      const daysAgo = period === "custom" || period === "range" ? 1 : parseInt(period);
       const prevStartDate = new Date();
       prevStartDate.setDate(prevStartDate.getDate() - daysAgo * 2);
-
-      // For custom date, set end of day
-      let endDate: Date | null = null;
-      if (period === "custom" && customDate) {
-        endDate = new Date(customDate);
-        endDate.setHours(23, 59, 59, 999);
-      }
 
       // Fetch orders for the period
       let ordersQuery = supabase
@@ -145,12 +149,13 @@ const AdminReports = () => {
         .gte("created_at", prevStartDate.toISOString())
         .lt("created_at", startDate.toISOString());
 
-      // Calculate summary
-      const totalRevenue = orders?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
+      // Calculate summary - only count paid orders as revenue
+      const paidOrders = orders?.filter(o => o.payment_status === 'paid') || [];
+      const totalRevenue = paidOrders.reduce((sum, o) => sum + Number(o.total_amount), 0);
       const totalOrders = orders?.length || 0;
       const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-      const onlineRevenue = orders?.filter(o => o.order_source === 'online').reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
-      const posRevenue = orders?.filter(o => o.order_source !== 'online').reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
+      const onlineRevenue = paidOrders.filter(o => o.order_source === 'online').reduce((sum, o) => sum + Number(o.total_amount), 0);
+      const posRevenue = paidOrders.filter(o => o.order_source !== 'online').reduce((sum, o) => sum + Number(o.total_amount), 0);
       const pendingOrders = orders?.filter(o => o.status === 'pending').length || 0;
 
       // Calculate payment method breakdowns from notes
@@ -360,6 +365,7 @@ const AdminReports = () => {
           <Select value={period} onValueChange={(v) => {
             setPeriod(v);
             if (v !== "custom") setCustomDate(undefined);
+            if (v !== "range") { setDateRangeFrom(undefined); setDateRangeTo(undefined); }
           }}>
             <SelectTrigger className="w-[180px]">
               <Calendar className="h-4 w-4 mr-2" />
@@ -372,33 +378,49 @@ const AdminReports = () => {
               <SelectItem value="90">Last 90 days</SelectItem>
               <SelectItem value="365">Last year</SelectItem>
               <SelectItem value="custom">Pick a date</SelectItem>
+              <SelectItem value="range">Date Range</SelectItem>
             </SelectContent>
           </Select>
 
           {period === "custom" && (
             <Popover>
               <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-[200px] justify-start text-left font-normal",
-                    !customDate && "text-muted-foreground"
-                  )}
-                >
+                <Button variant="outline" className={cn("w-[200px] justify-start text-left font-normal", !customDate && "text-muted-foreground")}>
                   <CalendarIcon className="h-4 w-4 mr-2" />
                   {customDate ? format(customDate, "PPP") : "Select date"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={customDate}
-                  onSelect={setCustomDate}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
+                <CalendarComponent mode="single" selected={customDate} onSelect={setCustomDate} initialFocus className={cn("p-3 pointer-events-auto")} />
               </PopoverContent>
             </Popover>
+          )}
+
+          {period === "range" && (
+            <>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-[160px] justify-start text-left font-normal", !dateRangeFrom && "text-muted-foreground")}>
+                    <CalendarIcon className="h-4 w-4 mr-2" />
+                    {dateRangeFrom ? format(dateRangeFrom, "MMM dd, yyyy") : "From"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent mode="single" selected={dateRangeFrom} onSelect={setDateRangeFrom} initialFocus className={cn("p-3 pointer-events-auto")} />
+                </PopoverContent>
+              </Popover>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-[160px] justify-start text-left font-normal", !dateRangeTo && "text-muted-foreground")}>
+                    <CalendarIcon className="h-4 w-4 mr-2" />
+                    {dateRangeTo ? format(dateRangeTo, "MMM dd, yyyy") : "To"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent mode="single" selected={dateRangeTo} onSelect={setDateRangeTo} initialFocus className={cn("p-3 pointer-events-auto")} />
+                </PopoverContent>
+              </Popover>
+            </>
           )}
         </div>
         <Button variant="outline" onClick={exportToCSV}>
