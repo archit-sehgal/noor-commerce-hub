@@ -54,6 +54,7 @@ interface CartItem {
   size: string | null;
   color: string | null;
   unitPrice: number;
+  discountPercent: number;
 }
 
 interface Customer {
@@ -85,7 +86,6 @@ const AdminBilling = () => {
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
   const [newCustomerEmail, setNewCustomerEmail] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
-  const [discountPercent, setDiscountPercent] = useState<number>(10);
   const [creditAmount, setCreditAmount] = useState<number>(0);
   const [cashAmount, setCashAmount] = useState<number>(0);
   const [cardUpiAmount, setCardUpiAmount] = useState<number>(0);
@@ -224,6 +224,7 @@ const AdminBilling = () => {
           size: product.sizes?.[0] || null,
           color: product.colors?.[0] || null,
           unitPrice,
+          discountPercent: 10,
         },
       ]);
     }
@@ -241,7 +242,10 @@ const AdminBilling = () => {
 
   const subtotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const taxAmount = 0; // All prices are GST inclusive
-  const discountAmount = Math.round((subtotal * discountPercent) / 100);
+  const discountAmount = cart.reduce((sum, item) => {
+    const itemTotal = item.unitPrice * item.quantity;
+    return sum + Math.round((itemTotal * item.discountPercent) / 100);
+  }, 0);
   const totalAmount = subtotal - discountAmount;
 
   const createNewCustomer = async () => {
@@ -301,15 +305,21 @@ const AdminBilling = () => {
   const printInvoiceDirectly = useCallback((invoiceData: any) => {
     const itemsHtml = invoiceData.items
       .map(
-        (item: CartItem) => `
-        <tr>
-          <td>${item.product.name}${item.size ? ` (${item.size})` : ""}${item.color ? ` - ${item.color}` : ""}</td>
-          <td style="text-align: center; font-family: monospace; font-size: 11px;">${item.product.sku || "-"}</td>
-          <td style="text-align: center;">${item.quantity}</td>
-          <td style="text-align: right;">${formatCurrency(item.unitPrice)}</td>
-          <td style="text-align: right;">${formatCurrency(item.unitPrice * item.quantity)}</td>
-        </tr>
-      `
+        (item: CartItem) => {
+          const itemTotal = item.unitPrice * item.quantity;
+          const itemDiscount = Math.round((itemTotal * item.discountPercent) / 100);
+          const itemNet = itemTotal - itemDiscount;
+          return `
+          <tr>
+            <td>${item.product.name}${item.size ? ` (${item.size})` : ""}${item.color ? ` - ${item.color}` : ""}</td>
+            <td style="text-align: center; font-family: monospace; font-size: 11px;">${item.product.sku || "-"}</td>
+            <td style="text-align: center;">${item.quantity}</td>
+            <td style="text-align: right;">${formatCurrency(item.unitPrice)}</td>
+            <td style="text-align: center;">${item.discountPercent}%</td>
+            <td style="text-align: right;">${formatCurrency(itemNet)}</td>
+          </tr>
+        `;
+        }
       )
       .join("");
 
@@ -318,10 +328,10 @@ const AdminBilling = () => {
         <head>
           <title>Invoice - ${invoiceData.invoiceNumber}</title>
           <style>
-            body { font-family: 'Georgia', serif; padding: 20px; max-width: 800px; margin: 0 auto; color: #000; }
-            .logo-section { text-align: center; margin-bottom: 10px; }
-            .logo-section img { max-width: 180px; height: auto; margin: 0 auto; }
-            .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 15px; margin-bottom: 15px; }
+            body { font-family: 'Georgia', serif; padding: 10px; max-width: 800px; margin: 0 auto; color: #000; }
+            .logo-section { text-align: center; margin-bottom: 5px; }
+            .logo-section img { max-width: 180px; height: auto; margin: 0 auto; filter: contrast(1.5) brightness(0.9); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
             .header h1 { color: #000; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: 2px; }
             .header p { margin: 3px 0; color: #000; font-weight: 600; }
             .invoice-details { display: flex; justify-content: space-between; margin-bottom: 20px; color: #000; }
@@ -335,7 +345,7 @@ const AdminBilling = () => {
             .totals .total { font-size: 22px; color: #000; font-weight: 900; }
             .footer { text-align: center; margin-top: 30px; padding-top: 15px; border-top: 2px solid #333; color: #000; font-weight: 500; }
             .gst-note { font-size: 11px; color: #000; font-style: italic; margin-top: 8px; }
-            @media print { body { padding: 10px; } }
+            @media print { body { padding: 10px; margin: 0; } @page { margin: 10px; } }
           </style>
         </head>
         <body>
@@ -364,7 +374,8 @@ const AdminBilling = () => {
                 <th style="text-align: center;">SKU</th>
                 <th style="text-align: center;">Qty</th>
                 <th style="text-align: right;">Price</th>
-                <th style="text-align: right;">Total</th>
+                <th style="text-align: center;">Disc%</th>
+                <th style="text-align: right;">Net</th>
               </tr>
             </thead>
             <tbody>
@@ -373,7 +384,8 @@ const AdminBilling = () => {
           </table>
           <div class="totals">
             <div>Subtotal: ${formatCurrency(invoiceData.subtotal)}</div>
-            ${invoiceData.discountAmount > 0 ? `<div>Discount (${invoiceData.discountPercent}%): -${formatCurrency(invoiceData.discountAmount)}</div>` : ""}
+            ${invoiceData.discountAmount > 0 ? `<div>Total Discount: -${formatCurrency(invoiceData.discountAmount)}</div>` : ""}
+            <div class="total">Total: ${formatCurrency(invoiceData.totalAmount)}</div>
             <div class="total">Total: ${formatCurrency(invoiceData.totalAmount)}</div>
             <div class="gst-note">* All prices are inclusive of GST</div>
           </div>
@@ -473,7 +485,6 @@ const AdminBilling = () => {
         subtotal,
         taxAmount,
         discountAmount,
-        discountPercent,
         totalAmount,
         paymentMethod,
         cashAmount,
@@ -934,8 +945,27 @@ const AdminBilling = () => {
                       </div>
                     </div>
 
-                    <div className="text-right text-sm font-semibold text-primary">
-                      {formatCurrency(item.unitPrice * item.quantity)}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <Label className="text-xs text-muted-foreground">Disc:</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={item.discountPercent === 0 ? "" : item.discountPercent}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const num = val === "" ? 0 : Math.min(100, Math.max(0, Number(val)));
+                            updateCartItem(index, { discountPercent: num });
+                          }}
+                          className="w-14 h-6 text-xs text-right"
+                          placeholder="0"
+                        />
+                        <span className="text-xs text-muted-foreground">%</span>
+                      </div>
+                      <div className="text-right text-sm font-semibold text-primary">
+                        {formatCurrency(item.unitPrice * item.quantity - Math.round((item.unitPrice * item.quantity * item.discountPercent) / 100))}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -954,31 +984,9 @@ const AdminBilling = () => {
                   <span className="text-foreground">Subtotal (GST Inclusive)</span>
                 <span>{formatCurrency(subtotal)}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <Label className="text-sm text-foreground">Discount (%)</Label>
-                <div className="flex items-center gap-1">
-                  <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={discountPercent === 0 ? "" : discountPercent}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === "") {
-                        setDiscountPercent(0);
-                      } else {
-                        setDiscountPercent(Math.min(100, Math.max(0, Number(val))));
-                      }
-                    }}
-                    className="w-20 h-8 text-right"
-                    placeholder="0"
-                  />
-                  <span className="text-sm text-muted-foreground">%</span>
-                </div>
-              </div>
               {discountAmount > 0 && (
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Discount Amount</span>
+                  <span>Total Discount</span>
                   <span>-{formatCurrency(discountAmount)}</span>
                 </div>
               )}

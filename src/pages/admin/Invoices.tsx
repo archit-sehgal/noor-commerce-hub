@@ -167,22 +167,29 @@ const AdminInvoices = () => {
             <head>
               <title>Invoice - ${selectedInvoice?.invoice_number}</title>
               <style>
-                body { font-family: 'Georgia', serif; padding: 40px; max-width: 800px; margin: 0 auto; color: #000; }
-                .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 20px; margin-bottom: 20px; }
+                body { font-family: 'Georgia', serif; padding: 10px; max-width: 800px; margin: 0 auto; color: #000; }
+                .logo-section { text-align: center; margin-bottom: 5px; }
+                .logo-section img { max-width: 180px; height: auto; margin: 0 auto; filter: contrast(1.5) brightness(0.9); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
                 .header h1 { color: #000; margin: 0; font-size: 28px; font-weight: 800; }
-                .header p { margin: 5px 0; color: #000; font-weight: 600; }
-                .invoice-details { display: flex; justify-content: space-between; margin-bottom: 30px; }
-                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-                th { background: #000; color: white; padding: 12px; text-align: left; font-weight: 700; }
-                td { padding: 10px; border-bottom: 2px solid #333; color: #000; font-weight: 600; }
-                .totals { text-align: right; margin-top: 20px; }
-                .totals div { margin: 5px 0; color: #000; font-weight: 600; }
-                .totals .total { font-size: 24px; color: #000; font-weight: 900; }
-                .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #333; color: #000; font-weight: 500; }
+                .header p { margin: 3px 0; color: #000; font-weight: 600; }
+                .invoice-details { display: flex; justify-content: space-between; margin-bottom: 20px; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+                th { background: #000; color: white; padding: 8px; text-align: left; font-weight: 700; }
+                td { padding: 8px; border-bottom: 2px solid #333; color: #000; font-weight: 600; }
+                .totals { text-align: right; margin-top: 15px; }
+                .totals div { margin: 3px 0; color: #000; font-weight: 600; }
+                .totals .total { font-size: 22px; color: #000; font-weight: 900; }
+                .footer { text-align: center; margin-top: 20px; padding-top: 10px; border-top: 2px solid #333; color: #000; font-weight: 500; }
+                @media print { body { padding: 10px; margin: 0; } @page { margin: 10px; } }
               </style>
             </head>
             <body>
+              <div class="logo-section">
+                <img src="/noor-logo-invoice.png" alt="Noor Creations" onerror="this.style.display='none'" />
+              </div>
               ${printContent.innerHTML}
+            </body>
             </body>
           </html>
         `);
