@@ -354,7 +354,7 @@ const AdminBilling = () => {
             .totals .total { font-size: 22px; color: #000; font-weight: 900; }
             .footer { text-align: center; margin-top: 30px; padding-top: 15px; border-top: 2px solid #333; color: #000; font-weight: 500; }
             .gst-note { font-size: 11px; color: #000; font-style: italic; margin-top: 8px; }
-            @media print { body { padding: 5px 10px; margin: 0; } @page { margin: 5px 10px; } }
+            @media print { @page { margin: 0; } body { margin: 0; padding: 0; max-width: 100%; } .logo-section { margin-top: 0 !important; padding-top: 0 !important; } }
           </style>
         </head>
         <body>
