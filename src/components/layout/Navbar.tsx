@@ -44,11 +44,10 @@ const Navbar = () => {
   const navLinks = [
     { name: "New Arrivals", href: "/new-arrivals" },
     { name: "Collections", href: "/collections" },
-    { name: "Kurtis", href: "/category/kurtis" },
-    { name: "Sarees", href: "/category/sarees" },
-    { name: "Suits", href: "/category/suits" },
-    { name: "Anarkalis", href: "/category/anarkalis" },
-    { name: "Lehengas", href: "/category/lehengas" },
+    { name: "Sarees", href: "/category/saree" },
+    { name: "Suits", href: "/category/suit" },
+    { name: "Lehengas", href: "/category/lehenga" },
+    { name: "RM Dress", href: "/category/rm-dress" },
   ];
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Account";
