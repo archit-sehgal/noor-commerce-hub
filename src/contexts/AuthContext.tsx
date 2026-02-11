@@ -14,6 +14,8 @@ interface AuthContextType {
   isStaff: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInWithPhone: (phone: string) => Promise<{ error: Error | null }>;
+  verifyPhoneOtp: (phone: string, token: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -103,10 +105,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       password,
     });
     if (!error) {
-      // Mark as fresh login for first-time loading screen
       sessionStorage.setItem("freshLogin", "true");
     }
     return { error };
+  };
+
+  const signInWithPhone = async (phone: string) => {
+    const { error } = await supabase.auth.signInWithOtp({ phone });
+    return { error: error as Error | null };
+  };
+
+  const verifyPhoneOtp = async (phone: string, token: string) => {
+    const { error } = await supabase.auth.verifyOtp({ phone, token, type: "sms" });
+    if (!error) {
+      sessionStorage.setItem("freshLogin", "true");
+    }
+    return { error: error as Error | null };
   };
 
   const signOut = async () => {
@@ -132,6 +146,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isStaff,
         signUp,
         signIn,
+        signInWithPhone,
+        verifyPhoneOtp,
         signOut,
       }}
     >
