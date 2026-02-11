@@ -329,7 +329,7 @@ const AdminBilling = () => {
           <title>Invoice - ${invoiceData.invoiceNumber}</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: 'Georgia', serif; padding: 10px; max-width: 800px; margin: 0 auto; color: #000; }
+            body { font-family: 'Georgia', serif; padding: 10px 15px; max-width: 800px; margin: 0 auto; color: #000; }
             .logo-section { text-align: center; margin-bottom: 2px; padding: 0; }
             .logo-section img { max-width: 160px; height: auto; margin: 0 auto; display: block; filter: contrast(2) brightness(0.8) saturate(1.2); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 8px; margin-bottom: 10px; }
@@ -339,14 +339,14 @@ const AdminBilling = () => {
             .invoice-details p { color: #000; font-weight: 500; margin: 2px 0; }
             .invoice-details strong { color: #000; font-weight: 800; }
             table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-            th { background: #000; color: white; padding: 8px; text-align: left; font-weight: 700; font-size: 13px; }
-            td { padding: 8px; border-bottom: 2px solid #333; color: #000; font-weight: 600; font-size: 13px; }
+            th { background: #000; color: white; padding: 6px 4px; text-align: left; font-weight: 700; font-size: 12px; }
+            td { padding: 6px 4px; border-bottom: 2px solid #333; color: #000; font-weight: 600; font-size: 12px; }
             .totals { text-align: right; margin-top: 15px; color: #000; }
             .totals div { margin: 3px 0; font-weight: 600; color: #000; }
             .totals .total { font-size: 22px; color: #000; font-weight: 900; }
             .footer { text-align: center; margin-top: 30px; padding-top: 15px; border-top: 2px solid #333; color: #000; font-weight: 500; }
             .gst-note { font-size: 11px; color: #000; font-style: italic; margin-top: 8px; }
-            @media print { body { padding: 5px; margin: 0; } @page { margin: 5px 10px; } }
+            @media print { body { padding: 5px 15px; margin: 0; } @page { margin: 5px 15px; } }
           </style>
         </head>
         <body>

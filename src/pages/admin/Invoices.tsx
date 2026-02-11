@@ -46,6 +46,7 @@ interface Invoice {
 interface OrderItem {
   id: string;
   product_name: string;
+  product_sku: string | null;
   quantity: number;
   unit_price: number;
   total_price: number;
@@ -158,44 +159,104 @@ const AdminInvoices = () => {
   };
 
   const printInvoice = () => {
-    const printContent = document.getElementById("invoice-view-content");
-    if (printContent) {
-      const printWindow = window.open("", "_blank");
-      if (printWindow) {
-        printWindow.document.write(`
-          <html>
-            <head>
-              <title>Invoice - ${selectedInvoice?.invoice_number}</title>
-              <style>
-                body { font-family: 'Georgia', serif; padding: 10px; max-width: 800px; margin: 0 auto; color: #000; }
-                .logo-section { text-align: center; margin-bottom: 5px; }
-                .logo-section img { max-width: 180px; height: auto; margin: 0 auto; filter: contrast(1.5) brightness(0.9); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
-                .header h1 { color: #000; margin: 0; font-size: 28px; font-weight: 800; }
-                .header p { margin: 3px 0; color: #000; font-weight: 600; }
-                .invoice-details { display: flex; justify-content: space-between; margin-bottom: 20px; }
-                table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-                th { background: #000; color: white; padding: 8px; text-align: left; font-weight: 700; }
-                td { padding: 8px; border-bottom: 2px solid #333; color: #000; font-weight: 600; }
-                .totals { text-align: right; margin-top: 15px; }
-                .totals div { margin: 3px 0; color: #000; font-weight: 600; }
-                .totals .total { font-size: 22px; color: #000; font-weight: 900; }
-                .footer { text-align: center; margin-top: 20px; padding-top: 10px; border-top: 2px solid #333; color: #000; font-weight: 500; }
-                @media print { body { padding: 10px; margin: 0; } @page { margin: 10px; } }
-              </style>
-            </head>
-            <body>
-              <div class="logo-section">
-                <img src="/noor-logo-invoice.png" alt="Noor Creations" onerror="this.style.display='none'" />
-              </div>
-              ${printContent.innerHTML}
-            </body>
-            </body>
-          </html>
-        `);
-        printWindow.document.close();
+    if (!selectedInvoice) return;
+
+    const itemsHtml = orderItems.map(item => {
+      return `
+        <tr>
+          <td>${item.product_name}${item.size ? ` (${item.size})` : ""}${item.color ? ` - ${item.color}` : ""}</td>
+          <td style="text-align: center; font-family: monospace; font-size: 11px;">${item.product_sku || "-"}</td>
+          <td style="text-align: center;">${item.quantity}</td>
+          <td style="text-align: right;">${formatCurrency(item.unit_price)}</td>
+          <td style="text-align: right;">${formatCurrency(item.total_price)}</td>
+        </tr>
+      `;
+    }).join("");
+
+    const printContent = `
+      <html>
+        <head>
+          <title>Invoice - ${selectedInvoice.invoice_number}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: 'Georgia', serif; padding: 10px 15px; max-width: 800px; margin: 0 auto; color: #000; }
+            .logo-section { text-align: center; margin-bottom: 2px; padding: 0; }
+            .logo-section img { max-width: 160px; height: auto; margin: 0 auto; display: block; filter: contrast(2) brightness(0.8) saturate(1.2); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 8px; margin-bottom: 10px; }
+            .header h1 { color: #000; margin: 0; font-size: 22px; font-weight: 900; letter-spacing: 3px; }
+            .header p { margin: 2px 0; color: #000; font-weight: 600; font-size: 12px; }
+            .invoice-details { display: flex; justify-content: space-between; margin-bottom: 20px; color: #000; }
+            .invoice-details p { color: #000; font-weight: 500; margin: 2px 0; }
+            .invoice-details strong { color: #000; font-weight: 800; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+            th { background: #000; color: white; padding: 6px 4px; text-align: left; font-weight: 700; font-size: 12px; }
+            td { padding: 6px 4px; border-bottom: 2px solid #333; color: #000; font-weight: 600; font-size: 12px; }
+            .totals { text-align: right; margin-top: 15px; color: #000; }
+            .totals div { margin: 3px 0; font-weight: 600; color: #000; }
+            .totals .total { font-size: 22px; color: #000; font-weight: 900; }
+            .footer { text-align: center; margin-top: 30px; padding-top: 15px; border-top: 2px solid #333; color: #000; font-weight: 500; }
+            .gst-note { font-size: 11px; color: #000; font-style: italic; margin-top: 8px; }
+            @media print { body { padding: 5px 15px; margin: 0; } @page { margin: 5px 15px; } }
+          </style>
+        </head>
+        <body>
+          <div class="logo-section">
+            <img src="/noor-logo-invoice.png" alt="Noor Creations" onerror="this.style.display='none'" />
+          </div>
+          <div class="header">
+            <h1>NOOR CREATIONS</h1>
+            <p>Moti Bazar Parade Jammu, 180001</p>
+            <p>Phone: 6006364546</p>
+            <p>GSTIN: 01NXZPS2503D1Z8</p>
+            <p style="margin-top: 8px; font-size: 16px; font-weight: 900; letter-spacing: 2px;">TAX INVOICE</p>
+          </div>
+          <div class="invoice-details">
+            <div>
+              <p><strong>Invoice No:</strong> ${selectedInvoice.invoice_number}</p>
+              <p><strong>Order #:</strong> ${selectedInvoice.order?.order_number || "-"}</p>
+              <p><strong>Date:</strong> ${new Date(selectedInvoice.created_at).toLocaleDateString("en-IN")}</p>
+              ${selectedInvoice.customer ? `<p><strong>Customer:</strong> ${selectedInvoice.customer.name}</p>` : ""}
+            </div>
+            <div>
+              <p><strong>Payment:</strong> ${selectedInvoice.payment_status.toUpperCase()}</p>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th style="text-align: center;">SKU</th>
+                <th style="text-align: center;">Qty</th>
+                <th style="text-align: right;">Price</th>
+                <th style="text-align: right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+          <div class="totals">
+            <div>Subtotal: ${formatCurrency(selectedInvoice.subtotal)}</div>
+            ${(selectedInvoice.discount_amount || 0) > 0 ? `<div>Total Discount: -${formatCurrency(selectedInvoice.discount_amount || 0)}</div>` : ""}
+            <div class="total">Total: ${formatCurrency(selectedInvoice.total_amount)}</div>
+            <div class="gst-note">* All prices are inclusive of GST</div>
+          </div>
+          <div class="footer">
+            <p>Thank you for shopping with us!</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open("", "_blank", "width=800,height=600");
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
         printWindow.print();
-      }
+        printWindow.close();
+      }, 100);
     }
   };
 
