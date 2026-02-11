@@ -323,17 +323,17 @@ const AdminBilling = () => {
       )
       .join("");
 
-    const logoUrl = `${window.location.origin}/noor-logo-invoice.png`;
+    const logoUrl = `${window.location.origin}/noor-logo-bill.png`;
     const printContent = `
       <html>
         <head>
           <title>Invoice - ${invoiceData.invoiceNumber}</title>
           <style>
-            @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: 'Poppins', 'Segoe UI', sans-serif; padding: 10px 15px; max-width: 800px; margin: 0 auto; color: #000; }
+            body { font-family: 'Inter', 'Segoe UI', sans-serif; padding: 10px 15px; max-width: 800px; margin: 0 auto; color: #000; transform: scale(0.9); transform-origin: top center; }
             .logo-section { text-align: center; margin-bottom: 2px; padding: 0; }
-            .logo-section img { max-width: 160px; height: auto; margin: 0 auto; display: block; filter: contrast(2) brightness(0.8) saturate(1.2); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .logo-section img { max-width: 160px; height: auto; margin: 0 auto; display: block; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 8px; margin-bottom: 10px; }
             .header h1 { color: #000; margin: 0; font-size: 22px; font-weight: 900; letter-spacing: 3px; }
             .header p { margin: 2px 0; color: #000; font-weight: 600; font-size: 12px; }
@@ -341,14 +341,14 @@ const AdminBilling = () => {
             .invoice-details p { color: #000; font-weight: 500; margin: 2px 0; }
             .invoice-details strong { color: #000; font-weight: 800; }
             table { width: 100%; border-collapse: collapse; margin-bottom: 15px; table-layout: fixed; }
-            th { background: #000; color: white; padding: 6px 3px; text-align: left; font-weight: 700; font-size: 11px; }
-            td { padding: 6px 3px; border-bottom: 2px solid #333; color: #000; font-weight: 600; font-size: 11px; word-wrap: break-word; }
-            .col-item { width: 28%; }
-            .col-sku { width: 16%; }
+            th { background: #000; color: white; padding: 6px 3px; text-align: left; font-weight: 700; font-size: 10px; }
+            td { padding: 6px 3px; border-bottom: 2px solid #333; color: #000; font-weight: 600; font-size: 10px; word-wrap: break-word; }
+            .col-item { width: 26%; }
+            .col-sku { width: 15%; }
             .col-qty { width: 8%; }
-            .col-price { width: 18%; }
+            .col-price { width: 17%; }
             .col-disc { width: 10%; }
-            .col-net { width: 20%; }
+            .col-net { width: 24%; }
             .totals { text-align: right; margin-top: 15px; color: #000; }
             .totals div { margin: 3px 0; font-weight: 600; color: #000; }
             .totals .total { font-size: 22px; color: #000; font-weight: 900; }
@@ -637,7 +637,8 @@ const AdminBilling = () => {
             <head>
               <title>Invoice - ${generatedInvoice?.invoiceNumber}</title>
               <style>
-                body { font-family: 'Poppins', 'Segoe UI', sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; color: #000; }
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+                body { font-family: 'Inter', 'Segoe UI', sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; color: #000; transform: scale(0.9); transform-origin: top center; }
                 .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 20px; margin-bottom: 20px; }
                 .header h1 { color: #000; margin: 0; font-size: 28px; font-weight: 800; }
                 .header p { margin: 5px 0; color: #000; font-weight: 600; }
