@@ -282,8 +282,11 @@ const AddToStoreDialog = ({
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{product.name}</p>
+                        <p className="text-xs font-mono text-muted-foreground">
+                          SKU: {product.sku || "-"}
+                        </p>
                         <p className="text-sm text-muted-foreground">
-                          SKU: {product.sku || "-"} • Stock: {product.stock_quantity}
+                          Stock: {product.stock_quantity}
                         </p>
                       </div>
                       <div className="text-right">
@@ -306,15 +309,24 @@ const AddToStoreDialog = ({
         ) : (
           <ScrollArea className="max-h-[60vh]">
             <div className="space-y-4 pr-4">
+              {/* Show inventory product info */}
+              {(selectedProduct || editProduct) && (
+                <div className="bg-muted/50 rounded-lg p-3 text-sm">
+                  <p className="font-medium">Inventory Product: {selectedProduct?.name || editProduct?.product?.id}</p>
+                  <p className="text-muted-foreground font-mono">SKU: {selectedProduct?.sku || editProduct?.product?.sku || "-"}</p>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <Label htmlFor="name">Product Name *</Label>
+                  <Label htmlFor="name">Store Display Title *</Label>
                   <Input
                     id="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter product name for store"
+                    placeholder="Title shown to customers on the store"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">This name will be displayed to customers on your online store.</p>
                 </div>
 
                 <div className="col-span-2">
