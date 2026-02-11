@@ -53,14 +53,21 @@ const Footer = () => {
               SHOP
             </h3>
             <ul className="space-y-3">
-              {["New Arrivals", "Collections", "Kurtis", "Sarees", "Suits", "Lehengas"].map((item) => (
-                <li key={item}>
+              {[
+                { name: "New Arrivals", href: "/new-arrivals" },
+                { name: "Collections", href: "/collections" },
+                { name: "Sarees", href: "/category/saree" },
+                { name: "Suits", href: "/category/suit" },
+                { name: "Lehengas", href: "/category/lehenga" },
+                { name: "RM Dress", href: "/category/rm-dress" },
+              ].map((item) => (
+                <li key={item.name}>
                   <Link 
-                    to={`/category/${item.toLowerCase().replace(' ', '-')}`}
+                    to={item.href}
                     className="text-muted-foreground hover:text-gold transition-colors text-sm font-body flex items-center gap-2"
                   >
                     <span className="text-gold/40 text-xs">✧</span>
-                    {item}
+                    {item.name}
                   </Link>
                 </li>
               ))}
