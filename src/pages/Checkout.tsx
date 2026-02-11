@@ -92,7 +92,7 @@ const Checkout = () => {
     try {
       const newOrderNumber = generateOrderNumber();
 
-      // Get or update customer record for this user
+      // Get or create customer record for this user
       let customerId: string | null = null;
       const { data: existingCustomer } = await supabase
         .from("customers")
@@ -102,7 +102,6 @@ const Checkout = () => {
 
       if (existingCustomer) {
         customerId = existingCustomer.id;
-        // Update customer info with latest shipping details
         await supabase
           .from("customers")
           .update({
@@ -114,6 +113,22 @@ const Checkout = () => {
             pincode: form.pincode,
           })
           .eq("id", customerId);
+      } else {
+        const { data: newCustomer } = await supabase
+          .from("customers")
+          .insert({
+            user_id: user.id,
+            name: form.fullName,
+            email: user.email || null,
+            phone: form.phone,
+            address: form.address,
+            city: form.city,
+            state: form.state,
+            pincode: form.pincode,
+          })
+          .select("id")
+          .single();
+        if (newCustomer) customerId = newCustomer.id;
       }
 
       // Create the order with customer_id
