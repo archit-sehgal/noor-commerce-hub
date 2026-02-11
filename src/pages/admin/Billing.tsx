@@ -328,12 +328,13 @@ const AdminBilling = () => {
         <head>
           <title>Invoice - ${invoiceData.invoiceNumber}</title>
           <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
             body { font-family: 'Georgia', serif; padding: 10px; max-width: 800px; margin: 0 auto; color: #000; }
-            .logo-section { text-align: center; margin-bottom: 5px; }
-            .logo-section img { max-width: 180px; height: auto; margin: 0 auto; filter: contrast(1.5) brightness(0.9); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
-            .header h1 { color: #000; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: 2px; }
-            .header p { margin: 3px 0; color: #000; font-weight: 600; }
+            .logo-section { text-align: center; margin-bottom: 2px; padding: 0; }
+            .logo-section img { max-width: 160px; height: auto; margin: 0 auto; display: block; filter: contrast(2) brightness(0.8) saturate(1.2); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 8px; margin-bottom: 10px; }
+            .header h1 { color: #000; margin: 0; font-size: 22px; font-weight: 900; letter-spacing: 3px; }
+            .header p { margin: 2px 0; color: #000; font-weight: 600; font-size: 12px; }
             .invoice-details { display: flex; justify-content: space-between; margin-bottom: 20px; color: #000; }
             .invoice-details p { color: #000; font-weight: 500; margin: 2px 0; }
             .invoice-details strong { color: #000; font-weight: 800; }
@@ -345,7 +346,7 @@ const AdminBilling = () => {
             .totals .total { font-size: 22px; color: #000; font-weight: 900; }
             .footer { text-align: center; margin-top: 30px; padding-top: 15px; border-top: 2px solid #333; color: #000; font-weight: 500; }
             .gst-note { font-size: 11px; color: #000; font-style: italic; margin-top: 8px; }
-            @media print { body { padding: 10px; margin: 0; } @page { margin: 10px; } }
+            @media print { body { padding: 5px; margin: 0; } @page { margin: 5px 10px; } }
           </style>
         </head>
         <body>
@@ -353,8 +354,11 @@ const AdminBilling = () => {
             <img src="/noor-logo-invoice.png" alt="Noor Creations" onerror="this.style.display='none'" />
           </div>
           <div class="header">
-            <h1>NOOR - A HAND CRAFTED HERITAGE</h1>
-            <p>Tax Invoice</p>
+            <h1>NOOR CREATIONS</h1>
+            <p>Moti Bazar Parade Jammu, 180001</p>
+            <p>Phone: 6006364546</p>
+            <p>GSTIN: 01NXZPS2503D1Z8</p>
+            <p style="margin-top: 8px; font-size: 16px; font-weight: 900; letter-spacing: 2px;">TAX INVOICE</p>
           </div>
           <div class="invoice-details">
             <div>
@@ -385,7 +389,6 @@ const AdminBilling = () => {
           <div class="totals">
             <div>Subtotal: ${formatCurrency(invoiceData.subtotal)}</div>
             ${invoiceData.discountAmount > 0 ? `<div>Total Discount: -${formatCurrency(invoiceData.discountAmount)}</div>` : ""}
-            <div class="total">Total: ${formatCurrency(invoiceData.totalAmount)}</div>
             <div class="total">Total: ${formatCurrency(invoiceData.totalAmount)}</div>
             <div class="gst-note">* All prices are inclusive of GST</div>
           </div>
@@ -859,8 +862,8 @@ const AdminBilling = () => {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <p className="font-medium text-sm">{item.product.name}</p>
-                        <p className="text-xs text-foreground">
-                          {formatCurrency(item.unitPrice)} each
+                        <p className="text-xs text-muted-foreground font-mono">
+                          {item.product.sku || "No SKU"} • {formatCurrency(item.unitPrice)} each
                         </p>
                       </div>
                       <Button
