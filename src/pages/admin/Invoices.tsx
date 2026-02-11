@@ -182,9 +182,9 @@ const AdminInvoices = () => {
         <head>
           <title>Invoice - ${selectedInvoice.invoice_number}</title>
           <style>
+            @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap');
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: 'Georgia', serif; padding: 10px 15px; max-width: 800px; margin: 0 auto; color: #000; }
-            .logo-section { text-align: center; margin-bottom: 2px; padding: 0; }
+            body { font-family: 'Poppins', 'Segoe UI', sans-serif; padding: 10px 15px; max-width: 800px; margin: 0 auto; color: #000; }
             .logo-section img { max-width: 160px; height: auto; margin: 0 auto; display: block; filter: contrast(2) brightness(0.8) saturate(1.2); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 8px; margin-bottom: 10px; }
             .header h1 { color: #000; margin: 0; font-size: 22px; font-weight: 900; letter-spacing: 3px; }
