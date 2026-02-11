@@ -174,6 +174,24 @@ const Checkout = () => {
 
       if (itemsError) throw itemsError;
 
+      // Deduct stock for each ordered item
+      for (const item of cartItems) {
+        if (item.product_id) {
+          const { data: product } = await supabase
+            .from("products")
+            .select("stock_quantity")
+            .eq("id", item.product_id)
+            .single();
+
+          if (product) {
+            await supabase
+              .from("products")
+              .update({ stock_quantity: Math.max(0, product.stock_quantity - item.quantity) })
+              .eq("id", item.product_id);
+          }
+        }
+      }
+
       // Clear the cart
       await clearCart.mutateAsync();
 
