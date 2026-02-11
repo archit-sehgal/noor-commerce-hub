@@ -323,6 +323,7 @@ const AdminBilling = () => {
       )
       .join("");
 
+    const logoUrl = `${window.location.origin}/noor-logo-invoice.png`;
     const printContent = `
       <html>
         <head>
@@ -338,20 +339,26 @@ const AdminBilling = () => {
             .invoice-details { display: flex; justify-content: space-between; margin-bottom: 20px; color: #000; }
             .invoice-details p { color: #000; font-weight: 500; margin: 2px 0; }
             .invoice-details strong { color: #000; font-weight: 800; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-            th { background: #000; color: white; padding: 6px 4px; text-align: left; font-weight: 700; font-size: 12px; }
-            td { padding: 6px 4px; border-bottom: 2px solid #333; color: #000; font-weight: 600; font-size: 12px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 15px; table-layout: fixed; }
+            th { background: #000; color: white; padding: 6px 3px; text-align: left; font-weight: 700; font-size: 11px; }
+            td { padding: 6px 3px; border-bottom: 2px solid #333; color: #000; font-weight: 600; font-size: 11px; word-wrap: break-word; }
+            .col-item { width: 28%; }
+            .col-sku { width: 16%; }
+            .col-qty { width: 8%; }
+            .col-price { width: 18%; }
+            .col-disc { width: 10%; }
+            .col-net { width: 20%; }
             .totals { text-align: right; margin-top: 15px; color: #000; }
             .totals div { margin: 3px 0; font-weight: 600; color: #000; }
             .totals .total { font-size: 22px; color: #000; font-weight: 900; }
             .footer { text-align: center; margin-top: 30px; padding-top: 15px; border-top: 2px solid #333; color: #000; font-weight: 500; }
             .gst-note { font-size: 11px; color: #000; font-style: italic; margin-top: 8px; }
-            @media print { body { padding: 5px 15px; margin: 0; } @page { margin: 5px 15px; } }
+            @media print { body { padding: 5px 10px; margin: 0; } @page { margin: 5px 10px; } }
           </style>
         </head>
         <body>
           <div class="logo-section">
-            <img src="/noor-logo-invoice.png" alt="Noor Creations" onerror="this.style.display='none'" />
+            <img src="${logoUrl}" alt="Noor Creations" onerror="this.style.display='none'" />
           </div>
           <div class="header">
             <h1>NOOR CREATIONS</h1>
@@ -374,12 +381,12 @@ const AdminBilling = () => {
           <table>
             <thead>
               <tr>
-                <th>Item</th>
-                <th style="text-align: center;">SKU</th>
-                <th style="text-align: center;">Qty</th>
-                <th style="text-align: right;">Price</th>
-                <th style="text-align: center;">Disc%</th>
-                <th style="text-align: right;">Net</th>
+                <th class="col-item">Item</th>
+                <th class="col-sku" style="text-align: center;">SKU</th>
+                <th class="col-qty" style="text-align: center;">Qty</th>
+                <th class="col-price" style="text-align: right;">Price</th>
+                <th class="col-disc" style="text-align: center;">Disc%</th>
+                <th class="col-net" style="text-align: right;">Net</th>
               </tr>
             </thead>
             <tbody>
@@ -405,10 +412,19 @@ const AdminBilling = () => {
       printWindow.document.write(printContent);
       printWindow.document.close();
       printWindow.focus();
-      setTimeout(() => {
+      const img = printWindow.document.querySelector('.logo-section img') as HTMLImageElement;
+      const doPrint = () => {
         printWindow.print();
         printWindow.close();
-      }, 100);
+      };
+      if (img && img.complete) {
+        setTimeout(doPrint, 100);
+      } else if (img) {
+        img.onload = () => setTimeout(doPrint, 100);
+        img.onerror = () => setTimeout(doPrint, 100);
+      } else {
+        setTimeout(doPrint, 100);
+      }
     } else {
       // Fallback: use hidden iframe
       const iframe = document.createElement("iframe");
