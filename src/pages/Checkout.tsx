@@ -133,6 +133,7 @@ const Checkout = () => {
           notes: form.notes,
           status: "pending",
           payment_status: "pending",
+          order_source: "online",
         })
         .select()
         .single();
