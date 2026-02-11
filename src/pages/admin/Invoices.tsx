@@ -162,12 +162,15 @@ const AdminInvoices = () => {
     if (!selectedInvoice) return;
 
     const itemsHtml = orderItems.map(item => {
+      const gross = item.unit_price * item.quantity;
+      const discPercent = gross > 0 ? Math.round(((gross - item.total_price) / gross) * 100) : 0;
       return `
         <tr>
           <td>${item.product_name}${item.size ? ` (${item.size})` : ""}${item.color ? ` - ${item.color}` : ""}</td>
           <td style="text-align: center; font-family: monospace; font-size: 11px;">${item.product_sku || "-"}</td>
           <td style="text-align: center;">${item.quantity}</td>
           <td style="text-align: right;">${formatCurrency(item.unit_price)}</td>
+          <td style="text-align: center;">${discPercent}%</td>
           <td style="text-align: right;">${formatCurrency(item.total_price)}</td>
         </tr>
       `;
@@ -228,7 +231,8 @@ const AdminInvoices = () => {
                 <th style="text-align: center;">SKU</th>
                 <th style="text-align: center;">Qty</th>
                 <th style="text-align: right;">Price</th>
-                <th style="text-align: right;">Amount</th>
+                <th style="text-align: center;">Disc%</th>
+                <th style="text-align: right;">Net</th>
               </tr>
             </thead>
             <tbody>
