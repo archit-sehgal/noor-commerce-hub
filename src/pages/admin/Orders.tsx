@@ -155,8 +155,39 @@ const AdminOrders = () => {
     }
   };
 
+  const restoreInventoryForOrder = async (orderId: string) => {
+    const order = orders.find(o => o.id === orderId);
+    if (!order?.order_items?.length) return;
+
+    for (const item of order.order_items) {
+      if (item.product_id) {
+        const { data: product } = await supabase
+          .from("products")
+          .select("stock_quantity")
+          .eq("id", item.product_id)
+          .single();
+
+        if (product) {
+          await supabase
+            .from("products")
+            .update({ stock_quantity: product.stock_quantity + item.quantity })
+            .eq("id", item.product_id);
+        }
+      }
+    }
+  };
+
   const updateOrderStatus = async (orderId: string, status: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled") => {
     try {
+      const order = orders.find(o => o.id === orderId);
+      const previousStatus = order?.status;
+
+      // Restore inventory when changing TO cancelled (and not already cancelled)
+      if (status === "cancelled" && previousStatus !== "cancelled") {
+        await restoreInventoryForOrder(orderId);
+        toast({ title: "Inventory Restored", description: "Stock has been restored for cancelled order" });
+      }
+
       const { error } = await supabase
         .from("orders")
         .update({ status })
@@ -166,11 +197,23 @@ const AdminOrders = () => {
       fetchOrders();
     } catch (error) {
       console.error("Error updating order:", error);
+      toast({ title: "Error", description: "Failed to update order status", variant: "destructive" });
     }
   };
 
   const updatePaymentStatus = async (orderId: string, paymentStatus: "pending" | "paid" | "failed" | "refunded") => {
     try {
+      const order = orders.find(o => o.id === orderId);
+      const previousPaymentStatus = order?.payment_status;
+
+      // Restore inventory when changing TO failed/refunded (and not already failed/refunded/cancelled)
+      if ((paymentStatus === "failed" || paymentStatus === "refunded") && 
+          previousPaymentStatus !== "failed" && previousPaymentStatus !== "refunded" && 
+          order?.status !== "cancelled") {
+        await restoreInventoryForOrder(orderId);
+        toast({ title: "Inventory Restored", description: `Stock has been restored for ${paymentStatus} payment` });
+      }
+
       const { error } = await supabase
         .from("orders")
         .update({ payment_status: paymentStatus })
@@ -186,6 +229,7 @@ const AdminOrders = () => {
       fetchOrders();
     } catch (error) {
       console.error("Error updating payment status:", error);
+      toast({ title: "Error", description: "Failed to update payment status", variant: "destructive" });
     }
   };
 
