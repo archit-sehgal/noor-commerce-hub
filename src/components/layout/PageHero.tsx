@@ -63,7 +63,7 @@ const PageHero = ({
         
         {/* Subtitle - Reduced size */}
         {subtitle && (
-          <p className="text-sm md:text-base font-heading text-foreground/80 max-w-xl mx-auto">
+          <p className="text-sm md:text-base font-heading text-white/90 max-w-xl mx-auto">
             {subtitle}
           </p>
         )}
