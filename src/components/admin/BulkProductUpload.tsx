@@ -168,28 +168,49 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
         return;
       }
 
-      // Parse data rows
+      // Parse data rows (limit to 2000 rows max to prevent performance issues)
+      const MAX_ROWS = 2000;
+      const MAX_TEXT_LENGTH = 300;
+      const MAX_BCN_LENGTH = 50;
+      const MAX_PRICE = 10000000; // 1 crore
+      const MAX_STOCK = 1000000;
+
       const products: ParsedProduct[] = [];
-      for (let i = 1; i < jsonData.length; i++) {
+      const dataRows = Math.min(jsonData.length, MAX_ROWS + 1); // +1 for header
+      
+      if (jsonData.length > MAX_ROWS + 1) {
+        toast({
+          title: "Row Limit Exceeded",
+          description: `Only the first ${MAX_ROWS} rows will be processed. File has ${jsonData.length - 1} data rows.`,
+          variant: "destructive",
+        });
+      }
+
+      for (let i = 1; i < dataRows; i++) {
         const row = jsonData[i] as (string | number)[];
         if (!row || row.length === 0) continue;
 
-        const bcn = (row[columnMap.bcn] || "").toString().trim();
-        if (!bcn) continue; // Skip empty rows
+        const bcnRaw = (row[columnMap.bcn] || "").toString().trim();
+        if (!bcnRaw) continue; // Skip empty rows
 
         const errors: string[] = [];
-        const itemDetails = (row[columnMap.itemDetails] || "").toString().trim();
-        const designNumber = (row[columnMap.designNumber] || "").toString().trim();
+        
+        // Sanitize and validate text fields with length limits
+        const bcn = bcnRaw.slice(0, MAX_BCN_LENGTH);
+        if (bcnRaw.length > MAX_BCN_LENGTH) errors.push(`BCN truncated to ${MAX_BCN_LENGTH} chars`);
+        
+        const itemDetails = (row[columnMap.itemDetails] || "").toString().trim().slice(0, MAX_TEXT_LENGTH);
+        const designNumber = (row[columnMap.designNumber] || "").toString().trim().slice(0, MAX_TEXT_LENGTH);
+        const unit = (row[columnMap.unit] || "Pcs").toString().trim().slice(0, 20);
+
         const mrpRaw = row[columnMap.mrp];
         const salePriceRaw = row[columnMap.salePrice];
-        const unit = (row[columnMap.unit] || "Pcs").toString().trim();
         const closingQtyRaw = row[columnMap.closingQty];
 
-        // Validate
+        // Validate required text fields
         if (!itemDetails) errors.push("Missing product name");
         
         // CRITICAL: Preserve exact values from file without transformation
-        // Use Number() and store raw values - no parseFloat which can introduce precision issues
         let mrp: number;
         let salePrice: number;
         let closingQty: number;
@@ -218,9 +239,15 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
           closingQty = Number(qtyStr);
         }
 
+        // Numeric validation with bounds checking
         if (isNaN(mrp) || mrp < 0) errors.push("Invalid MRP");
+        else if (mrp > MAX_PRICE) errors.push(`MRP exceeds maximum (${MAX_PRICE})`);
+        
         if (isNaN(salePrice) || salePrice < 0) errors.push("Invalid Sale Price");
+        else if (salePrice > MAX_PRICE) errors.push(`Sale Price exceeds maximum (${MAX_PRICE})`);
+        
         if (isNaN(closingQty) || closingQty < 0) errors.push("Invalid Quantity");
+        else if (closingQty > MAX_STOCK) errors.push(`Quantity exceeds maximum (${MAX_STOCK})`);
 
         products.push({
           itemDetails,
