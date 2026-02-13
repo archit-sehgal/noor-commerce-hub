@@ -169,7 +169,7 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
       }
 
       // Parse data rows (limit to 2000 rows max to prevent performance issues)
-      const MAX_ROWS = 2000;
+      const MAX_ROWS = 10000;
       const MAX_TEXT_LENGTH = 300;
       const MAX_BCN_LENGTH = 50;
       const MAX_PRICE = 10000000; // 1 crore
