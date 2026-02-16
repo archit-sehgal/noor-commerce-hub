@@ -30,22 +30,22 @@ const Account = lazy(() => import("./pages/Account"));
 const NewArrivals = lazy(() => import("./pages/NewArrivals"));
 const Collections = lazy(() => import("./pages/Collections"));
 
-// Lazy-loaded pages - admin
-const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
-const AdminProducts = lazy(() => import("./pages/admin/Products"));
-const AdminProductForm = lazy(() => import("./pages/admin/ProductForm"));
-const AdminCategories = lazy(() => import("./pages/admin/Categories"));
-const AdminOrders = lazy(() => import("./pages/admin/Orders"));
-const AdminCustomers = lazy(() => import("./pages/admin/Customers"));
-const AdminInventory = lazy(() => import("./pages/admin/Inventory"));
-const AdminReports = lazy(() => import("./pages/admin/Reports"));
-const AdminBilling = lazy(() => import("./pages/admin/Billing"));
-const AdminInvoices = lazy(() => import("./pages/admin/Invoices"));
-const AdminSalesman = lazy(() => import("./pages/admin/Salesman"));
-const AdminSettings = lazy(() => import("./pages/admin/Settings"));
-const AdminAlterations = lazy(() => import("./pages/admin/Alterations"));
-const AdminPurchases = lazy(() => import("./pages/admin/Purchases"));
-const AdminOnlineStore = lazy(() => import("./pages/admin/OnlineStore"));
+// Admin pages - eagerly loaded to avoid spinners when switching sections
+import AdminDashboard from "./pages/admin/Dashboard";
+import AdminProducts from "./pages/admin/Products";
+import AdminProductForm from "./pages/admin/ProductForm";
+import AdminCategories from "./pages/admin/Categories";
+import AdminOrders from "./pages/admin/Orders";
+import AdminCustomers from "./pages/admin/Customers";
+import AdminInventory from "./pages/admin/Inventory";
+import AdminReports from "./pages/admin/Reports";
+import AdminBilling from "./pages/admin/Billing";
+import AdminInvoices from "./pages/admin/Invoices";
+import AdminSalesman from "./pages/admin/Salesman";
+import AdminSettings from "./pages/admin/Settings";
+import AdminAlterations from "./pages/admin/Alterations";
+import AdminPurchases from "./pages/admin/Purchases";
+import AdminOnlineStore from "./pages/admin/OnlineStore";
 
 const queryClient = new QueryClient({
   defaultOptions: {
