@@ -60,46 +60,36 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const { count: productsCount } = await supabase
-          .from("products")
-          .select("*", { count: "exact", head: true });
-
-        const { count: ordersCount } = await supabase
-          .from("orders")
-          .select("*", { count: "exact", head: true });
-
-        const { count: customersCount } = await supabase
-          .from("customers")
-          .select("*", { count: "exact", head: true });
-
-        const { data: revenueData } = await supabase
-          .from("orders")
-          .select("total_amount")
-          .eq("payment_status", "paid");
+        // Run all queries in parallel for faster dashboard load
+        const [
+          productsRes,
+          ordersRes,
+          customersRes,
+          revenueRes,
+          lowStockRes,
+          pendingRes,
+        ] = await Promise.all([
+          supabase.from("products").select("*", { count: "exact", head: true }),
+          supabase.from("orders").select("*", { count: "exact", head: true }),
+          supabase.from("customers").select("*", { count: "exact", head: true }),
+          supabase.from("orders").select("total_amount").eq("payment_status", "paid"),
+          supabase.from("products").select("*", { count: "exact", head: true }).lte("stock_quantity", 5),
+          supabase.from("orders").select("*", { count: "exact", head: true }).eq("status", "pending"),
+        ]);
 
         const totalRevenue =
-          revenueData?.reduce(
+          revenueRes.data?.reduce(
             (acc, order) => acc + (Number(order.total_amount) || 0),
             0,
           ) || 0;
 
-        const { count: lowStockCount } = await supabase
-          .from("products")
-          .select("*", { count: "exact", head: true })
-          .lte("stock_quantity", 5);
-
-        const { count: pendingCount } = await supabase
-          .from("orders")
-          .select("*", { count: "exact", head: true })
-          .eq("status", "pending");
-
         setStats({
-          totalProducts: productsCount || 0,
-          totalOrders: ordersCount || 0,
-          totalCustomers: customersCount || 0,
+          totalProducts: productsRes.count || 0,
+          totalOrders: ordersRes.count || 0,
+          totalCustomers: customersRes.count || 0,
           totalRevenue,
-          lowStockProducts: lowStockCount || 0,
-          pendingOrders: pendingCount || 0,
+          lowStockProducts: lowStockRes.count || 0,
+          pendingOrders: pendingRes.count || 0,
         });
       } catch (error) {
         console.error("Error fetching stats:", error);
