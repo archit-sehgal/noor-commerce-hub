@@ -55,7 +55,8 @@ const EditOrderDialog = ({
   const [discountAmount, setDiscountAmount] = useState(0);
   const [items, setItems] = useState<OrderItem[]>([]);
   const [removedItems, setRemovedItems] = useState<OrderItem[]>([]);
-  const [addedItems, setAddedItems] = useState<OrderItem[]>([]);
+  const [addedItemIds, setAddedItemIds] = useState<Set<string>>(new Set());
+  const [originalItemQuantities, setOriginalItemQuantities] = useState<Map<string, number>>(new Map());
   const [products, setProducts] = useState<Product[]>([]);
   const [productSearch, setProductSearch] = useState("");
   const [showProductSearch, setShowProductSearch] = useState(false);
@@ -66,7 +67,8 @@ const EditOrderDialog = ({
       fetchOrder();
       fetchProducts();
       setRemovedItems([]);
-      setAddedItems([]);
+      setAddedItemIds(new Set());
+      setOriginalItemQuantities(new Map());
       setShowProductSearch(false);
       setProductSearch("");
     }
@@ -85,7 +87,12 @@ const EditOrderDialog = ({
       if (error) throw error;
       setOrderNumber(data.order_number);
       setDiscountAmount(data.discount_amount || 0);
-      setItems(data.order_items || []);
+      const orderItems = data.order_items || [];
+      setItems(orderItems);
+      // Store original quantities for existing items to detect changes
+      const qtyMap = new Map<string, number>();
+      orderItems.forEach((item: OrderItem) => qtyMap.set(item.id, item.quantity));
+      setOriginalItemQuantities(qtyMap);
     } catch (error) {
       console.error("Error fetching order:", error);
       toast({ title: "Error", description: "Failed to fetch order details", variant: "destructive" });
@@ -108,7 +115,7 @@ const EditOrderDialog = ({
     if (!item.isNew) {
       setRemovedItems(prev => [...prev, item]);
     } else {
-      setAddedItems(prev => prev.filter(a => a.id !== item.id));
+      setAddedItemIds(prev => { const next = new Set(prev); next.delete(item.id); return next; });
     }
     setItems(prev => prev.filter((_, i) => i !== index));
   };
@@ -128,7 +135,7 @@ const EditOrderDialog = ({
       isNew: true,
     };
     setItems(prev => [...prev, newItem]);
-    setAddedItems(prev => [...prev, newItem]);
+    setAddedItemIds(prev => new Set(prev).add(newItem.id));
     setProductSearch("");
     setShowProductSearch(false);
   };
@@ -163,19 +170,18 @@ const EditOrderDialog = ({
             await supabase.from("products").update({ stock_quantity: product.stock_quantity + item.quantity }).eq("id", item.product_id);
           }
         }
-        // Delete the order item from DB
         await supabase.from("order_items").delete().eq("id", item.id);
       }
 
-      // 2. Deduct inventory for added items (-quantity)
-      for (const item of addedItems) {
+      // 2. Deduct inventory for newly added items (-quantity) using current qty from items array
+      const newItems = items.filter(i => addedItemIds.has(i.id));
+      for (const item of newItems) {
         if (item.product_id) {
           const { data: product } = await supabase.from("products").select("stock_quantity").eq("id", item.product_id).single();
           if (product) {
             await supabase.from("products").update({ stock_quantity: product.stock_quantity - item.quantity }).eq("id", item.product_id);
           }
         }
-        // Insert new order item
         await supabase.from("order_items").insert({
           order_id: orderId,
           product_id: item.product_id,
@@ -189,9 +195,21 @@ const EditOrderDialog = ({
         });
       }
 
-      // 3. Update existing items quantity changes
-      const originalItems = items.filter(i => !i.isNew);
-      for (const item of originalItems) {
+      // 3. Update existing items — adjust inventory for quantity changes
+      const existingItems = items.filter(i => !i.isNew);
+      for (const item of existingItems) {
+        const originalQty = originalItemQuantities.get(item.id) || item.quantity;
+        const qtyDiff = item.quantity - originalQty;
+
+        // Adjust inventory if quantity changed
+        if (qtyDiff !== 0 && item.product_id) {
+          const { data: product } = await supabase.from("products").select("stock_quantity").eq("id", item.product_id).single();
+          if (product) {
+            // qtyDiff > 0 means more ordered → deduct; qtyDiff < 0 means less ordered → restore
+            await supabase.from("products").update({ stock_quantity: product.stock_quantity - qtyDiff }).eq("id", item.product_id);
+          }
+        }
+
         await supabase.from("order_items").update({
           quantity: item.quantity,
           total_price: item.unit_price * item.quantity,
@@ -345,9 +363,9 @@ const EditOrderDialog = ({
                 ⚠️ {removedItems.length} item(s) will be removed and inventory restored.
               </p>
             )}
-            {addedItems.length > 0 && (
+            {addedItemIds.size > 0 && (
               <p className="text-xs text-muted-foreground">
-                ✅ {addedItems.length} new item(s) will be added and inventory deducted.
+                ✅ {addedItemIds.size} new item(s) will be added and inventory deducted.
               </p>
             )}
           </div>
