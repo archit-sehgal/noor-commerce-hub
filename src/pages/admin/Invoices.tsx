@@ -47,11 +47,13 @@ interface OrderItem {
   id: string;
   product_name: string;
   product_sku: string | null;
+  product_id: string | null;
   quantity: number;
   unit_price: number;
   total_price: number;
   size: string | null;
   color: string | null;
+  gst_rate?: number;
 }
 
 const AdminInvoices = () => {
@@ -109,7 +111,24 @@ const AdminInvoices = () => {
       .eq("order_id", orderId);
 
     if (!error && data) {
-      setOrderItems(data);
+      // Fetch GST rates for products
+      const productIds = data.map(i => i.product_id).filter(Boolean) as string[];
+      let gstMap: Record<string, number> = {};
+      if (productIds.length > 0) {
+        const { data: products } = await supabase
+          .from("products")
+          .select("id, gst_rate")
+          .in("id", productIds);
+        if (products) {
+          for (const p of products) {
+            gstMap[p.id] = p.gst_rate || 0;
+          }
+        }
+      }
+      setOrderItems(data.map(item => ({
+        ...item,
+        gst_rate: item.product_id ? (gstMap[item.product_id] || 0) : 0,
+      })));
     }
   };
 
@@ -164,13 +183,15 @@ const AdminInvoices = () => {
     const itemsHtml = orderItems.map(item => {
       const gross = item.unit_price * item.quantity;
       const discPercent = gross > 0 ? Math.round(((gross - item.total_price) / gross) * 100) : 0;
+      const gstRate = item.gst_rate || 0;
       return `
         <tr>
           <td>${item.product_name}${item.size ? ` (${item.size})` : ""}${item.color ? ` - ${item.color}` : ""}</td>
           <td style="text-align: center; font-family: monospace; font-size: 11px;">${item.product_sku || "-"}</td>
           <td style="text-align: center;">${item.quantity}</td>
           <td style="text-align: right;">${formatCurrency(item.unit_price)}</td>
-          <td style="text-align: center;">${discPercent}%</td>
+          <td style="text-align: center;">${gstRate > 0 ? gstRate + '%' : '-'}</td>
+          <td style="text-align: center;">${discPercent > 0 ? discPercent + '%' : '-'}</td>
           <td style="text-align: right;">${formatCurrency(item.total_price)}</td>
         </tr>
       `;
@@ -196,12 +217,13 @@ const AdminInvoices = () => {
             table { width: 100%; border-collapse: collapse; margin-bottom: 15px; table-layout: fixed; }
             th { background: #000; color: white; padding: 6px 3px; text-align: left; font-weight: 700; font-size: 10px; }
             td { padding: 6px 3px; border-bottom: 2px solid #333; color: #000; font-weight: 600; font-size: 10px; word-wrap: break-word; }
-            .col-item { width: 26%; }
-            .col-sku { width: 15%; }
+            .col-item { width: 28%; }
+            .col-sku { width: 14%; }
             .col-qty { width: 8%; }
-            .col-price { width: 17%; }
-            .col-disc { width: 10%; }
-            .col-net { width: 24%; }
+            .col-price { width: 15%; }
+            .col-gst { width: 8%; }
+            .col-disc { width: 8%; }
+            .col-net { width: 19%; }
             .totals { text-align: right; margin-top: 15px; color: #000; }
             .totals div { margin: 3px 0; font-weight: 600; color: #000; }
             .totals .total { font-size: 22px; color: #000; font-weight: 900; }
@@ -239,6 +261,7 @@ const AdminInvoices = () => {
                 <th class="col-sku" style="text-align: center;">SKU</th>
                 <th class="col-qty" style="text-align: center;">Qty</th>
                 <th class="col-price" style="text-align: right;">Price</th>
+                <th class="col-gst" style="text-align: center;">GST%</th>
                 <th class="col-disc" style="text-align: center;">Disc%</th>
                 <th class="col-net" style="text-align: right;">Net</th>
               </tr>
@@ -247,11 +270,10 @@ const AdminInvoices = () => {
               ${itemsHtml}
             </tbody>
           </table>
-          <div class="totals">
+           <div class="totals">
             <div>Subtotal: ${formatCurrency(selectedInvoice.subtotal)}</div>
-            ${(selectedInvoice.discount_amount || 0) > 0 ? `<div>Total Discount: -${formatCurrency(selectedInvoice.discount_amount || 0)}</div>` : ""}
-            <div class="total">Total: ${formatCurrency(selectedInvoice.total_amount)}</div>
-            <div class="gst-note">* All prices are inclusive of GST</div>
+            ${(selectedInvoice.discount_amount || 0) > 0 ? `<div>Discount: -${formatCurrency(selectedInvoice.discount_amount || 0)}</div>` : ""}
+            <div class="total">Net Total: ${formatCurrency(selectedInvoice.total_amount)}</div>
           </div>
           <div class="footer">
             <p>Thank you for shopping with us!</p>
@@ -569,9 +591,6 @@ const AdminInvoices = () => {
                   {formatCurrency(selectedInvoice?.subtotal || 0)}
                 </span>
               </p>
-              <p className="text-xs text-foreground italic">
-                * All prices are inclusive of GST
-              </p>
               {(selectedInvoice?.discount_amount || 0) > 0 && (
                 <p>
                   <span className="text-foreground">Discount:</span>{" "}
@@ -581,7 +600,7 @@ const AdminInvoices = () => {
                 </p>
               )}
               <p className="text-xl font-bold text-primary pt-2 border-t border-border">
-                <span>Total:</span>{" "}
+                <span>Net Total:</span>{" "}
                 {formatCurrency(selectedInvoice?.total_amount || 0)}
               </p>
             </div>
