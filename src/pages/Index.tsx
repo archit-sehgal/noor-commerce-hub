@@ -3,16 +3,15 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import HeroSection from "@/components/home/HeroSection";
 import OfferMarquee from "@/components/home/OfferMarquee";
-
-// Lazy load below-the-fold sections
-const FeaturedCategories = lazy(() => import("@/components/home/FeaturedCategories"));
-const NewArrivals = lazy(() => import("@/components/home/NewArrivals"));
-const BestSellers = lazy(() => import("@/components/home/BestSellers"));
-const FeatureBanner = lazy(() => import("@/components/home/FeatureBanner"));
-const Newsletter = lazy(() => import("@/components/home/Newsletter"));
-const FlashSale = lazy(() => import("@/components/home/FlashSale"));
-const TrustBadges = lazy(() => import("@/components/home/TrustBadges"));
-const Testimonials = lazy(() => import("@/components/home/Testimonials"));
+import FlashSale from "@/components/home/FlashSale";
+import TrustBadges from "@/components/home/TrustBadges";
+import Testimonials from "@/components/home/Testimonials";
+import UrgentHostingWarning from "@/components/UrgentHostingWarning";
+import FeatureBanner from "@/components/home/FeatureBanner";
+import FeaturedCategories from "@/components/home/FeaturedCategories";
+import BestSellers from "@/components/home/BestSellers";
+import Newsletter from "@/components/home/Newsletter";
+import NewArrivals from "./NewArrivals";
 
 const Index = () => {
   return (
@@ -20,6 +19,9 @@ const Index = () => {
       <OfferMarquee />
       <Navbar />
       <main>
+        {/* Remove After Cloud Payment */}
+        <UrgentHostingWarning/>
+        {/* Remove After Cloud Payment */}
         <HeroSection />
         <Suspense fallback={null}>
           <FlashSale />
