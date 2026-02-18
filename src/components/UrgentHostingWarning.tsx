@@ -26,8 +26,6 @@ const UrgentHostingWarning: React.FC = () => {
           ▲ VERCEL CLOUD INFRASTRUCTURE
         </div>
 
-        <h2 style={titleStyle}>URGENT WARNING</h2>
-
         <p style={textStyle}>
           Your cloud hosting credits are nearing exhaustion.
           <br /><br />
