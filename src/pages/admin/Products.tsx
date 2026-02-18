@@ -175,6 +175,7 @@ const AdminProducts = () => {
         "BCN": product.sku || "",
         "Design Number": product.design_number || "",
         "Category": product.category?.name || "",
+        "GST%": product.gst_rate ?? "",
         "MRP": product.price,
         "Sale Price": product.discount_price || product.price,
         "Cl. Qty.": product.stock_quantity,
@@ -366,11 +367,12 @@ const AdminProducts = () => {
           <div className="border rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow>
+              <TableRow>
                   <TableHead className="w-[60px]">Image</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>SKU</TableHead>
                   <TableHead>Category</TableHead>
+                  <TableHead className="text-center">GST%</TableHead>
                   <TableHead className="text-right">Price</TableHead>
                   <TableHead className="text-right">Stock</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -401,6 +403,9 @@ const AdminProducts = () => {
                       {product.sku || "-"}
                     </TableCell>
                     <TableCell>{product.category?.name || "-"}</TableCell>
+                    <TableCell className="text-center">
+                      {product.gst_rate !== null && product.gst_rate !== undefined ? `${product.gst_rate}%` : "-"}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div>
                         <span>₹{product.price.toLocaleString()}</span>

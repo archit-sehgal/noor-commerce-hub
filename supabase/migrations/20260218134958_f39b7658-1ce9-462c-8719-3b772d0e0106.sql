@@ -1,0 +1,1 @@
+ALTER TABLE public.products ADD COLUMN gst_rate numeric NULL DEFAULT NULL;
