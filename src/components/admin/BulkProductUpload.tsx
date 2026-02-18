@@ -42,6 +42,7 @@ interface ParsedProduct {
   salePrice: number;
   unit: string;
   closingQty: number;
+  gstRate: number | null;
   isValid: boolean;
   errors: string[];
   detectedCategory: string | null;
@@ -145,17 +146,27 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
       
       headerRow.forEach((col, index) => {
         const colLower = (col || "").toString().toLowerCase().trim();
-        if (colLower.includes("item details")) columnMap.itemDetails = index;
-        else if (colLower === "bcn") columnMap.bcn = index;
-        else if (colLower.includes("p1") || colLower.includes("dsn")) columnMap.designNumber = index;
+        if (colLower.includes("item details") || colLower.includes("item name")) columnMap.itemDetails = index;
+        else if (colLower === "bcn" || colLower.includes("barcode")) columnMap.bcn = index;
+        else if (colLower.includes("p1") || colLower.includes("dsn") || colLower.includes("design")) columnMap.designNumber = index;
         else if (colLower === "mrp") columnMap.mrp = index;
-        else if (colLower.includes("sale") && colLower.includes("price")) columnMap.salePrice = index;
+        else if ((colLower.includes("sale") && (colLower.includes("price") || colLower.includes("rate")))) columnMap.salePrice = index;
         else if (colLower === "unit") columnMap.unit = index;
-        else if (colLower.includes("cl.") && colLower.includes("qty")) columnMap.closingQty = index;
+        else if ((colLower.includes("cl.") && colLower.includes("qty")) || colLower === "qty") columnMap.closingQty = index;
+        else if (colLower.includes("tax") && colLower.includes("rate")) columnMap.gstRate = index;
       });
 
+      // If no separate MRP column, use salePrice as MRP (file may only have SALE RATE)
+      if (columnMap.mrp === undefined && columnMap.salePrice !== undefined) {
+        columnMap.mrp = columnMap.salePrice;
+      }
+      // If no separate salePrice, use MRP
+      if (columnMap.salePrice === undefined && columnMap.mrp !== undefined) {
+        columnMap.salePrice = columnMap.mrp;
+      }
+
       // Validate required columns
-      const requiredColumns = ["itemDetails", "bcn", "mrp", "salePrice", "closingQty"];
+      const requiredColumns = ["itemDetails", "bcn", "mrp", "closingQty"];
       const missingColumns = requiredColumns.filter((col) => columnMap[col] === undefined);
       
       if (missingColumns.length > 0) {
@@ -206,6 +217,7 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
         const mrpRaw = row[columnMap.mrp];
         const salePriceRaw = row[columnMap.salePrice];
         const closingQtyRaw = row[columnMap.closingQty];
+        const gstRateRaw = columnMap.gstRate !== undefined ? row[columnMap.gstRate] : null;
 
         // Validate required text fields
         if (!itemDetails) errors.push("Missing product name");
@@ -249,6 +261,13 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
         if (isNaN(closingQty) || closingQty < 0) errors.push("Invalid Quantity");
         else if (closingQty > MAX_STOCK) errors.push(`Quantity exceeds maximum (${MAX_STOCK})`);
 
+        // Parse GST rate
+        let gstRate: number | null = null;
+        if (gstRateRaw !== null && gstRateRaw !== undefined && gstRateRaw !== "") {
+          gstRate = typeof gstRateRaw === "number" ? gstRateRaw : Number(String(gstRateRaw).trim());
+          if (isNaN(gstRate)) gstRate = null;
+        }
+
         products.push({
           itemDetails,
           bcn,
@@ -256,7 +275,8 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
           mrp,
           salePrice,
           unit,
-          closingQty: Math.round(closingQty), // Round to nearest integer for stock (integers only in DB)
+          closingQty: Math.round(closingQty),
+          gstRate,
           isValid: errors.length === 0,
           errors,
           detectedCategory: detectCategory(itemDetails),
@@ -361,6 +381,7 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
                     discount_price: product.salePrice !== product.mrp ? product.salePrice : null,
                     stock_quantity: newQty,
                     category_id: categoryId,
+                    gst_rate: product.gstRate,
                     updated_at: new Date().toISOString(),
                   })
                   .eq("id", existing.id);
@@ -396,6 +417,7 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
                     discount_price: product.salePrice !== product.mrp ? product.salePrice : null,
                     stock_quantity: product.closingQty,
                     category_id: categoryId,
+                    gst_rate: product.gstRate,
                     is_active: true,
                     is_featured: false,
                   })
@@ -543,6 +565,8 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
                     <TableHead>Design No.</TableHead>
                     <TableHead className="text-right">MRP</TableHead>
                     <TableHead className="text-right">Sale Price</TableHead>
+                    <TableHead className="text-center">GST%</TableHead>
+                    <TableHead className="text-right">Stock</TableHead>
                     <TableHead className="text-right">Stock</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -580,6 +604,7 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
                       <TableCell>{product.designNumber || "-"}</TableCell>
                       <TableCell className="text-right">₹{product.mrp.toLocaleString()}</TableCell>
                       <TableCell className="text-right">₹{product.salePrice.toLocaleString()}</TableCell>
+                      <TableCell className="text-center">{product.gstRate !== null ? `${product.gstRate}%` : "-"}</TableCell>
                       <TableCell className="text-right">{product.closingQty}</TableCell>
                     </TableRow>
                   ))}

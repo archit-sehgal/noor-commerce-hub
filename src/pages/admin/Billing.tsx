@@ -46,6 +46,7 @@ interface Product {
   stock_quantity: number;
   sizes: string[] | null;
   colors: string[] | null;
+  gst_rate: number | null;
 }
 
 interface CartItem {
@@ -118,7 +119,7 @@ const AdminBilling = () => {
     try {
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, sku, price, discount_price, stock_quantity, sizes, colors")
+        .select("id, name, sku, price, discount_price, stock_quantity, sizes, colors, gst_rate")
         .eq("is_active", true)
         .gt("stock_quantity", 0)
         .order("name");
@@ -309,12 +310,14 @@ const AdminBilling = () => {
           const itemTotal = item.unitPrice * item.quantity;
           const itemDiscount = Math.round((itemTotal * item.discountPercent) / 100);
           const itemNet = itemTotal - itemDiscount;
+          const gstDisplay = item.product.gst_rate !== null && item.product.gst_rate !== undefined ? `${item.product.gst_rate}%` : "-";
           return `
           <tr>
             <td>${item.product.name}${item.size ? ` (${item.size})` : ""}${item.color ? ` - ${item.color}` : ""}</td>
             <td style="text-align: center; font-family: monospace; font-size: 11px;">${item.product.sku || "-"}</td>
             <td style="text-align: center;">${item.quantity}</td>
             <td style="text-align: right;">${formatCurrency(item.unitPrice)}</td>
+            <td style="text-align: center;">${gstDisplay}</td>
             <td style="text-align: center;">${item.discountPercent}%</td>
             <td style="text-align: right;">${formatCurrency(itemNet)}</td>
           </tr>
@@ -343,12 +346,13 @@ const AdminBilling = () => {
             table { width: 100%; border-collapse: collapse; margin-bottom: 15px; table-layout: fixed; }
             th { background: #000; color: white; padding: 6px 3px; text-align: left; font-weight: 700; font-size: 10px; }
             td { padding: 6px 3px; border-bottom: 2px solid #333; color: #000; font-weight: 600; font-size: 10px; word-wrap: break-word; }
-            .col-item { width: 26%; }
-            .col-sku { width: 15%; }
-            .col-qty { width: 8%; }
-            .col-price { width: 17%; }
-            .col-disc { width: 10%; }
-            .col-net { width: 24%; }
+            .col-item { width: 24%; }
+            .col-sku { width: 14%; }
+            .col-qty { width: 7%; }
+            .col-price { width: 15%; }
+            .col-gst { width: 8%; }
+            .col-disc { width: 9%; }
+            .col-net { width: 23%; }
             .totals { text-align: right; margin-top: 15px; color: #000; }
             .totals div { margin: 3px 0; font-weight: 600; color: #000; }
             .totals .total { font-size: 22px; color: #000; font-weight: 900; }
@@ -386,6 +390,7 @@ const AdminBilling = () => {
                 <th class="col-sku" style="text-align: center;">SKU</th>
                 <th class="col-qty" style="text-align: center;">Qty</th>
                 <th class="col-price" style="text-align: right;">Price</th>
+                <th class="col-gst" style="text-align: center;">GST%</th>
                 <th class="col-disc" style="text-align: center;">Disc%</th>
                 <th class="col-net" style="text-align: right;">Net</th>
               </tr>

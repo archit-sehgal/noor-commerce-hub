@@ -22,6 +22,7 @@ export interface Product {
   is_active: boolean | null;
   is_featured: boolean | null;
   design_number: string | null;
+  gst_rate: number | null;
   created_at: string;
   updated_at: string;
   category?: {

@@ -607,6 +607,7 @@ export type Database = {
           design_number: string | null
           discount_price: number | null
           fabric_type: string | null
+          gst_rate: number | null
           id: string
           images: string[] | null
           is_active: boolean | null
@@ -630,6 +631,7 @@ export type Database = {
           design_number?: string | null
           discount_price?: number | null
           fabric_type?: string | null
+          gst_rate?: number | null
           id?: string
           images?: string[] | null
           is_active?: boolean | null
@@ -653,6 +655,7 @@ export type Database = {
           design_number?: string | null
           discount_price?: number | null
           fabric_type?: string | null
+          gst_rate?: number | null
           id?: string
           images?: string[] | null
           is_active?: boolean | null
