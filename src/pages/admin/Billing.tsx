@@ -413,20 +413,7 @@ const AdminBilling = () => {
           </table>
           <div class="totals">
             <div>Base Amount (excl. GST): ${formatCurrency(invoiceData.baseAmount)}</div>
-            ${(() => {
-              const gstGroups: Record<number, number> = {};
-              invoiceData.items.forEach((item: any) => {
-                const rate = item.product.gst_rate || 0;
-                if (rate > 0) {
-                  const itemTotal = item.unitPrice * item.quantity;
-                  const gst = itemTotal - (itemTotal / (1 + rate / 100));
-                  gstGroups[rate] = (gstGroups[rate] || 0) + Math.round(gst);
-                }
-              });
-              return Object.entries(gstGroups).map(([rate, amount]) => 
-                `<div>GST ${rate}%: ${formatCurrency(amount as number)}</div>`
-              ).join('');
-            })()}
+            <div>GST Amount: ${formatCurrency(invoiceData.gstAmount)}</div>
             <div>Subtotal (incl. GST): ${formatCurrency(invoiceData.subtotal)}</div>
             ${invoiceData.discountAmount > 0 ? `<div>Discount: -${formatCurrency(invoiceData.discountAmount)}</div>` : ""}
             <div class="total">Net Total: ${formatCurrency(invoiceData.totalAmount)}</div>
@@ -1033,24 +1020,10 @@ const AdminBilling = () => {
                 <span className="text-foreground">Base Amount (excl. GST)</span>
                 <span>{formatCurrency(baseAmount)}</span>
               </div>
-              {/* Show GST breakdown by rate */}
-              {(() => {
-                const gstGroups: Record<number, number> = {};
-                cart.forEach((item) => {
-                  const rate = item.product.gst_rate || 0;
-                  if (rate > 0) {
-                    const itemTotal = item.unitPrice * item.quantity;
-                    const gst = itemTotal - (itemTotal / (1 + rate / 100));
-                    gstGroups[rate] = (gstGroups[rate] || 0) + Math.round(gst);
-                  }
-                });
-                return Object.entries(gstGroups).map(([rate, amount]) => (
-                  <div key={rate} className="flex justify-between text-sm">
-                    <span className="text-foreground">GST {rate}%</span>
-                    <span>{formatCurrency(amount)}</span>
-                  </div>
-                ));
-              })()}
+              <div className="flex justify-between text-sm">
+                <span className="text-foreground">GST Amount</span>
+                <span>{formatCurrency(gstAmount)}</span>
+              </div>
               <div className="flex justify-between text-sm">
                 <span className="text-foreground">Subtotal (incl. GST)</span>
                 <span>{formatCurrency(subtotal)}</span>
