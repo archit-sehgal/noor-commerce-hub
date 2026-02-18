@@ -30,20 +30,45 @@ const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(amount);
 };
 
-const generateInvoiceHTML = (order: any, orderItems: any[], customer: any) => {
-  const itemsHTML = orderItems.map(item => `
+const generateInvoiceHTML = (order: any, orderItems: any[], customer: any, products: any[]) => {
+  // Build a map of product_id -> gst_rate
+  const productGstMap: Record<string, number> = {};
+  for (const p of products) {
+    productGstMap[p.id] = p.gst_rate || 0;
+  }
+
+  let totalBase = 0;
+  let totalGst = 0;
+  let totalDiscount = order.discount_amount || 0;
+
+  const itemsHTML = orderItems.map(item => {
+    const gstRate = item.product_id ? (productGstMap[item.product_id] || 0) : 0;
+    const itemTotal = item.total_price;
+    const itemGst = gstRate > 0 ? Math.round(itemTotal - (itemTotal / (1 + gstRate / 100))) : 0;
+    const itemBase = itemTotal - itemGst;
+    totalBase += itemBase;
+    totalGst += itemGst;
+
+    return `
     <tr>
-      <td style="padding: 12px; border-bottom: 1px solid #e5e5e5;">${item.product_name}</td>
-      <td style="padding: 12px; border-bottom: 1px solid #e5e5e5; text-align: center;">${item.size || '-'}</td>
-      <td style="padding: 12px; border-bottom: 1px solid #e5e5e5; text-align: center;">${item.color || '-'}</td>
-      <td style="padding: 12px; border-bottom: 1px solid #e5e5e5; text-align: center;">${item.quantity}</td>
-      <td style="padding: 12px; border-bottom: 1px solid #e5e5e5; text-align: right;">${formatCurrency(item.unit_price)}</td>
-      <td style="padding: 12px; border-bottom: 1px solid #e5e5e5; text-align: right;">${formatCurrency(item.total_price)}</td>
+      <td>${item.product_name}${item.size ? ` (${item.size})` : ''}${item.color ? ` - ${item.color}` : ''}</td>
+      <td style="text-align: center; font-family: monospace; font-size: 11px;">${item.product_sku || '-'}</td>
+      <td style="text-align: center;">${item.quantity}</td>
+      <td style="text-align: right;">${formatCurrency(itemBase)}</td>
+      <td style="text-align: center;">${gstRate > 0 ? gstRate + '%' : '-'}</td>
+      <td style="text-align: right;">${formatCurrency(itemGst)}</td>
+      <td style="text-align: right;">${formatCurrency(itemTotal)}</td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
+
+  const subtotal = order.subtotal;
+  const netTotal = order.total_amount;
 
   return `
 <!DOCTYPE html>
@@ -52,91 +77,84 @@ const generateInvoiceHTML = (order: any, orderItems: any[], customer: any) => {
   <meta charset="UTF-8">
   <title>Invoice ${order.invoice_number || order.order_number}</title>
   <style>
-    body { font-family: 'Georgia', serif; margin: 0; padding: 40px; color: #000; background: #faf9f7; }
-    .invoice { max-width: 800px; margin: 0 auto; background: white; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; border-bottom: 3px solid #000; padding-bottom: 20px; }
-    .logo { font-size: 28px; font-weight: 800; color: #000; letter-spacing: 2px; }
-    .logo span { color: #000; }
-    .invoice-title { text-align: right; }
-    .invoice-title h1 { font-size: 32px; margin: 0; color: #000; font-weight: 800; }
-    .invoice-title p { color: #000; margin: 5px 0 0; font-weight: 600; }
-    .details { display: flex; justify-content: space-between; margin-bottom: 40px; }
-    .details-section { width: 45%; }
-    .details-section h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: #000; margin-bottom: 10px; font-weight: 700; }
-    .details-section p { margin: 5px 0; color: #000; line-height: 1.6; font-weight: 500; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-    th { background: #000; color: white; padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
-    th:last-child, th:nth-child(5), th:nth-child(4) { text-align: right; }
-    th:nth-child(2), th:nth-child(3), th:nth-child(4) { text-align: center; }
-    td { color: #000; font-weight: 600; }
-    .totals { text-align: right; margin-top: 20px; }
-    .totals p { margin: 8px 0; color: #000; font-weight: 600; }
-    .totals .total { font-size: 20px; font-weight: 900; color: #000; border-top: 3px solid #000; padding-top: 10px; margin-top: 10px; }
-    .footer { margin-top: 40px; padding-top: 20px; border-top: 2px solid #333; text-align: center; color: #000; font-size: 14px; font-weight: 500; }
-    .footer p { margin: 5px 0; }
-    .thank-you { font-style: italic; color: #000; font-size: 18px; margin-bottom: 10px; font-weight: 600; }
-    .gst-note { font-size: 11px; font-style: italic; margin-top: 10px; color: #000; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', 'Segoe UI', sans-serif; padding: 10px 15px; max-width: 800px; margin: 0 auto; color: #000; }
+    .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 8px; margin-bottom: 10px; }
+    .header h1 { color: #000; margin: 0; font-size: 22px; font-weight: 900; letter-spacing: 3px; }
+    .header p { margin: 2px 0; color: #000; font-weight: 600; font-size: 12px; }
+    .invoice-details { display: flex; justify-content: space-between; margin-bottom: 20px; color: #000; }
+    .invoice-details p { color: #000; font-weight: 500; margin: 2px 0; }
+    .invoice-details strong { color: #000; font-weight: 800; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 15px; table-layout: fixed; }
+    th { background: #000; color: white; padding: 6px 3px; text-align: left; font-weight: 700; font-size: 10px; }
+    td { padding: 6px 3px; border-bottom: 2px solid #333; color: #000; font-weight: 600; font-size: 10px; word-wrap: break-word; }
+    .col-item { width: 26%; }
+    .col-sku { width: 14%; }
+    .col-qty { width: 7%; }
+    .col-base { width: 13%; }
+    .col-gst { width: 8%; }
+    .col-gstamt { width: 12%; }
+    .col-net { width: 20%; }
+    .totals { text-align: right; margin-top: 15px; color: #000; }
+    .totals div { margin: 3px 0; font-weight: 600; color: #000; }
+    .totals .total { font-size: 22px; color: #000; font-weight: 900; }
+    .footer { text-align: center; margin-top: 30px; padding-top: 15px; border-top: 2px solid #333; color: #000; font-weight: 500; }
+    @media print { @page { margin: 0; } body { margin: 0; padding: 0; max-width: 100%; } }
   </style>
 </head>
 <body>
-  <div class="invoice">
-    <div class="header">
-      <div class="logo">NOOR CREATIONS</div>
-      <div style="font-size: 12px; color: #000; font-weight: 500; margin-top: 4px;">Premium Ethnic Wear | Jammu, J&K</div>
-      <div class="invoice-title">
-        <h1>Invoice</h1>
-        <p>${order.invoice_number || order.order_number}</p>
-      </div>
+  <div class="header">
+    <h1>NOOR CREATIONS</h1>
+    <p>Moti Bazar Parade Jammu, 180001</p>
+    <p>Phone: 6006364546</p>
+    <p>GSTIN: 01NXZPS2503D1Z8</p>
+    <p style="margin-top: 8px; font-size: 16px; font-weight: 900; letter-spacing: 2px;">TAX INVOICE</p>
+  </div>
+
+  <div class="invoice-details">
+    <div>
+      <p><strong>Invoice No:</strong> ${order.invoice_number || order.order_number}</p>
+      <p><strong>Date:</strong> ${formatDate(order.created_at)}</p>
+      ${customer?.name ? `<p><strong>Customer:</strong> ${customer.name}</p>` : ''}
+      ${customer?.phone ? `<p><strong>Phone:</strong> ${customer.phone}</p>` : ''}
+      ${order.shipping_address ? `<p><strong>Address:</strong> ${order.shipping_address}</p>` : ''}
     </div>
-    
-    <div class="details">
-      <div class="details-section">
-        <h3>Bill To</h3>
-        <p><strong>${customer?.name || 'Valued Customer'}</strong></p>
-        ${order.shipping_address ? `<p>${order.shipping_address}</p>` : ''}
-        ${order.shipping_city || order.shipping_state || order.shipping_pincode ? 
-          `<p>${[order.shipping_city, order.shipping_state, order.shipping_pincode].filter(Boolean).join(', ')}</p>` : ''}
-        ${customer?.phone ? `<p>Phone: ${customer.phone}</p>` : ''}
-        ${customer?.email ? `<p>Email: ${customer.email}</p>` : ''}
-      </div>
-      <div class="details-section" style="text-align: right;">
-        <h3>Invoice Details</h3>
-        <p><strong>Invoice Date:</strong> ${formatDate(order.created_at)}</p>
-        <p><strong>Order Number:</strong> ${order.order_number}</p>
-        <p><strong>Payment Status:</strong> ${order.payment_status.toUpperCase()}</p>
-        <p><strong>Order Status:</strong> ${order.status.toUpperCase()}</p>
-      </div>
+    <div style="text-align: right;">
+      <p><strong>Order:</strong> ${order.order_number}</p>
+      <p><strong>Payment:</strong> ${order.payment_status.toUpperCase()}</p>
+      <p><strong>Status:</strong> ${order.status.toUpperCase()}</p>
     </div>
-    
-    <table>
-      <thead>
-        <tr>
-          <th>Product</th>
-          <th>Size</th>
-          <th>Color</th>
-          <th>Qty</th>
-          <th>Unit Price</th>
-          <th>Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${itemsHTML}
-      </tbody>
-    </table>
-    
-    <div class="totals">
-      <p><strong>Subtotal:</strong> ${formatCurrency(order.subtotal)}</p>
-      ${order.discount_amount ? `<p><strong>Discount:</strong> -${formatCurrency(order.discount_amount)}</p>` : ''}
-      <p><strong>Shipping:</strong> ${order.shipping_amount === 0 ? 'Free' : formatCurrency(order.shipping_amount || 0)}</p>
-      <p class="total"><strong>Total:</strong> ${formatCurrency(order.total_amount)}</p>
-      <p class="gst-note">* All prices are inclusive of GST</p>
-    </div>
-    
-    <div class="footer">
-      <p class="thank-you">Thank you for shopping with us!</p>
-      <p>For any queries, please contact us at support@noorcreations.com</p>
-      <p>NOOR CREATIONS | Premium Ethnic Wear | Jammu, J&K</p>
-    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th class="col-item">Item</th>
+        <th class="col-sku" style="text-align: center;">SKU</th>
+        <th class="col-qty" style="text-align: center;">Qty</th>
+        <th class="col-base" style="text-align: right;">Base Price</th>
+        <th class="col-gst" style="text-align: center;">GST%</th>
+        <th class="col-gstamt" style="text-align: right;">GST Amt</th>
+        <th class="col-net" style="text-align: right;">Net</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${itemsHTML}
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <div>Base Amount (excl. GST): ${formatCurrency(totalBase)}</div>
+    <div>GST Amount: ${formatCurrency(totalGst)}</div>
+    <div>Subtotal (incl. GST): ${formatCurrency(subtotal)}</div>
+    ${totalDiscount > 0 ? `<div>Discount: -${formatCurrency(totalDiscount)}</div>` : ''}
+    <div class="total">Net Total: ${formatCurrency(netTotal)}</div>
+  </div>
+
+  <div class="footer">
+    <p>Thank you for shopping with us!</p>
+    <p style="margin-top: 5px; font-size: 11px;">NOOR CREATIONS | Premium Ethnic Wear | Jammu, J&K</p>
   </div>
 </body>
 </html>
@@ -145,8 +163,7 @@ const generateInvoiceHTML = (order: any, orderItems: any[], customer: any) => {
 
 const handler = async (req: Request): Promise<Response> => {
   console.log("Invoice generation function called");
-  
-  // Handle CORS preflight
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -186,6 +203,17 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Failed to fetch order items");
     }
 
+    // Fetch products for GST rates
+    const productIds = (orderItems || []).map(i => i.product_id).filter(Boolean);
+    let products: any[] = [];
+    if (productIds.length > 0) {
+      const { data: productData } = await supabase
+        .from("products")
+        .select("id, gst_rate")
+        .in("id", productIds);
+      products = productData || [];
+    }
+
     // Fetch customer if exists
     let customer = null;
     if (order.customer_id) {
@@ -211,7 +239,6 @@ const handler = async (req: Request): Promise<Response> => {
     if (existingInvoice) {
       invoice = existingInvoice;
     } else {
-      // Create invoice record
       const { data: newInvoice, error: invoiceError } = await supabase
         .from("invoices")
         .insert({
@@ -238,33 +265,30 @@ const handler = async (req: Request): Promise<Response> => {
     const invoiceHTML = generateInvoiceHTML(
       { ...order, invoice_number: invoice.invoice_number },
       orderItems || [],
-      customer
+      customer,
+      products
     );
 
     console.log("Invoice generated successfully:", invoice.invoice_number);
 
-    // Send email if requested and RESEND_API_KEY is available
+    // Send email if requested
     let emailSent = false;
     if (sendEmail) {
       const resendApiKey = Deno.env.get("RESEND_API_KEY");
       if (resendApiKey && customer?.email) {
         try {
           const resend = new Resend(resendApiKey);
-          
           await resend.emails.send({
             from: "Noor Creations <orders@resend.dev>",
             to: [customer.email],
             subject: `Your Invoice #${invoice.invoice_number} from Noor Creations`,
             html: invoiceHTML,
           });
-          
           emailSent = true;
           console.log("Invoice email sent to:", customer.email);
         } catch (emailError: any) {
           console.error("Error sending email:", emailError);
         }
-      } else {
-        console.log("Email not sent: Missing RESEND_API_KEY or customer email");
       }
     }
 
