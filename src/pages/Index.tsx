@@ -27,14 +27,14 @@ const Index = () => {
           <FlashSale />
           <FeatureBanner />
           <FeaturedCategories />
-          <NewArrivals />
           <TrustBadges />
           <BestSellers />
           <Testimonials />
-          <Newsletter />
+          {/* <Newsletter /> */}
+          <NewArrivals />
         </Suspense>
       </main>
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 };
