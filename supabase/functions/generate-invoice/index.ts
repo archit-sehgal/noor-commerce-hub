@@ -42,17 +42,10 @@ const generateInvoiceHTML = (order: any, orderItems: any[], customer: any, produ
     productGstMap[p.id] = p.gst_rate || 0;
   }
 
-  let totalBase = 0;
-  let totalGst = 0;
-  let totalDiscount = order.discount_amount || 0;
-
   const itemsHTML = orderItems.map(item => {
     const gstRate = item.product_id ? (productGstMap[item.product_id] || 0) : 0;
-    const itemTotal = item.total_price;
-    const itemGst = gstRate > 0 ? Math.round(itemTotal - (itemTotal / (1 + gstRate / 100))) : 0;
-    const itemBase = itemTotal - itemGst;
-    totalBase += itemBase;
-    totalGst += itemGst;
+    const gross = item.unit_price * item.quantity;
+    const discPercent = gross > 0 ? Math.round(((gross - item.total_price) / gross) * 100) : 0;
 
     return `
     <tr>
@@ -61,12 +54,14 @@ const generateInvoiceHTML = (order: any, orderItems: any[], customer: any, produ
       <td style="text-align: center;">${item.quantity}</td>
       <td style="text-align: right;">${formatCurrency(item.unit_price)}</td>
       <td style="text-align: center;">${gstRate > 0 ? gstRate + '%' : '-'}</td>
-      <td style="text-align: right;">${formatCurrency(itemTotal)}</td>
+      <td style="text-align: center;">${discPercent > 0 ? discPercent + '%' : '-'}</td>
+      <td style="text-align: right;">${formatCurrency(item.total_price)}</td>
     </tr>
   `;
   }).join('');
 
   const subtotal = order.subtotal;
+  const totalDiscount = order.discount_amount || 0;
   const netTotal = order.total_amount;
 
   return `
@@ -88,12 +83,13 @@ const generateInvoiceHTML = (order: any, orderItems: any[], customer: any, produ
     table { width: 100%; border-collapse: collapse; margin-bottom: 15px; table-layout: fixed; }
     th { background: #000; color: white; padding: 6px 3px; text-align: left; font-weight: 700; font-size: 10px; }
     td { padding: 6px 3px; border-bottom: 2px solid #333; color: #000; font-weight: 600; font-size: 10px; word-wrap: break-word; }
-    .col-item { width: 30%; }
-    .col-sku { width: 16%; }
+    .col-item { width: 28%; }
+    .col-sku { width: 14%; }
     .col-qty { width: 8%; }
     .col-price { width: 15%; }
-    .col-gst { width: 9%; }
-    .col-net { width: 22%; }
+    .col-gst { width: 8%; }
+    .col-disc { width: 8%; }
+    .col-net { width: 19%; }
     .totals { text-align: right; margin-top: 15px; color: #000; }
     .totals div { margin: 3px 0; font-weight: 600; color: #000; }
     .totals .total { font-size: 22px; color: #000; font-weight: 900; }
@@ -133,6 +129,7 @@ const generateInvoiceHTML = (order: any, orderItems: any[], customer: any, produ
         <th class="col-qty" style="text-align: center;">Qty</th>
         <th class="col-price" style="text-align: right;">Price</th>
         <th class="col-gst" style="text-align: center;">GST%</th>
+        <th class="col-disc" style="text-align: center;">Disc%</th>
         <th class="col-net" style="text-align: right;">Net</th>
       </tr>
     </thead>

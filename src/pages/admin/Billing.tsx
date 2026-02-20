@@ -535,7 +535,7 @@ const AdminBilling = () => {
         product_sku: item.product.sku || null,
         quantity: item.quantity,
         unit_price: item.unitPrice,
-        total_price: item.unitPrice * item.quantity,
+        total_price: Math.round(item.unitPrice * item.quantity * (1 - item.discountPercent / 100)),
         size: item.size,
         color: item.color,
       }));
