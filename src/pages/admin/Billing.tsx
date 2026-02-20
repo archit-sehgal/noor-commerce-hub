@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -73,6 +74,7 @@ interface Salesman {
 
 const AdminBilling = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [salesmen, setSalesmen] = useState<Salesman[]>([]);
@@ -625,6 +627,9 @@ const AdminBilling = () => {
         title: "Success",
         description: `Bill generated in ${elapsed}ms!`,
       });
+
+      // Invalidate product cache so stock reflects correctly everywhere
+      queryClient.invalidateQueries({ queryKey: ["products"] });
 
       // Navigate to dashboard immediately
       navigate("/admin");
