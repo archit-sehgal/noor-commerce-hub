@@ -37,6 +37,7 @@ interface OrderItem {
   id: string;
   product_name: string;
   product_sku: string | null;
+  product_id: string | null;
   quantity: number;
   unit_price: number;
   total_price: number;
@@ -182,126 +183,158 @@ const OrderDetailDialog = ({ orderId, open, onOpenChange, onOrderUpdated }: Prop
   const handleDownloadInvoice = async () => {
     if (!order) return;
 
-    // Generate items HTML separately to avoid template literal issues
-    const itemsHTML = items.map(item => `
-      <tr>
-        <td>${item.product_name}</td>
-        <td>${item.product_sku || "-"}</td>
-        <td>${item.size || "-"}</td>
-        <td>${item.color || "-"}</td>
-        <td>${item.quantity}</td>
-        <td>₹${Number(item.unit_price).toLocaleString()}</td>
-        <td>₹${Number(item.total_price).toLocaleString()}</td>
-      </tr>
-    `).join("");
+    // Fetch GST rates for items
+    const productIds = items.map(i => i.product_id).filter(Boolean) as string[];
+    let gstMap: Record<string, number> = {};
+    if (productIds.length > 0) {
+      const { data: products } = await supabase
+        .from("products")
+        .select("id, gst_rate")
+        .in("id", productIds);
+      if (products) {
+        for (const p of products) {
+          gstMap[p.id] = p.gst_rate || 0;
+        }
+      }
+    }
 
-    // Generate a simple invoice HTML and download as a file
+    const formatCurrency = (amount: number) =>
+      new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+
+    const itemsHTML = items.map(item => {
+      const gross = item.unit_price * item.quantity;
+      const discPercent = gross > 0 ? Math.round(((gross - item.total_price) / gross) * 100) : 0;
+      const gstRate = item.product_id ? (gstMap[item.product_id] || 0) : 0;
+      return `
+        <tr>
+          <td>${item.product_name}${item.size ? ` (${item.size})` : ""}${item.color ? ` - ${item.color}` : ""}</td>
+          <td style="text-align: center; font-family: monospace; font-size: 11px;">${item.product_sku || "-"}</td>
+          <td style="text-align: center;">${item.quantity}</td>
+          <td style="text-align: right;">${formatCurrency(item.unit_price)}</td>
+          <td style="text-align: center;">${gstRate > 0 ? gstRate + "%" : "-"}</td>
+          <td style="text-align: center;">${discPercent > 0 ? discPercent + "%" : "-"}</td>
+          <td style="text-align: right;">${formatCurrency(item.total_price)}</td>
+        </tr>
+      `;
+    }).join("");
+
+    const logoUrl = `${window.location.origin}/noor-logo-bill.png`;
     const invoiceHTML = `
 <!DOCTYPE html>
 <html>
 <head>
   <title>Invoice - ${order.order_number}</title>
   <style>
-    body { font-family: 'Georgia', serif; max-width: 800px; margin: 0 auto; padding: 40px; color: #000; }
-    .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #000; padding-bottom: 20px; }
-    .header img { height: 80px; margin-bottom: 10px; }
-    .header h1 { margin: 0; color: #000; font-weight: 900; font-size: 28px; letter-spacing: 2px; }
-    .header .tagline { color: #000; font-weight: 600; font-size: 14px; margin: 4px 0; }
-    .header .address { color: #000; font-weight: 500; font-size: 12px; }
-    .info-row { display: flex; justify-content: space-between; margin-bottom: 20px; }
-    .info-box { flex: 1; }
-    .info-box h3 { margin: 0 0 10px; color: #000; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-    .info-box p { color: #000; font-weight: 600; margin: 4px 0; }
-    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-    th, td { padding: 12px; text-align: left; border-bottom: 2px solid #333; color: #000; font-weight: 600; }
-    th { background-color: #000; font-weight: 700; color: white; }
-    .totals { text-align: right; margin-top: 20px; }
-    .totals p { margin: 5px 0; color: #000; font-weight: 700; }
-    .total-amount { font-size: 22px; font-weight: 900; color: #000; border-top: 3px solid #000; padding-top: 10px; margin-top: 10px; }
-    .gst-note { font-size: 11px; font-style: italic; margin-top: 10px; color: #000; }
-    .footer { margin-top: 40px; text-align: center; color: #000; font-size: 12px; font-weight: 600; padding-top: 20px; border-top: 2px solid #333; }
-    .footer .thanks { font-size: 16px; font-style: italic; font-weight: 700; margin-bottom: 8px; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', 'Segoe UI', sans-serif; padding: 10px 15px; max-width: 800px; margin: 0 auto; color: #000; transform: scale(0.9); transform-origin: top center; }
+    .logo-section { text-align: center; margin-bottom: 2px; padding: 0; }
+    .logo-section img { max-width: 160px; height: auto; margin: 0 auto; display: block; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 8px; margin-bottom: 10px; }
+    .header h1 { color: #000; margin: 0; font-size: 22px; font-weight: 900; letter-spacing: 3px; }
+    .header p { margin: 2px 0; color: #000; font-weight: 600; font-size: 12px; }
+    .invoice-details { display: flex; justify-content: space-between; margin-bottom: 20px; color: #000; }
+    .invoice-details p { color: #000; font-weight: 500; margin: 2px 0; }
+    .invoice-details strong { color: #000; font-weight: 800; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 15px; table-layout: fixed; }
+    th { background: #000; color: white; padding: 6px 3px; text-align: left; font-weight: 700; font-size: 10px; }
+    td { padding: 6px 3px; border-bottom: 2px solid #333; color: #000; font-weight: 600; font-size: 10px; word-wrap: break-word; }
+    .col-item { width: 28%; }
+    .col-sku { width: 14%; }
+    .col-qty { width: 8%; }
+    .col-price { width: 15%; }
+    .col-gst { width: 8%; }
+    .col-disc { width: 8%; }
+    .col-net { width: 19%; }
+    .totals { text-align: right; margin-top: 15px; color: #000; }
+    .totals div { margin: 3px 0; font-weight: 600; color: #000; }
+    .totals .total { font-size: 22px; color: #000; font-weight: 900; }
+    .footer { text-align: center; margin-top: 30px; padding-top: 15px; border-top: 2px solid #333; color: #000; font-weight: 500; }
+    @media print { @page { margin: 0; } body { margin: 0; padding: 0; max-width: 100%; } .logo-section { margin-top: 0 !important; padding-top: 0 !important; } }
   </style>
 </head>
 <body>
+  <div class="logo-section">
+    <img src="${logoUrl}" alt="Noor Creations" onerror="this.style.display='none'" />
+  </div>
   <div class="header">
-    <img src="${window.location.origin}/noor-logo-invoice.png" alt="Noor Creations" onerror="this.style.display='none'" />
     <h1>NOOR CREATIONS</h1>
-    <p class="tagline">Premium Ethnic Wear</p>
-    <p class="address">Jammu, J&K</p>
+    <p>Moti Bazar Parade Jammu, 180001</p>
+    <p>Phone: 6006364546</p>
+    <p>GSTIN: 01NXZPS2503D1Z8</p>
+    <p style="margin-top: 8px; font-size: 16px; font-weight: 900; letter-spacing: 2px;">TAX INVOICE</p>
   </div>
-  
-  <div class="info-row">
-    <div class="info-box">
-      <h3>Bill To</h3>
-      <p><strong>${order.customer?.name || "Walk-in Customer"}</strong></p>
-      ${order.customer?.email ? `<p>${order.customer.email}</p>` : ""}
-      ${order.customer?.phone ? `<p>${order.customer.phone}</p>` : ""}
-    </div>
-    <div class="info-box" style="text-align: right;">
-      <h3>Invoice Details</h3>
-      <p><strong>Order:</strong> ${order.order_number}</p>
+  <div class="invoice-details">
+    <div>
+      <p><strong>Order No:</strong> ${order.order_number}</p>
       <p><strong>Date:</strong> ${new Date(order.created_at).toLocaleDateString("en-IN")}</p>
+      ${order.customer?.name ? `<p><strong>Customer:</strong> ${order.customer.name}</p>` : ""}
+      ${order.customer?.phone ? `<p><strong>Phone:</strong> ${order.customer.phone}</p>` : ""}
+    </div>
+    <div style="text-align: right;">
       <p><strong>Payment:</strong> ${order.payment_status?.toUpperCase() || "N/A"}</p>
+      <p><strong>Status:</strong> ${order.status?.toUpperCase() || ""}</p>
     </div>
   </div>
-
-  ${order.shipping_address ? `
-  <div class="info-row">
-    <div class="info-box">
-      <h3>Ship To</h3>
-      <p>${order.shipping_address}</p>
-      <p>${[order.shipping_city, order.shipping_state, order.shipping_pincode].filter(Boolean).join(", ") || ""}</p>
-    </div>
-  </div>
-  ` : ""}
-
   <table>
     <thead>
       <tr>
-        <th>Item</th>
-        <th>SKU</th>
-        <th>Size</th>
-        <th>Color</th>
-        <th>Qty</th>
-        <th>Price</th>
-        <th>Total</th>
+        <th class="col-item">Item</th>
+        <th class="col-sku" style="text-align: center;">SKU</th>
+        <th class="col-qty" style="text-align: center;">Qty</th>
+        <th class="col-price" style="text-align: right;">Price</th>
+        <th class="col-gst" style="text-align: center;">GST%</th>
+        <th class="col-disc" style="text-align: center;">Disc%</th>
+        <th class="col-net" style="text-align: right;">Net</th>
       </tr>
     </thead>
     <tbody>
       ${itemsHTML}
     </tbody>
   </table>
-
   <div class="totals">
-    <p>Subtotal: ₹${Number(order.subtotal).toLocaleString()}</p>
-    ${order.discount_amount ? `<p>Discount: -₹${Number(order.discount_amount).toLocaleString()}</p>` : ""}
-    ${order.shipping_amount ? `<p>Shipping: ₹${Number(order.shipping_amount).toLocaleString()}</p>` : ""}
-    <p class="total-amount">Total: ₹${Number(order.total_amount).toLocaleString()}</p>
-    <p class="gst-note">* All prices are inclusive of GST</p>
+    <div>Subtotal: ${formatCurrency(order.subtotal)}</div>
+    ${(order.discount_amount || 0) > 0 ? `<div>Discount: -${formatCurrency(order.discount_amount || 0)}</div>` : ""}
+    <div class="total">Net Total: ${formatCurrency(order.total_amount)}</div>
   </div>
-
   <div class="footer">
-    <p class="thanks">Thank you for shopping with us!</p>
-    <p>NOOR CREATIONS | Premium Ethnic Wear | Jammu, J&K</p>
+    <p>Thank you for shopping with us!</p>
   </div>
 </body>
 </html>
     `;
 
-    const blob = new Blob([invoiceHTML], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `invoice-${order.order_number}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const printWindow = window.open("", "_blank", "width=800,height=600");
+    if (printWindow) {
+      printWindow.document.write(invoiceHTML);
+      printWindow.document.close();
+      printWindow.focus();
+      const img = printWindow.document.querySelector(".logo-section img") as HTMLImageElement;
+      const doPrint = () => { printWindow.print(); printWindow.close(); };
+      if (img && img.complete) {
+        setTimeout(doPrint, 100);
+      } else if (img) {
+        img.onload = () => setTimeout(doPrint, 100);
+        img.onerror = () => setTimeout(doPrint, 100);
+      } else {
+        setTimeout(doPrint, 100);
+      }
+    } else {
+      // Fallback: download as HTML
+      const blob = new Blob([invoiceHTML], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `invoice-${order.order_number}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
 
     toast({
-      title: "Invoice downloaded",
-      description: "The invoice has been downloaded successfully",
+      title: "Invoice printed",
+      description: "The invoice print dialog has been opened",
     });
   };
 
