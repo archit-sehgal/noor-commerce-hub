@@ -142,6 +142,7 @@ const generateInvoiceHTML = (order: any, orderItems: any[], customer: any, produ
     <div>Subtotal: ${formatCurrency(subtotal)}</div>
     ${totalDiscount > 0 ? `<div>Discount: -${formatCurrency(totalDiscount)}</div>` : ''}
     <div class="total">Net Total: ${formatCurrency(netTotal)}</div>
+    <div style="font-size: 11px; font-style: italic; margin-top: 6px;">Inclusive of all taxes</div>
   </div>
 
   <div class="footer">

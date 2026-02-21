@@ -25,6 +25,7 @@ interface OrderItem {
   color: string | null;
   product_id: string | null;
   isNew?: boolean;
+  discountPercent: number;
 }
 
 interface Product {
@@ -52,7 +53,6 @@ const EditOrderDialog = ({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
-  const [discountAmount, setDiscountAmount] = useState(0);
   const [items, setItems] = useState<OrderItem[]>([]);
   const [removedItems, setRemovedItems] = useState<OrderItem[]>([]);
   const [addedItemIds, setAddedItemIds] = useState<Set<string>>(new Set());
@@ -86,8 +86,12 @@ const EditOrderDialog = ({
 
       if (error) throw error;
       setOrderNumber(data.order_number);
-      setDiscountAmount(data.discount_amount || 0);
-      const orderItems = data.order_items || [];
+      // Discount is now per-item, no global discount state needed
+      const orderItems = (data.order_items || []).map((item: any) => {
+        const gross = item.unit_price * item.quantity;
+        const discPercent = gross > 0 ? Math.round(((gross - item.total_price) / gross) * 100) : 0;
+        return { ...item, discountPercent: discPercent };
+      });
       setItems(orderItems);
       // Store original quantities for existing items to detect changes
       const qtyMap = new Map<string, number>();
@@ -133,6 +137,7 @@ const EditOrderDialog = ({
       color: null,
       product_id: product.id,
       isNew: true,
+      discountPercent: 0,
     };
     setItems(prev => [...prev, newItem]);
     setAddedItemIds(prev => new Set(prev).add(newItem.id));
@@ -142,13 +147,30 @@ const EditOrderDialog = ({
 
   const updateItemQuantity = (index: number, qty: number) => {
     const newQty = Math.max(1, qty);
-    setItems(prev => prev.map((item, i) =>
-      i === index ? { ...item, quantity: newQty, total_price: item.unit_price * newQty } : item
-    ));
+    setItems(prev => prev.map((item, i) => {
+      if (i !== index) return item;
+      const gross = item.unit_price * newQty;
+      const net = Math.round(gross * (1 - item.discountPercent / 100));
+      return { ...item, quantity: newQty, total_price: net };
+    }));
+  };
+
+  const updateItemDiscount = (index: number, disc: number) => {
+    const newDisc = Math.max(0, Math.min(100, disc));
+    setItems(prev => prev.map((item, i) => {
+      if (i !== index) return item;
+      const gross = item.unit_price * item.quantity;
+      const net = Math.round(gross * (1 - newDisc / 100));
+      return { ...item, discountPercent: newDisc, total_price: net };
+    }));
   };
 
   const subtotal = items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
-  const totalAmount = subtotal - discountAmount;
+  const totalDiscount = items.reduce((sum, item) => {
+    const gross = item.unit_price * item.quantity;
+    return sum + (gross - item.total_price);
+  }, 0);
+  const totalAmount = subtotal - totalDiscount;
 
   const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
@@ -189,7 +211,7 @@ const EditOrderDialog = ({
           product_sku: item.product_sku,
           quantity: item.quantity,
           unit_price: item.unit_price,
-          total_price: item.unit_price * item.quantity,
+          total_price: item.total_price,
           size: item.size,
           color: item.color,
         });
@@ -212,21 +234,21 @@ const EditOrderDialog = ({
 
         await supabase.from("order_items").update({
           quantity: item.quantity,
-          total_price: item.unit_price * item.quantity,
+          total_price: item.total_price,
         }).eq("id", item.id);
       }
 
       // 4. Update order totals
       await supabase.from("orders").update({
         subtotal,
-        discount_amount: discountAmount,
+        discount_amount: totalDiscount,
         total_amount: totalAmount,
       }).eq("id", orderId);
 
       // 5. Update linked invoice totals
       await supabase.from("invoices").update({
         subtotal,
-        discount_amount: discountAmount,
+        discount_amount: totalDiscount,
         total_amount: totalAmount,
       }).eq("order_id", orderId);
 
@@ -265,6 +287,7 @@ const EditOrderDialog = ({
                       <th className="p-2 text-center">SKU</th>
                       <th className="p-2 text-center">Qty</th>
                       <th className="p-2 text-right">Rate</th>
+                      <th className="p-2 text-center">Disc%</th>
                       <th className="p-2 text-right">Total</th>
                       <th className="p-2 w-10"></th>
                     </tr>
@@ -284,7 +307,17 @@ const EditOrderDialog = ({
                           />
                         </td>
                         <td className="p-2 text-right">{formatCurrency(item.unit_price)}</td>
-                        <td className="p-2 text-right font-semibold">{formatCurrency(item.unit_price * item.quantity)}</td>
+                        <td className="p-2 text-center">
+                          <Input
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={item.discountPercent}
+                            onChange={(e) => updateItemDiscount(index, Number(e.target.value))}
+                            className="w-16 h-7 text-center mx-auto"
+                          />
+                        </td>
+                        <td className="p-2 text-right font-semibold">{formatCurrency(item.total_price)}</td>
                         <td className="p-2">
                           <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => removeItem(index)}>
                             <Trash2 className="h-3.5 w-3.5" />
@@ -293,7 +326,7 @@ const EditOrderDialog = ({
                       </tr>
                     ))}
                     {items.length === 0 && (
-                      <tr><td colSpan={6} className="p-4 text-center text-muted-foreground">No items</td></tr>
+                      <tr><td colSpan={7} className="p-4 text-center text-muted-foreground">No items</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -342,16 +375,12 @@ const EditOrderDialog = ({
                 <span>Subtotal</span>
                 <span className="font-medium">{formatCurrency(subtotal)}</span>
               </div>
-              <div className="flex justify-between items-center text-sm">
-                <span>Discount (₹)</span>
-                <Input
-                  type="number"
-                  min={0}
-                  value={discountAmount}
-                  onChange={(e) => setDiscountAmount(Number(e.target.value) || 0)}
-                  className="w-28 h-7 text-right"
-                />
-              </div>
+              {totalDiscount > 0 && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>Discount</span>
+                  <span>-{formatCurrency(totalDiscount)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-lg font-bold border-t border-border pt-2">
                 <span>Total</span>
                 <span className="text-primary">{formatCurrency(totalAmount)}</span>
