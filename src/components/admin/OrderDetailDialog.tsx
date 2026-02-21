@@ -296,6 +296,7 @@ const OrderDetailDialog = ({ orderId, open, onOpenChange, onOrderUpdated }: Prop
     <div>Subtotal: ${formatCurrency(order.subtotal)}</div>
     ${(order.discount_amount || 0) > 0 ? `<div>Discount: -${formatCurrency(order.discount_amount || 0)}</div>` : ""}
     <div class="total">Net Total: ${formatCurrency(order.total_amount)}</div>
+    <div style="font-size: 11px; font-style: italic; margin-top: 6px;">Inclusive of all taxes</div>
   </div>
   <div class="footer">
     <p>Thank you for shopping with us!</p>

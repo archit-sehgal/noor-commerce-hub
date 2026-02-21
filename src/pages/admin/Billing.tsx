@@ -412,6 +412,7 @@ const AdminBilling = () => {
             <div>Subtotal: ${formatCurrency(invoiceData.subtotal)}</div>
             ${invoiceData.discountAmount > 0 ? `<div>Discount: -${formatCurrency(invoiceData.discountAmount)}</div>` : ""}
             <div class="total">Net Total: ${formatCurrency(invoiceData.totalAmount)}</div>
+            <div class="gst-note" style="font-size: 11px; font-style: italic; margin-top: 6px;">Inclusive of all taxes</div>
           </div>
           <div class="footer">
             <p>Thank you for shopping with us!</p>
