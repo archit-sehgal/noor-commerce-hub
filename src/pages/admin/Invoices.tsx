@@ -12,6 +12,8 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -24,7 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Printer, Eye, Loader2, FileText, Pencil } from "lucide-react";
+import { Search, Printer, Eye, Loader2, FileText, Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import EditInvoiceDialog from "@/components/admin/EditInvoiceDialog";
 
@@ -66,6 +68,10 @@ const AdminInvoices = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null);
+  const [deletePasscode, setDeletePasscode] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -174,6 +180,109 @@ const AdminInvoices = () => {
         description: "Failed to update payment status",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleDeleteInvoice = async () => {
+    if (deletePasscode !== "2486") {
+      toast({ title: "Error", description: "Incorrect passcode", variant: "destructive" });
+      return;
+    }
+    if (!deleteInvoiceId) return;
+
+    setDeleting(true);
+    try {
+      const invoice = invoices.find(i => i.id === deleteInvoiceId);
+      if (!invoice) throw new Error("Invoice not found");
+
+      if (invoice.order_id) {
+        // Fetch order items to restore inventory
+        const { data: items } = await supabase
+          .from("order_items")
+          .select("*")
+          .eq("order_id", invoice.order_id);
+
+        // Restore inventory
+        if (items && items.length > 0) {
+          for (const item of items) {
+            if (item.product_id) {
+              const { data: product } = await supabase
+                .from("products")
+                .select("stock_quantity")
+                .eq("id", item.product_id)
+                .single();
+              if (product) {
+                await supabase
+                  .from("products")
+                  .update({ stock_quantity: product.stock_quantity + item.quantity })
+                  .eq("id", item.product_id);
+              }
+            }
+          }
+        }
+
+        // Reverse customer stats
+        if (invoice.customer) {
+          const { data: customerData } = await supabase
+            .from("customers")
+            .select("id, total_orders, total_spent")
+            .eq("name", invoice.customer.name)
+            .single();
+          if (customerData) {
+            await supabase
+              .from("customers")
+              .update({
+                total_orders: Math.max(0, (customerData.total_orders || 0) - 1),
+                total_spent: Math.max(0, Number(customerData.total_spent || 0) - Number(invoice.total_amount)),
+              })
+              .eq("id", customerData.id);
+          }
+        }
+
+        // Reverse salesman stats if order has salesman
+        const { data: orderData } = await supabase
+          .from("orders")
+          .select("salesman_id")
+          .eq("id", invoice.order_id)
+          .single();
+
+        if (orderData?.salesman_id) {
+          const { data: salesmanData } = await supabase
+            .from("salesman")
+            .select("id, total_orders, total_sales")
+            .eq("id", orderData.salesman_id)
+            .single();
+          if (salesmanData) {
+            await supabase
+              .from("salesman")
+              .update({
+                total_orders: Math.max(0, (salesmanData.total_orders || 0) - 1),
+                total_sales: Math.max(0, Number(salesmanData.total_sales || 0) - Number(invoice.total_amount)),
+              })
+              .eq("id", salesmanData.id);
+          }
+        }
+
+        // Delete stock history, order items, invoice, then order
+        await supabase.from("stock_history").delete().eq("reference_id", invoice.order_id);
+        await supabase.from("order_items").delete().eq("order_id", invoice.order_id);
+        await supabase.from("invoices").delete().eq("id", deleteInvoiceId);
+        await supabase.from("orders").delete().eq("id", invoice.order_id);
+      } else {
+        // No linked order, just delete the invoice
+        await supabase.from("invoices").delete().eq("id", deleteInvoiceId);
+      }
+
+      toast({ title: "Success", description: "Invoice deleted and inventory restored" });
+      setDeleteDialogOpen(false);
+      setDeletePasscode("");
+      setDeleteInvoiceId(null);
+      fetchInvoices();
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      toast({ title: "Error", description: "Failed to delete invoice", variant: "destructive" });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -476,6 +585,18 @@ const AdminInvoices = () => {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setDeleteInvoiceId(invoice.id);
+                          setDeleteDialogOpen(true);
+                        }}
+                        title="Delete Invoice"
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -625,6 +746,32 @@ const AdminInvoices = () => {
         onOpenChange={setEditDialogOpen}
         onInvoiceUpdated={fetchInvoices}
       />
+
+      {/* Delete Invoice Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={(open) => { setDeleteDialogOpen(open); if (!open) setDeletePasscode(""); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Invoice</DialogTitle>
+            <DialogDescription>
+              This will delete the invoice, its linked order, restore inventory, and reverse customer/salesman stats. Enter passcode to confirm.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            type="password"
+            placeholder="Enter passcode"
+            value={deletePasscode}
+            onChange={(e) => setDeletePasscode(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleDeleteInvoice()}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeleteInvoice} disabled={deleting}>
+              {deleting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Delete Invoice
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
