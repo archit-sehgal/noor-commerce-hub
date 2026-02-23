@@ -1157,7 +1157,7 @@ const AdminOrders = () => {
           {exchangeStep === 1 && (
             <div className="space-y-4">
               <Label>Search order by number, customer name or phone</Label>
-              <Input placeholder="Order number or customer..." value={exchangeOrderSearch} onChange={(e) => setExchangeOrderSearch(e.target.value)} />
+              <Input placeholder="Order number, customer name or phone..." value={exchangeOrderSearch} onChange={(e) => setExchangeOrderSearch(e.target.value)} />
               <div className="max-h-[300px] overflow-y-auto space-y-2 border rounded-lg p-2">
                 {orders
                   .filter(o => !exchangeOrderSearch || o.order_number.toLowerCase().includes(exchangeOrderSearch.toLowerCase()) || o.customer?.name?.toLowerCase().includes(exchangeOrderSearch.toLowerCase()) || o.customer?.phone?.includes(exchangeOrderSearch))
