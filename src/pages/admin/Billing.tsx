@@ -984,22 +984,22 @@ const AdminBilling = () => {
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-0.5">
-                        <Label className="text-[10px] text-muted-foreground">Disc:</Label>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={100}
-                          value={item.discountPercent === 0 ? "" : item.discountPercent}
+                      <div className="flex items-center gap-1">
+                        <Label className="text-xs font-medium text-muted-foreground">Disc:</Label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={item.discountPercent === 0 ? "" : String(item.discountPercent)}
                           onChange={(e) => {
-                            const val = e.target.value;
+                            const val = e.target.value.replace(/[^0-9]/g, "");
                             const num = val === "" ? 0 : Math.min(100, Math.max(0, Number(val)));
                             updateCartItem(index, { discountPercent: num });
                           }}
-                          className="w-10 h-5 text-[10px] text-right"
+                          className="w-8 h-6 text-xs font-medium text-center border border-border rounded bg-background focus:outline-none focus:ring-1 focus:ring-ring"
                           placeholder="0"
                         />
-                        <span className="text-[10px] text-muted-foreground">%</span>
+                        <span className="text-xs font-medium text-muted-foreground">%</span>
                       </div>
                       <div className="text-right text-xs font-semibold text-primary">
                         {formatCurrency(item.unitPrice * item.quantity - Math.round((item.unitPrice * item.quantity * item.discountPercent) / 100))}
