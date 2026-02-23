@@ -1156,11 +1156,11 @@ const AdminOrders = () => {
           {/* Step 1: Select order */}
           {exchangeStep === 1 && (
             <div className="space-y-4">
-              <Label>Search order by number or customer name</Label>
+              <Label>Search order by number, customer name or phone</Label>
               <Input placeholder="Order number or customer..." value={exchangeOrderSearch} onChange={(e) => setExchangeOrderSearch(e.target.value)} />
               <div className="max-h-[300px] overflow-y-auto space-y-2 border rounded-lg p-2">
                 {orders
-                  .filter(o => !exchangeOrderSearch || o.order_number.toLowerCase().includes(exchangeOrderSearch.toLowerCase()) || o.customer?.name?.toLowerCase().includes(exchangeOrderSearch.toLowerCase()))
+                  .filter(o => !exchangeOrderSearch || o.order_number.toLowerCase().includes(exchangeOrderSearch.toLowerCase()) || o.customer?.name?.toLowerCase().includes(exchangeOrderSearch.toLowerCase()) || o.customer?.phone?.includes(exchangeOrderSearch))
                   .map(order => (
                     <button key={order.id} onClick={() => selectExchangeOrder(order)} className="w-full p-3 border rounded-lg text-left hover:bg-muted/50 transition-colors">
                       <div className="flex justify-between">
@@ -1170,7 +1170,7 @@ const AdminOrders = () => {
                       <p className="text-xs text-muted-foreground">{order.customer?.name || "Walk-in"} • {order.order_items?.length || 0} items</p>
                     </button>
                   ))}
-                {orders.filter(o => !exchangeOrderSearch || o.order_number.toLowerCase().includes(exchangeOrderSearch.toLowerCase()) || o.customer?.name?.toLowerCase().includes(exchangeOrderSearch.toLowerCase())).length === 0 && (
+                {orders.filter(o => !exchangeOrderSearch || o.order_number.toLowerCase().includes(exchangeOrderSearch.toLowerCase()) || o.customer?.name?.toLowerCase().includes(exchangeOrderSearch.toLowerCase()) || o.customer?.phone?.includes(exchangeOrderSearch)).length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-4">No orders found</p>
                 )}
               </div>

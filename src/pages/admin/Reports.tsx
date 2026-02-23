@@ -67,7 +67,7 @@ const COLORS = ['hsl(38, 75%, 52%)', 'hsl(15, 55%, 60%)', 'hsl(160, 45%, 35%)', 
 
 const AdminReports = () => {
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState("30");
+  const [period, setPeriod] = useState("0");
   const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
   const [dateRangeFrom, setDateRangeFrom] = useState<Date | undefined>(undefined);
   const [dateRangeTo, setDateRangeTo] = useState<Date | undefined>(undefined);
