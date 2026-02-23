@@ -888,30 +888,30 @@ const AdminBilling = () => {
                 No items in cart
               </p>
             ) : (
-              <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
                 {cart.map((item, index) => (
                   <div
                     key={index}
-                    className="border border-border rounded-lg p-3 space-y-2"
+                    className="border border-border rounded-lg p-2 space-y-1"
                   >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{item.product.name}</p>
-                        <p className="text-xs text-muted-foreground font-mono">
-                          {item.product.sku || "No SKU"} • {formatCurrency(item.unitPrice)} each
+                    <div className="flex justify-between items-start gap-1">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-xs truncate">{item.product.name}</p>
+                        <p className="text-[10px] text-muted-foreground font-mono truncate">
+                          {item.product.sku || "No SKU"} • {formatCurrency(item.unitPrice)}
                         </p>
                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => removeFromCart(index)}
-                        className="text-destructive h-6 w-6 p-0"
+                        className="text-destructive h-5 w-5 p-0 shrink-0"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 flex-wrap">
                       {item.product.sizes && item.product.sizes.length > 0 && (
                         <Select
                           value={item.size || ""}
@@ -919,7 +919,7 @@ const AdminBilling = () => {
                             updateCartItem(index, { size: value })
                           }
                         >
-                          <SelectTrigger className="h-8 text-xs w-20">
+                          <SelectTrigger className="h-6 text-[10px] w-16">
                             <SelectValue placeholder="Size" />
                           </SelectTrigger>
                           <SelectContent>
@@ -939,7 +939,7 @@ const AdminBilling = () => {
                             updateCartItem(index, { color: value })
                           }
                         >
-                          <SelectTrigger className="h-8 text-xs w-24">
+                          <SelectTrigger className="h-6 text-[10px] w-18">
                             <SelectValue placeholder="Color" />
                           </SelectTrigger>
                           <SelectContent>
@@ -952,40 +952,40 @@ const AdminBilling = () => {
                         </Select>
                       )}
 
-                      <div className="flex items-center gap-1 ml-auto">
+                      <div className="flex items-center gap-0.5 ml-auto">
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-8 w-8 p-0"
+                          className="h-6 w-6 p-0"
                           onClick={() =>
                             updateCartItem(index, {
                               quantity: Math.max(1, item.quantity - 1),
                             })
                           }
                         >
-                          <Minus className="h-3 w-3" />
+                          <Minus className="h-2.5 w-2.5" />
                         </Button>
-                        <span className="w-8 text-center text-sm font-medium">
+                        <span className="w-5 text-center text-xs font-medium">
                           {item.quantity}
                         </span>
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-8 w-8 p-0"
+                          className="h-6 w-6 p-0"
                           onClick={() => {
                             if (item.quantity < item.product.stock_quantity) {
                               updateCartItem(index, { quantity: item.quantity + 1 });
                             }
                           }}
                         >
-                          <Plus className="h-3 w-3" />
+                          <Plus className="h-2.5 w-2.5" />
                         </Button>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1">
-                        <Label className="text-xs text-muted-foreground">Disc:</Label>
+                      <div className="flex items-center gap-0.5">
+                        <Label className="text-[10px] text-muted-foreground">Disc:</Label>
                         <Input
                           type="number"
                           min={0}
@@ -996,12 +996,12 @@ const AdminBilling = () => {
                             const num = val === "" ? 0 : Math.min(100, Math.max(0, Number(val)));
                             updateCartItem(index, { discountPercent: num });
                           }}
-                          className="w-14 h-6 text-xs text-right"
+                          className="w-10 h-5 text-[10px] text-right"
                           placeholder="0"
                         />
-                        <span className="text-xs text-muted-foreground">%</span>
+                        <span className="text-[10px] text-muted-foreground">%</span>
                       </div>
-                      <div className="text-right text-sm font-semibold text-primary">
+                      <div className="text-right text-xs font-semibold text-primary">
                         {formatCurrency(item.unitPrice * item.quantity - Math.round((item.unitPrice * item.quantity * item.discountPercent) / 100))}
                       </div>
                     </div>
