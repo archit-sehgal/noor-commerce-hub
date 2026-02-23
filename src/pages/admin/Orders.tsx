@@ -41,7 +41,7 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import OrderDetailDialog from "@/components/admin/OrderDetailDialog";
 import EditOrderDialog from "@/components/admin/EditOrderDialog";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Loader2, ShoppingCart, Eye, Store, Globe, ChevronDown, ChevronUp, Package, Download, CalendarIcon, X, Pencil, Trash2, ArrowLeftRight } from "lucide-react";
+import { Search, Loader2, ShoppingCart, Eye, Store, Globe, ChevronDown, ChevronUp, Package, Download, CalendarIcon, X, Pencil, Trash2, ArrowLeftRight, Printer } from "lucide-react";
 import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -129,6 +129,7 @@ const AdminOrders = () => {
   const [allProducts, setAllProducts] = useState<ExchangeProduct[]>([]);
   const [exchangeProductSearch, setExchangeProductSearch] = useState("");
   const [exchanging, setExchanging] = useState(false);
+  const [exchangeCompletedData, setExchangeCompletedData] = useState<{ order: Order; newItems: { product: ExchangeProduct; quantity: number }[]; difference: number } | null>(null);
 
   useEffect(() => {
     fetchOrders();
@@ -335,6 +336,7 @@ const AdminOrders = () => {
     setExchangeSelectedItems(new Set());
     setExchangeNewProducts([]);
     setExchangeProductSearch("");
+    setExchangeCompletedData(null);
     fetchAllProducts();
   };
 
@@ -390,6 +392,154 @@ const AdminOrders = () => {
       .reduce((sum, i) => sum + i.total_price, 0);
     const newTotal = exchangeNewProducts.reduce((sum, p) => sum + (p.product.discount_price || p.product.price) * p.quantity, 0);
     return { oldTotal, newTotal, difference: newTotal - oldTotal };
+  };
+
+  const printExchangeBill = async (data: { order: Order; newItems: { product: ExchangeProduct; quantity: number }[]; difference: number }) => {
+    // Fetch updated order with items from DB
+    const { data: updatedOrder } = await supabase
+      .from("orders")
+      .select(`*, order_items(id, product_name, product_sku, quantity, unit_price, total_price, size, color, product_id), customer:customers(name, phone, email), salesman:salesman(name)`)
+      .eq("id", data.order.id)
+      .single();
+
+    if (!updatedOrder) return;
+
+    // Fetch invoice number
+    const { data: invoice } = await supabase
+      .from("invoices")
+      .select("invoice_number")
+      .eq("order_id", data.order.id)
+      .single();
+
+    const invoiceNumber = invoice?.invoice_number || updatedOrder.order_number;
+    const items = updatedOrder.order_items || [];
+
+    const itemsHtml = items.map((item: any, index: number) => {
+      const gross = item.unit_price * item.quantity;
+      const discPercent = gross > 0 ? Math.round(((gross - item.total_price) / gross) * 100) : 0;
+      return `
+        <tr>
+          <td style="text-align: center;">${index + 1}</td>
+          <td>${item.product_name}${item.size ? ` (${item.size})` : ""}${item.color ? ` - ${item.color}` : ""}</td>
+          <td style="text-align: center; font-family: monospace; font-size: 11px;">${item.product_sku || "-"}</td>
+          <td style="text-align: center;">${item.quantity}</td>
+          <td style="text-align: right;">${formatCurrency(item.unit_price)}</td>
+          <td style="text-align: center;">${discPercent > 0 ? discPercent + '%' : '-'}</td>
+          <td style="text-align: right;">${formatCurrency(item.total_price)}</td>
+        </tr>
+      `;
+    }).join("");
+
+    const logoUrl = `${window.location.origin}/noor-logo-bill.png`;
+    const printContent = `
+      <html>
+        <head>
+          <title>Invoice - ${invoiceNumber}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: 'Inter', 'Segoe UI', sans-serif; padding: 10px 15px; max-width: 800px; margin: 0 auto; color: #000; transform: scale(0.9); transform-origin: top center; }
+            .logo-section { text-align: center; margin-bottom: 2px; padding: 0; }
+            .logo-section img { max-width: 160px; height: auto; margin: 0 auto; display: block; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 8px; margin-bottom: 10px; }
+            .header h1 { color: #000; margin: 0; font-size: 22px; font-weight: 900; letter-spacing: 3px; }
+            .header p { margin: 2px 0; color: #000; font-weight: 600; font-size: 12px; }
+            .invoice-details { display: flex; justify-content: space-between; margin-bottom: 20px; color: #000; }
+            .invoice-details p { color: #000; font-weight: 500; margin: 2px 0; }
+            .invoice-details strong { color: #000; font-weight: 800; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 15px; table-layout: fixed; }
+            th { background: #000; color: white; padding: 6px 3px; text-align: left; font-weight: 700; font-size: 10px; }
+            td { padding: 6px 3px; border-bottom: 2px solid #333; color: #000; font-weight: 600; font-size: 10px; word-wrap: break-word; }
+            .col-sno { width: 6%; }
+            .col-item { width: 30%; }
+            .col-sku { width: 14%; }
+            .col-qty { width: 8%; }
+            .col-price { width: 15%; }
+            .col-disc { width: 8%; }
+            .col-net { width: 19%; }
+            .totals { text-align: right; margin-top: 15px; color: #000; }
+            .totals div { margin: 3px 0; font-weight: 600; color: #000; }
+            .totals .total { font-size: 22px; color: #000; font-weight: 900; }
+            .footer { text-align: center; margin-top: 30px; padding-top: 15px; border-top: 2px solid #333; color: #000; font-weight: 500; }
+            .gst-note { font-size: 11px; color: #000; font-style: italic; margin-top: 8px; }
+            @media print { @page { margin: 0; } body { margin: 0; padding: 0; max-width: 100%; } .logo-section { margin-top: 0 !important; padding-top: 0 !important; } }
+          </style>
+        </head>
+        <body>
+          <div class="logo-section">
+            <img src="${logoUrl}" alt="Noor Creations" onerror="this.style.display='none'" />
+          </div>
+          <div class="header">
+            <h1>NOOR CREATIONS</h1>
+            <p>Moti Bazar Parade Jammu, 180001</p>
+            <p>Phone: 6006364546</p>
+            <p>GSTIN: 01NXZPS2503D1Z8</p>
+            <p style="margin-top: 8px; font-size: 16px; font-weight: 900; letter-spacing: 2px;">TAX INVOICE</p>
+          </div>
+          <div class="invoice-details">
+            <div>
+              <p><strong>Invoice No:</strong> ${invoiceNumber}</p>
+              <p><strong>Date:</strong> ${new Date().toLocaleDateString("en-IN")}</p>
+              ${updatedOrder.customer ? `<p><strong>Customer:</strong> ${updatedOrder.customer.name}</p>` : ""}
+              ${updatedOrder.salesman ? `<p><strong>Salesman:</strong> ${updatedOrder.salesman.name}</p>` : ""}
+            </div>
+            <div>
+              <p><strong>Exchange Bill</strong></p>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th class="col-sno" style="text-align: center;">S.No.</th>
+                <th class="col-item">Item</th>
+                <th class="col-sku" style="text-align: center;">SKU</th>
+                <th class="col-qty" style="text-align: center;">Qty</th>
+                <th class="col-price" style="text-align: right;">Price</th>
+                <th class="col-disc" style="text-align: center;">Disc%</th>
+                <th class="col-net" style="text-align: right;">Net</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+          <div class="totals">
+            <div>Subtotal: ${formatCurrency(updatedOrder.subtotal)}</div>
+            ${updatedOrder.discount_amount > 0 ? `<div>Discount: -${formatCurrency(updatedOrder.discount_amount)}</div>` : ""}
+            <div class="total">Net Total: ${formatCurrency(updatedOrder.total_amount)}</div>
+            <div class="gst-note" style="font-size: 11px; font-style: italic; margin-top: 6px;">Inclusive of all taxes</div>
+          </div>
+          <div class="footer">
+            <p>Thank you for shopping with us!</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open("", "_blank", "width=800,height=600");
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.focus();
+      const img = printWindow.document.querySelector('.logo-section img') as HTMLImageElement;
+      const doPrint = () => { printWindow.print(); printWindow.close(); };
+      if (img && img.complete) { setTimeout(doPrint, 100); }
+      else if (img) { img.onload = () => setTimeout(doPrint, 100); img.onerror = () => setTimeout(doPrint, 100); }
+      else { setTimeout(doPrint, 100); }
+    } else {
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "absolute";
+      iframe.style.top = "-10000px";
+      iframe.style.left = "-10000px";
+      document.body.appendChild(iframe);
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (iframeDoc) {
+        iframeDoc.open();
+        iframeDoc.write(printContent);
+        iframeDoc.close();
+        iframe.onload = () => { iframe.contentWindow?.focus(); iframe.contentWindow?.print(); setTimeout(() => document.body.removeChild(iframe), 1000); };
+      }
+    }
   };
 
   const processExchange = async () => {
@@ -453,7 +603,8 @@ const AdminOrders = () => {
       }).eq("order_id", exchangeOrder.id);
 
       toast({ title: "Exchange Completed", description: difference > 0 ? `Customer needs to pay ₹${difference.toLocaleString()} more` : difference < 0 ? `Customer gets ₹${Math.abs(difference).toLocaleString()} back` : "Even exchange - no balance" });
-      setExchangeDialogOpen(false);
+      setExchangeCompletedData({ order: exchangeOrder, newItems: [...exchangeNewProducts], difference });
+      setExchangeStep(4);
       fetchOrders();
     } catch (error) {
       console.error("Exchange error:", error);
@@ -1111,6 +1262,28 @@ const AdminOrders = () => {
                 <Button onClick={processExchange} disabled={exchangeNewProducts.length === 0 || exchanging} className="flex-1">
                   {exchanging && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   Process Exchange
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Exchange completed — Print Bill */}
+          {exchangeStep === 4 && exchangeCompletedData && (
+            <div className="space-y-4 text-center">
+              <div className="p-4 bg-green-50 rounded-lg">
+                <p className="text-lg font-bold text-green-700">✅ Exchange Completed</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {exchangeCompletedData.difference > 0
+                    ? `Customer pays ${formatCurrency(exchangeCompletedData.difference)} more`
+                    : exchangeCompletedData.difference < 0
+                    ? `Customer gets ${formatCurrency(Math.abs(exchangeCompletedData.difference))} back`
+                    : "Even exchange — no balance"}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setExchangeDialogOpen(false)} className="flex-1">Close</Button>
+                <Button onClick={() => printExchangeBill(exchangeCompletedData)} className="flex-1">
+                  <Printer className="h-4 w-4 mr-2" /> Print Bill
                 </Button>
               </div>
             </div>

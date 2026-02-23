@@ -693,7 +693,7 @@ const AdminBilling = () => {
 
   return (
     <AdminLayout title="In-Store Billing">
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 md:gap-6">
         {/* Products Section */}
         <div className="xl:col-span-2 space-y-4">
           {/* Barcode Scanner Section */}
@@ -768,7 +768,7 @@ const AdminBilling = () => {
         </div>
 
         {/* Cart & Billing Section */}
-        <div className="space-y-4">
+        <div className="xl:col-span-3 space-y-4">
           {/* Salesman Selection */}
           <div className="bg-background rounded-lg p-4 shadow-sm">
             <h3 className="font-serif text-lg font-semibold mb-3 flex items-center gap-2">
@@ -888,7 +888,7 @@ const AdminBilling = () => {
                 No items in cart
               </p>
             ) : (
-              <div className="space-y-3 max-h-[300px] overflow-y-auto">
+              <div className="space-y-3">
                 {cart.map((item, index) => (
                   <div
                     key={index}
