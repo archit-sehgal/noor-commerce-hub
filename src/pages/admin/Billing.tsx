@@ -315,18 +315,17 @@ const AdminBilling = () => {
   const printInvoiceDirectly = useCallback((invoiceData: any) => {
     const itemsHtml = invoiceData.items
       .map(
-        (item: CartItem) => {
-          const gstRate = item.product.gst_rate || 0;
+        (item: CartItem, index: number) => {
           const itemTotal = item.unitPrice * item.quantity;
           const itemDiscount = Math.round((itemTotal * item.discountPercent) / 100);
           const itemNet = itemTotal - itemDiscount;
           return `
           <tr>
+            <td style="text-align: center;">${index + 1}</td>
             <td>${item.product.name}${item.size ? ` (${item.size})` : ""}${item.color ? ` - ${item.color}` : ""}</td>
             <td style="text-align: center; font-family: monospace; font-size: 11px;">${item.product.sku || "-"}</td>
             <td style="text-align: center;">${item.quantity}</td>
             <td style="text-align: right;">${formatCurrency(item.unitPrice)}</td>
-            <td style="text-align: center;">${gstRate > 0 ? gstRate + '%' : '-'}</td>
             <td style="text-align: center;">${item.discountPercent > 0 ? item.discountPercent + '%' : '-'}</td>
             <td style="text-align: right;">${formatCurrency(itemNet)}</td>
           </tr>
@@ -355,11 +354,11 @@ const AdminBilling = () => {
             table { width: 100%; border-collapse: collapse; margin-bottom: 15px; table-layout: fixed; }
             th { background: #000; color: white; padding: 6px 3px; text-align: left; font-weight: 700; font-size: 10px; }
             td { padding: 6px 3px; border-bottom: 2px solid #333; color: #000; font-weight: 600; font-size: 10px; word-wrap: break-word; }
-            .col-item { width: 28%; }
+            .col-sno { width: 6%; }
+            .col-item { width: 30%; }
             .col-sku { width: 14%; }
             .col-qty { width: 8%; }
             .col-price { width: 15%; }
-            .col-gst { width: 8%; }
             .col-disc { width: 8%; }
             .col-net { width: 19%; }
             .totals { text-align: right; margin-top: 15px; color: #000; }
@@ -395,11 +394,11 @@ const AdminBilling = () => {
           <table>
             <thead>
               <tr>
+                <th class="col-sno" style="text-align: center;">S.No.</th>
                 <th class="col-item">Item</th>
                 <th class="col-sku" style="text-align: center;">SKU</th>
                 <th class="col-qty" style="text-align: center;">Qty</th>
                 <th class="col-price" style="text-align: right;">Price</th>
-                <th class="col-gst" style="text-align: center;">GST%</th>
                 <th class="col-disc" style="text-align: center;">Disc%</th>
                 <th class="col-net" style="text-align: right;">Net</th>
               </tr>

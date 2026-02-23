@@ -201,17 +201,16 @@ const OrderDetailDialog = ({ orderId, open, onOpenChange, onOrderUpdated }: Prop
     const formatCurrency = (amount: number) =>
       new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 
-    const itemsHTML = items.map(item => {
+    const itemsHTML = items.map((item, index) => {
       const gross = item.unit_price * item.quantity;
       const discPercent = gross > 0 ? Math.round(((gross - item.total_price) / gross) * 100) : 0;
-      const gstRate = item.product_id ? (gstMap[item.product_id] || 0) : 0;
       return `
         <tr>
+          <td style="text-align: center;">${index + 1}</td>
           <td>${item.product_name}${item.size ? ` (${item.size})` : ""}${item.color ? ` - ${item.color}` : ""}</td>
           <td style="text-align: center; font-family: monospace; font-size: 11px;">${item.product_sku || "-"}</td>
           <td style="text-align: center;">${item.quantity}</td>
           <td style="text-align: right;">${formatCurrency(item.unit_price)}</td>
-          <td style="text-align: center;">${gstRate > 0 ? gstRate + "%" : "-"}</td>
           <td style="text-align: center;">${discPercent > 0 ? discPercent + "%" : "-"}</td>
           <td style="text-align: right;">${formatCurrency(item.total_price)}</td>
         </tr>
@@ -239,11 +238,11 @@ const OrderDetailDialog = ({ orderId, open, onOpenChange, onOrderUpdated }: Prop
     table { width: 100%; border-collapse: collapse; margin-bottom: 15px; table-layout: fixed; }
     th { background: #000; color: white; padding: 6px 3px; text-align: left; font-weight: 700; font-size: 10px; }
     td { padding: 6px 3px; border-bottom: 2px solid #333; color: #000; font-weight: 600; font-size: 10px; word-wrap: break-word; }
-    .col-item { width: 28%; }
+    .col-sno { width: 6%; }
+    .col-item { width: 30%; }
     .col-sku { width: 14%; }
     .col-qty { width: 8%; }
     .col-price { width: 15%; }
-    .col-gst { width: 8%; }
     .col-disc { width: 8%; }
     .col-net { width: 19%; }
     .totals { text-align: right; margin-top: 15px; color: #000; }
@@ -279,11 +278,11 @@ const OrderDetailDialog = ({ orderId, open, onOpenChange, onOrderUpdated }: Prop
   <table>
     <thead>
       <tr>
+        <th class="col-sno" style="text-align: center;">S.No.</th>
         <th class="col-item">Item</th>
         <th class="col-sku" style="text-align: center;">SKU</th>
         <th class="col-qty" style="text-align: center;">Qty</th>
         <th class="col-price" style="text-align: right;">Price</th>
-        <th class="col-gst" style="text-align: center;">GST%</th>
         <th class="col-disc" style="text-align: center;">Disc%</th>
         <th class="col-net" style="text-align: right;">Net</th>
       </tr>
