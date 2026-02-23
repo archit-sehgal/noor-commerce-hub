@@ -659,10 +659,12 @@ const AdminOrders = () => {
 
   const filterOrders = (orderList: Order[]) => {
     return orderList.filter((order) => {
+      const q = searchQuery.toLowerCase();
       const matchesSearch =
-        order.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.customer?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.customer?.email?.toLowerCase().includes(searchQuery.toLowerCase());
+        order.order_number.toLowerCase().includes(q) ||
+        order.customer?.name?.toLowerCase().includes(q) ||
+        order.customer?.email?.toLowerCase().includes(q) ||
+        order.customer?.phone?.includes(searchQuery);
 
       const matchesStatus =
         statusFilter === "all" || order.status === statusFilter;
