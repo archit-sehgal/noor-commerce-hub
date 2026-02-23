@@ -6,7 +6,7 @@ import OfferMarquee from "@/components/home/OfferMarquee";
 import FlashSale from "@/components/home/FlashSale";
 import TrustBadges from "@/components/home/TrustBadges";
 import Testimonials from "@/components/home/Testimonials";
-import UrgentHostingWarning from "@/components/UrgentHostingWarning";
+// import UrgentHostingWarning from "@/components/UrgentHostingWarning";
 import FeatureBanner from "@/components/home/FeatureBanner";
 import FeaturedCategories from "@/components/home/FeaturedCategories";
 import BestSellers from "@/components/home/BestSellers";
@@ -20,7 +20,7 @@ const Index = () => {
       <Navbar />
       <main>
         {/* Remove After Cloud Payment */}
-        <UrgentHostingWarning/>
+        {/* <UrgentHostingWarning/> */}
         {/* Remove After Cloud Payment */}
         <HeroSection />
         <Suspense fallback={null}>
