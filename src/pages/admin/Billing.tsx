@@ -102,6 +102,7 @@ const AdminBilling = () => {
   const [alterationDueDate, setAlterationDueDate] = useState("");
   const [alterationNotes, setAlterationNotes] = useState("");
   const [alterationNumber, setAlterationNumber] = useState("");
+  const [alterationItemIndices, setAlterationItemIndices] = useState<number[]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -469,6 +470,22 @@ const AdminBilling = () => {
     }
   }, []);
 
+  const buildAlterationNotes = () => {
+    const selectedItems = alterationItemIndices.length > 0
+      ? cart.filter((_, idx) => alterationItemIndices.includes(idx))
+      : cart;
+    const itemDetails = selectedItems
+      .map((item) => `${item.product.name}${item.product.sku ? ` (SKU: ${item.product.sku})` : ""}${item.size ? ` - ${item.size}` : ""}${item.color ? ` - ${item.color}` : ""}`)
+      .join(", ");
+    return `Items: ${itemDetails}${alterationNotes ? `\nNotes: ${alterationNotes}` : ""}`;
+  };
+
+  const toggleAlterationItem = (index: number) => {
+    setAlterationItemIndices((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+    );
+  };
+
   const handleGenerateBill = async () => {
     if (cart.length === 0) {
       toast({
@@ -504,7 +521,7 @@ const AdminBilling = () => {
           needs_alteration: needsAlteration,
           alteration_due_date: needsAlteration && alterationDueDate ? alterationDueDate : null,
           alteration_status: needsAlteration ? "pending" : null,
-          alteration_notes: needsAlteration ? alterationNotes : null,
+          alteration_notes: needsAlteration ? buildAlterationNotes() : null,
           alteration_number: needsAlteration && alterationNumber ? alterationNumber : null,
           order_source: "pos",
         })
@@ -1162,6 +1179,53 @@ const AdminBilling = () => {
                         className="border-gold/20"
                       />
                     </div>
+
+                    {/* Item Selection for Alteration */}
+                    {cart.length > 1 && (
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <Label className="text-sm">Select Items for Alteration</Label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (alterationItemIndices.length === cart.length) {
+                                setAlterationItemIndices([]);
+                              } else {
+                                setAlterationItemIndices(cart.map((_, i) => i));
+                              }
+                            }}
+                            className="text-xs text-gold hover:underline"
+                          >
+                            {alterationItemIndices.length === cart.length ? "Deselect All" : "Select All"}
+                          </button>
+                        </div>
+                        <div className="border border-gold/10 rounded-lg divide-y divide-gold/10 max-h-32 overflow-y-auto">
+                          {cart.map((item, idx) => (
+                            <label
+                              key={idx}
+                              className="flex items-center gap-2 p-2 cursor-pointer hover:bg-muted/50 transition-colors text-xs"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={alterationItemIndices.includes(idx)}
+                                onChange={() => toggleAlterationItem(idx)}
+                                className="h-3.5 w-3.5 rounded border-gold accent-gold"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <span className="font-medium truncate block">{item.product.name}</span>
+                                <span className="text-muted-foreground">
+                                  {[item.product.sku && `SKU: ${item.product.sku}`, item.size, item.color].filter(Boolean).join(" • ")}
+                                </span>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                        {alterationItemIndices.length === 0 && (
+                          <p className="text-xs text-muted-foreground mt-1">All items will be included if none selected</p>
+                        )}
+                      </div>
+                    )}
+
                     <div>
                       <Label className="text-sm">Due Date</Label>
                       <Input
