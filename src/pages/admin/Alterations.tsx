@@ -73,14 +73,15 @@ const Alterations = () => {
     },
   });
 
-  // Filter orders based on search
+  // Filter orders based on search (by alteration number, customer phone, or order number)
   const filteredOrders = alterationOrders?.filter((order) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
       order.order_number?.toLowerCase().includes(query) ||
       order.customer?.name?.toLowerCase().includes(query) ||
-      order.customer?.phone?.toLowerCase().includes(query)
+      order.customer?.phone?.toLowerCase().includes(query) ||
+      order.alteration_number?.toLowerCase().includes(query)
     );
   });
 
@@ -168,8 +169,8 @@ const Alterations = () => {
               <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                 <div className="relative flex-1 md:w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by order, name, phone..."
+                   <Input
+                    placeholder="Search by alteration #, phone, order #..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9 border-gold/20"
@@ -210,6 +211,9 @@ const Alterations = () => {
                         <div className="flex justify-between items-start mb-3">
                           <div>
                             <p className="font-semibold text-sm">{order.order_number}</p>
+                            {order.alteration_number && (
+                              <p className="text-xs text-gold font-medium">Alt# {order.alteration_number}</p>
+                            )}
                             <p className="text-sm text-muted-foreground">{order.customer?.name || "—"}</p>
                           </div>
                           <Badge className={`${statusColors[order.alteration_status || "pending"]} flex items-center gap-1`}>
@@ -268,6 +272,7 @@ const Alterations = () => {
                     <TableHeader>
                       <TableRow className="border-gold/10">
                         <TableHead>Order #</TableHead>
+                        <TableHead>Alt #</TableHead>
                         <TableHead>Customer</TableHead>
                         <TableHead className="hidden lg:table-cell">Phone</TableHead>
                         <TableHead>Due Date</TableHead>
@@ -285,6 +290,7 @@ const Alterations = () => {
                         return (
                           <TableRow key={order.id} className={`border-gold/10 ${isOverdue ? "bg-red-50" : ""}`}>
                             <TableCell className="font-medium">{order.order_number}</TableCell>
+                            <TableCell className="text-gold font-medium">{order.alteration_number || "—"}</TableCell>
                             <TableCell>{order.customer?.name || "—"}</TableCell>
                             <TableCell className="hidden lg:table-cell">{order.customer?.phone || "—"}</TableCell>
                             <TableCell>

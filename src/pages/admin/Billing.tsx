@@ -101,6 +101,7 @@ const AdminBilling = () => {
   const [needsAlteration, setNeedsAlteration] = useState(false);
   const [alterationDueDate, setAlterationDueDate] = useState("");
   const [alterationNotes, setAlterationNotes] = useState("");
+  const [alterationNumber, setAlterationNumber] = useState("");
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -504,6 +505,7 @@ const AdminBilling = () => {
           alteration_due_date: needsAlteration && alterationDueDate ? alterationDueDate : null,
           alteration_status: needsAlteration ? "pending" : null,
           alteration_notes: needsAlteration ? alterationNotes : null,
+          alteration_number: needsAlteration && alterationNumber ? alterationNumber : null,
           order_source: "pos",
         })
         .select()
@@ -1151,6 +1153,15 @@ const AdminBilling = () => {
                 
                 {needsAlteration && (
                   <div className="space-y-3 pt-2 border-t border-gold/10">
+                    <div>
+                      <Label className="text-sm">Alteration Number</Label>
+                      <Input
+                        value={alterationNumber}
+                        onChange={(e) => setAlterationNumber(e.target.value)}
+                        placeholder="Enter alteration number (e.g., ALT-001)"
+                        className="border-gold/20"
+                      />
+                    </div>
                     <div>
                       <Label className="text-sm">Due Date</Label>
                       <Input

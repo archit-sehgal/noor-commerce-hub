@@ -42,6 +42,7 @@ const NewAlterationForm = () => {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
+  const [alterationNumber, setAlterationNumber] = useState("");
 
   // Fetch orders that don't already have alterations
   const { data: orders, isLoading: ordersLoading } = useQuery({
@@ -104,6 +105,7 @@ const NewAlterationForm = () => {
           alteration_status: "pending",
           alteration_due_date: new Date(dueDate).toISOString(),
           alteration_notes: fullNotes,
+          alteration_number: alterationNumber || null,
         })
         .eq("id", selectedOrderId);
 
@@ -124,6 +126,7 @@ const NewAlterationForm = () => {
     setSelectedItems([]);
     setDueDate("");
     setNotes("");
+    setAlterationNumber("");
     setOrderSearch("");
     setIsOpen(false);
   };
@@ -249,6 +252,20 @@ const NewAlterationForm = () => {
             </div>
           </div>
         )}
+
+        {/* Alteration Number */}
+        <div className="space-y-2">
+          <Label htmlFor="alt-number" className="text-sm font-medium">
+            Alteration Number
+          </Label>
+          <Input
+            id="alt-number"
+            value={alterationNumber}
+            onChange={(e) => setAlterationNumber(e.target.value)}
+            placeholder="Enter alteration number (e.g., ALT-001)"
+            className="border-gold/20"
+          />
+        </div>
 
         {/* Due Date */}
         <div className="space-y-2">
