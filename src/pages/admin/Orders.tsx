@@ -701,19 +701,58 @@ const AdminOrders = () => {
     });
   };
 
-  const exportToCSV = () => {
+  const exportToCSV = async () => {
     const filtered = filterOrders(orders);
     if (filtered.length === 0) return;
-    const headers = ["Customer Name", "Order ID", "Amount", "Date"];
+
+    // Fetch all order items for filtered orders
+    const orderIds = filtered.map(o => o.id);
+    const { data: allItems } = await supabase
+      .from("order_items")
+      .select("*")
+      .in("order_id", orderIds);
+
+    const itemsByOrder: Record<string, typeof allItems> = {};
+    (allItems || []).forEach(item => {
+      if (!itemsByOrder[item.order_id]) itemsByOrder[item.order_id] = [];
+      itemsByOrder[item.order_id]!.push(item);
+    });
+
+    const headers = ["Order Number", "Order Date", "Customer Name", "Item Name", "SKU", "Qty", "MRP", "Disc%", "Net Rate", "Order Total", "Payment Status", "Status"];
     const csvRows = [headers.join(",")];
+
     filtered.forEach((order) => {
       const customerName = order.customer?.name || "Walk-in";
-      const orderId = order.order_number;
-      const amount = order.total_amount;
-      const date = format(new Date(order.created_at), "yyyy-MM-dd HH:mm");
-      const escapedName = `"${customerName.replace(/"/g, '""')}"`;
-      csvRows.push([escapedName, orderId, amount, date].join(","));
+      const orderDate = format(new Date(order.created_at), "yyyy-MM-dd HH:mm");
+      const escapedCustomer = `"${customerName.replace(/"/g, '""')}"`;
+      const items = itemsByOrder[order.id] || [];
+
+      if (items.length === 0) {
+        csvRows.push([order.order_number, orderDate, escapedCustomer, "", "", "", "", "", "", order.total_amount, order.payment_status, order.status].join(","));
+      } else {
+        items.forEach(item => {
+          const gross = item.unit_price * item.quantity;
+          const discPercent = gross > 0 ? Math.round(((gross - item.total_price) / gross) * 100) : 0;
+          const netRate = item.quantity > 0 ? Math.round(item.total_price / item.quantity) : 0;
+          const escapedName = `"${(item.product_name || "").replace(/"/g, '""')}"`;
+          csvRows.push([
+            order.order_number,
+            orderDate,
+            escapedCustomer,
+            escapedName,
+            item.product_sku || "",
+            item.quantity,
+            item.unit_price,
+            discPercent > 0 ? discPercent + "%" : "0%",
+            netRate,
+            order.total_amount,
+            order.payment_status,
+            order.status,
+          ].join(","));
+        });
+      }
     });
+
     const csvContent = csvRows.join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
