@@ -466,6 +466,7 @@ export type Database = {
         Row: {
           alteration_due_date: string | null
           alteration_notes: string | null
+          alteration_number: string | null
           alteration_status: string | null
           created_at: string
           created_by: string | null
@@ -493,6 +494,7 @@ export type Database = {
         Insert: {
           alteration_due_date?: string | null
           alteration_notes?: string | null
+          alteration_number?: string | null
           alteration_status?: string | null
           created_at?: string
           created_by?: string | null
@@ -520,6 +522,7 @@ export type Database = {
         Update: {
           alteration_due_date?: string | null
           alteration_notes?: string | null
+          alteration_number?: string | null
           alteration_status?: string | null
           created_at?: string
           created_by?: string | null
