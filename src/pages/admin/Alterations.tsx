@@ -40,7 +40,8 @@ const Alterations = () => {
         .from("orders")
         .select(`
           *,
-          customer:customers(id, name, phone, email)
+          customer:customers(id, name, phone, email),
+          order_items(id, product_name, product_sku, quantity, size, color)
         `)
         .eq("needs_alteration", true)
         .order("alteration_due_date", { ascending: true });
@@ -239,6 +240,21 @@ const Alterations = () => {
                               )}
                             </div>
                           </div>
+                          {order.order_items && order.order_items.length > 0 && (
+                            <div>
+                              <span className="text-muted-foreground">Items:</span>
+                              <div className="mt-1 space-y-0.5">
+                                {order.order_items.map((item: any) => (
+                                  <div key={item.id} className="text-xs">
+                                    <span className="font-medium">{item.product_name}</span>
+                                    {item.product_sku && (
+                                      <span className="text-muted-foreground ml-1">({item.product_sku})</span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                           {order.alteration_notes && (
                             <p className="text-muted-foreground truncate">{order.alteration_notes}</p>
                           )}
@@ -275,6 +291,7 @@ const Alterations = () => {
                         <TableHead>Alt #</TableHead>
                         <TableHead>Customer</TableHead>
                         <TableHead className="hidden lg:table-cell">Phone</TableHead>
+                        <TableHead>Items / SKU</TableHead>
                         <TableHead>Due Date</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="hidden lg:table-cell">Notes</TableHead>
@@ -293,6 +310,20 @@ const Alterations = () => {
                             <TableCell className="text-gold font-medium">{order.alteration_number || "—"}</TableCell>
                             <TableCell>{order.customer?.name || "—"}</TableCell>
                             <TableCell className="hidden lg:table-cell">{order.customer?.phone || "—"}</TableCell>
+                            <TableCell className="max-w-[200px]">
+                              {order.order_items && order.order_items.length > 0 ? (
+                                <div className="space-y-0.5">
+                                  {order.order_items.map((item: any) => (
+                                    <div key={item.id} className="text-xs">
+                                      <span className="font-medium">{item.product_name}</span>
+                                      {item.product_sku && (
+                                        <span className="text-muted-foreground ml-1">({item.product_sku})</span>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : "—"}
+                            </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 {order.alteration_due_date
