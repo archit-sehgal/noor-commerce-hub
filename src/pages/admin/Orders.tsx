@@ -41,7 +41,7 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import OrderDetailDialog from "@/components/admin/OrderDetailDialog";
 import EditOrderDialog from "@/components/admin/EditOrderDialog";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Loader2, ShoppingCart, Eye, Store, Globe, ChevronDown, ChevronUp, Package, Download, CalendarIcon, X, Pencil, Trash2, ArrowLeftRight, Printer } from "lucide-react";
+import { Search, Loader2, ShoppingCart, Eye, Store, Globe, ChevronDown, ChevronUp, Package, Download, CalendarIcon, X, Pencil, Trash2, ArrowLeftRight, Printer, CreditCard } from "lucide-react";
 import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -802,6 +802,26 @@ const AdminOrders = () => {
 
   const formatCurrency = (amount: number) => `₹${Number(amount).toLocaleString()}`;
 
+  const getCreditNoteAmount = (order: Order): number | null => {
+    if (order.notes && order.notes.includes("Credit Note: ₹")) {
+      const match = order.notes.match(/Credit Note: ₹([\d,]+)/);
+      if (match) return parseInt(match[1].replace(/,/g, ""));
+    }
+    return null;
+  };
+
+  const renderAmount = (order: Order) => {
+    const cn = getCreditNoteAmount(order);
+    if (cn && cn > 0) {
+      return (
+        <span className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full text-xs font-bold">
+          CN {formatCurrency(cn)}
+        </span>
+      );
+    }
+    return <span className="font-bold text-gold">{formatCurrency(order.total_amount)}</span>;
+  };
+
   const OrderRow = ({ order }: { order: Order }) => {
     const isExpanded = expandedOrders.has(order.id);
     const skuList = order.order_items?.map(item => item.product_sku).filter(Boolean).join(", ") || "-";
@@ -829,7 +849,7 @@ const AdminOrders = () => {
           </TableCell>
           <TableCell className="hidden lg:table-cell text-sm">{format(new Date(order.created_at), "MMM dd, yyyy HH:mm")}</TableCell>
           <TableCell className="hidden md:table-cell text-sm">{order.order_items?.length || 0} items</TableCell>
-          <TableCell className="font-bold text-gold">{formatCurrency(order.total_amount)}</TableCell>
+          <TableCell>{renderAmount(order)}</TableCell>
           <TableCell onClick={(e) => e.stopPropagation()}>
             <Select value={order.payment_status} onValueChange={(value: "pending" | "paid" | "failed" | "refunded") => updatePaymentStatus(order.id, value)}>
               <SelectTrigger className="w-[100px] h-8 text-xs">
@@ -951,7 +971,7 @@ const AdminOrders = () => {
                         <p className="text-xs text-foreground">{format(new Date(order.created_at), "MMM dd, HH:mm")}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-gold">{formatCurrency(order.total_amount)}</span>
+                        {renderAmount(order)}
                         {expandedOrders.has(order.id) ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                       </div>
                     </div>
@@ -1218,7 +1238,7 @@ const AdminOrders = () => {
                     <button key={order.id} onClick={() => selectExchangeOrder(order)} className="w-full p-3 border rounded-lg text-left hover:bg-muted/50 transition-colors">
                       <div className="flex justify-between">
                         <span className="font-medium text-sm">{order.order_number}</span>
-                        <span className="font-bold text-gold">{formatCurrency(order.total_amount)}</span>
+                        {renderAmount(order)}
                       </div>
                       <p className="text-xs text-muted-foreground">{order.customer?.name || "Walk-in"} • {order.order_items?.length || 0} items</p>
                     </button>
