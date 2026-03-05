@@ -1226,37 +1226,26 @@ const AdminBilling = () => {
                       }}
                       onBlur={(e) => {
                         const desiredTotal = parseFloat(e.target.value);
-                        const pItems = cart.filter(item => item.quantity > 0);
-                        const purchaseGross = pItems.reduce((s, item) => s + item.unitPrice * item.quantity, 0);
+                        const purchaseGross = cart.filter(x => x.quantity > 0).reduce((s, x) => s + x.unitPrice * x.quantity, 0);
                         if (isNaN(desiredTotal) || purchaseGross === 0) return;
-                        const desiredPurchaseNet = desiredTotal + returnTotal;
-                        const totalDiscNeeded = Math.max(0, purchaseGross - desiredPurchaseNet);
-                        
-                        const purchaseIndices = cart.map((item, idx) => item.quantity > 0 ? idx : -1).filter(i => i >= 0);
-                        let discAllocated = 0;
-                        
-                        purchaseIndices.forEach((cartIdx, i) => {
-                          const item = cart[cartIdx];
-                          const itemGross = item.unitPrice * item.quantity;
-                          let itemDisc: number;
-                          if (i === purchaseIndices.length - 1) {
-                            itemDisc = totalDiscNeeded - discAllocated;
-                          } else {
-                            itemDisc = Math.round((itemGross / purchaseGross) * totalDiscNeeded);
+                        const totalDiscNeeded = Math.max(0, purchaseGross - (desiredTotal + returnTotal));
+                        const pIdx = cart.map((x, i) => x.quantity > 0 ? i : -1).filter(i => i >= 0);
+                        let allocated = 0;
+                        const findPct = (g: number, t: number) => {
+                          if (g === 0) return 0;
+                          const r = (t * 100) / g;
+                          for (let o = 0; o <= 30; o++) {
+                            for (const d of [Math.round(r*1000)/1000, Math.floor(r*1000+o)/1000, Math.ceil(r*1000-o)/1000]) {
+                              if (d >= 0 && d <= 100 && Math.round((g * d) / 100) === t) return d;
+                            }
                           }
-                          discAllocated += itemDisc;
-                          // Find the 2-decimal discountPercent that makes Math.round((itemGross * dp) / 100) === itemDisc
-                          if (itemGross > 0) {
-                            const rawPercent = (itemDisc * 100) / itemGross;
-                            // Try floor and ceil at 2 decimals
-                            const floor2 = Math.floor(rawPercent * 100) / 100;
-                            const ceil2 = Math.ceil(rawPercent * 100) / 100;
-                            const floorResult = Math.round((itemGross * floor2) / 100);
-                            const dp = floorResult === itemDisc ? floor2 : ceil2;
-                            updateCartItem(cartIdx, { discountPercent: dp });
-                          } else {
-                            updateCartItem(cartIdx, { discountPercent: 0 });
-                          }
+                          return Math.round(r * 1000) / 1000;
+                        };
+                        pIdx.forEach((ci, i) => {
+                          const g = cart[ci].unitPrice * cart[ci].quantity;
+                          const disc = i === pIdx.length - 1 ? totalDiscNeeded - allocated : Math.round((g / purchaseGross) * totalDiscNeeded);
+                          allocated += disc;
+                          updateCartItem(ci, { discountPercent: findPct(g, disc) });
                         });
                       }}
                       onKeyDown={(e) => {
