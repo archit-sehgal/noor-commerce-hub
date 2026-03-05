@@ -47,6 +47,7 @@ interface Product {
   stock_quantity: number;
   sizes: string[] | null;
   colors: string[] | null;
+  design_number: string | null;
 }
 
 interface CartItem {
@@ -120,15 +121,30 @@ const AdminBilling = () => {
 
   const fetchProducts = async () => {
     try {
-      const { data, error } = await supabase
-        .from("products")
-        .select("id, name, sku, price, discount_price, stock_quantity, sizes, colors")
-        .eq("is_active", true)
-        .gt("stock_quantity", 0)
-        .order("name");
+      const PAGE_SIZE = 1000;
+      let allData: any[] = [];
+      let from = 0;
+      let hasMore = true;
 
-      if (error) throw error;
-      setProducts(data || []);
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from("products")
+          .select("id, name, sku, price, discount_price, stock_quantity, sizes, colors, design_number")
+          .eq("is_active", true)
+          .gt("stock_quantity", 0)
+          .order("name")
+          .range(from, from + PAGE_SIZE - 1);
+
+        if (error) throw error;
+        allData = allData.concat(data || []);
+        if (!data || data.length < PAGE_SIZE) {
+          hasMore = false;
+        } else {
+          from += PAGE_SIZE;
+        }
+      }
+
+      setProducts(allData);
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
@@ -168,7 +184,8 @@ const AdminBilling = () => {
   const filteredProducts = products.filter(
     (p) =>
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.sku?.toLowerCase().includes(searchQuery.toLowerCase())
+      p.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.design_number?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const filteredCustomers = customers.filter(
@@ -183,7 +200,8 @@ const AdminBilling = () => {
     if (e.key === "Enter" && barcodeInput.trim()) {
       const scannedSku = barcodeInput.trim();
       const product = products.find(
-        (p) => p.sku?.toLowerCase() === scannedSku.toLowerCase()
+        (p) => p.sku?.toLowerCase() === scannedSku.toLowerCase() ||
+               p.design_number?.toLowerCase() === scannedSku.toLowerCase()
       );
 
       if (product) {
