@@ -6,12 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Trash2, UserCog, Shield } from "lucide-react";
+import { Plus, Trash2, UserCog, Shield, AlertTriangle } from "lucide-react";
 
 interface Employee {
   id: string;
@@ -50,6 +50,18 @@ const permissionLabels = {
 const Settings = () => {
   const queryClient = useQueryClient();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isClearDataOpen, setIsClearDataOpen] = useState(false);
+  const [clearCode, setClearCode] = useState("");
+  const [clearSelections, setClearSelections] = useState({
+    orders: true,
+    invoices: true,
+    products: false,
+    customers: false,
+    stock_history: true,
+    notifications: true,
+  });
+  const [isClearing, setIsClearing] = useState(false);
+  
   const [newEmployeeEmail, setNewEmployeeEmail] = useState("");
   const [newEmployeeName, setNewEmployeeName] = useState("");
   const [newEmployeePassword, setNewEmployeePassword] = useState("");
@@ -243,6 +255,55 @@ const Settings = () => {
       userId,
       permissions: { [permission]: !currentValue },
     });
+  };
+
+  const handleClearData = async () => {
+    if (clearCode !== "2486") {
+      toast.error("Invalid security code");
+      return;
+    }
+
+    const selected = Object.entries(clearSelections).filter(([_, v]) => v).map(([k]) => k);
+    if (selected.length === 0) {
+      toast.error("Please select at least one data type to clear");
+      return;
+    }
+
+    setIsClearing(true);
+    try {
+      // Order matters due to foreign keys
+      if (clearSelections.invoices) {
+        await supabase.from("invoices").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      }
+      if (clearSelections.orders) {
+        // Delete order items first
+        await supabase.from("order_items").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+        await supabase.from("orders").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      }
+      if (clearSelections.stock_history) {
+        await supabase.from("stock_history").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      }
+      if (clearSelections.products) {
+        // Delete online store products first
+        await supabase.from("online_store_products").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+        await supabase.from("products").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      }
+      if (clearSelections.customers) {
+        await supabase.from("customers").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      }
+      if (clearSelections.notifications) {
+        await supabase.from("notifications").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      }
+
+      toast.success(`Cleared: ${selected.join(", ")}`);
+      queryClient.invalidateQueries();
+      setIsClearDataOpen(false);
+      setClearCode("");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to clear data");
+    } finally {
+      setIsClearing(false);
+    }
   };
 
   return (
@@ -476,6 +537,99 @@ const Settings = () => {
               Save Settings
             </Button>
           </CardContent>
+        </Card>
+
+        {/* Clear Data Section */}
+        <Card className="border-destructive/30">
+          <CardHeader className="bg-gradient-to-r from-destructive/5 to-destructive/10 border-b border-destructive/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-destructive/10 rounded-lg">
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                </div>
+                <div>
+                  <CardTitle className="font-display text-xl text-destructive">Danger Zone</CardTitle>
+                  <CardDescription>
+                    Permanently clear data from the system. This action cannot be undone.
+                  </CardDescription>
+                </div>
+              </div>
+              <Dialog open={isClearDataOpen} onOpenChange={(open) => { setIsClearDataOpen(open); if (!open) setClearCode(""); }}>
+                <DialogTrigger asChild>
+                  <Button variant="destructive">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Clear Data
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="font-display text-xl flex items-center gap-2 text-destructive">
+                      <AlertTriangle className="h-5 w-5" />
+                      Clear System Data
+                    </DialogTitle>
+                    <DialogDescription>
+                      Select what data to remove. This is permanent and cannot be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <Label className="text-base font-display">Select data to clear</Label>
+                    <div className="space-y-3">
+                      {[
+                        { key: "orders", label: "Orders & Order Items", desc: "All orders and their line items" },
+                        { key: "invoices", label: "Invoices / Billing", desc: "All generated invoices" },
+                        { key: "products", label: "Products & Inventory", desc: "All products, online store listings" },
+                        { key: "stock_history", label: "Stock History", desc: "All stock change logs" },
+                        { key: "customers", label: "Customers", desc: "All customer records" },
+                        { key: "notifications", label: "Notifications", desc: "All system notifications" },
+                      ].map(({ key, label, desc }) => (
+                        <div
+                          key={key}
+                          className="flex items-start space-x-3 p-3 rounded-lg border border-destructive/10 hover:border-destructive/30 transition-colors"
+                        >
+                          <Checkbox
+                            id={`clear-${key}`}
+                            checked={clearSelections[key as keyof typeof clearSelections]}
+                            onCheckedChange={(checked) =>
+                              setClearSelections((prev) => ({ ...prev, [key]: !!checked }))
+                            }
+                            className="mt-0.5 border-destructive data-[state=checked]:bg-destructive data-[state=checked]:border-destructive"
+                          />
+                          <div>
+                            <Label htmlFor={`clear-${key}`} className="font-medium cursor-pointer">{label}</Label>
+                            <p className="text-xs text-muted-foreground">{desc}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="space-y-2 pt-2">
+                      <Label htmlFor="clear-code">Enter security code to confirm</Label>
+                      <Input
+                        id="clear-code"
+                        type="password"
+                        value={clearCode}
+                        onChange={(e) => setClearCode(e.target.value)}
+                        placeholder="Enter 4-digit code"
+                        className="border-destructive/20 focus:border-destructive"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsClearDataOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleClearData}
+                      disabled={isClearing || !clearCode}
+                    >
+                      {isClearing ? "Clearing..." : "Clear Selected Data"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardHeader>
         </Card>
       </div>
     </AdminLayout>
