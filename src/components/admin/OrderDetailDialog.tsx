@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { generateInvoiceHTML, printInvoiceHTML } from "@/lib/invoiceTemplate";
 import {
   Dialog,
   DialogContent,
@@ -89,6 +90,8 @@ const OrderDetailDialog = ({ orderId, open, onOpenChange, onOrderUpdated }: Prop
   const [isEditing, setIsEditing] = useState(false);
   const [editedAmount, setEditedAmount] = useState("");
   const [saving, setSaving] = useState(false);
+  const [invoiceNumber, setInvoiceNumber] = useState<string | null>(null);
+  const [invoiceNotes, setInvoiceNotes] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -101,27 +104,35 @@ const OrderDetailDialog = ({ orderId, open, onOpenChange, onOrderUpdated }: Prop
     if (!orderId) return;
     setLoading(true);
     try {
-      const { data: orderData, error: orderError } = await supabase
-        .from("orders")
-        .select(`
-          *,
-          customer:customers(name, email, phone),
-          salesman:salesman(name)
-        `)
-        .eq("id", orderId)
-        .maybeSingle();
+      const [orderResult, itemsResult, invoiceResult] = await Promise.all([
+        supabase
+          .from("orders")
+          .select(`
+            *,
+            customer:customers(name, email, phone),
+            salesman:salesman(name)
+          `)
+          .eq("id", orderId)
+          .maybeSingle(),
+        supabase
+          .from("order_items")
+          .select("*")
+          .eq("order_id", orderId),
+        supabase
+          .from("invoices")
+          .select("invoice_number, notes")
+          .eq("order_id", orderId)
+          .maybeSingle(),
+      ]);
 
-      if (orderError) throw orderError;
-      setOrder(orderData);
-      setEditedAmount(orderData?.total_amount?.toString() || "");
+      if (orderResult.error) throw orderResult.error;
+      setOrder(orderResult.data);
+      setEditedAmount(orderResult.data?.total_amount?.toString() || "");
+      setInvoiceNumber(invoiceResult.data?.invoice_number || null);
+      setInvoiceNotes(invoiceResult.data?.notes || orderResult.data?.notes || null);
 
-      const { data: itemsData, error: itemsError } = await supabase
-        .from("order_items")
-        .select("*")
-        .eq("order_id", orderId);
-
-      if (itemsError) throw itemsError;
-      setItems(itemsData || []);
+      if (itemsResult.error) throw itemsResult.error;
+      setItems(itemsResult.data || []);
     } catch (error) {
       console.error("Error fetching order details:", error);
       toast({
@@ -183,141 +194,24 @@ const OrderDetailDialog = ({ orderId, open, onOpenChange, onOrderUpdated }: Prop
   const handleDownloadInvoice = async () => {
     if (!order) return;
 
+    const notesSource = invoiceNotes || order.notes || null;
 
+    const html = generateInvoiceHTML({
+      invoiceNumber: invoiceNumber || order.order_number,
+      orderNumber: order.order_number,
+      date: new Date(order.created_at).toLocaleDateString("en-IN"),
+      customerName: order.customer?.name,
+      customerPhone: order.customer?.phone || undefined,
+      salesmanName: order.salesman?.name,
+      paymentStatus: order.payment_status || "N/A",
+      items: items,
+      subtotal: order.subtotal,
+      discountAmount: order.discount_amount || 0,
+      totalAmount: order.total_amount,
+      notes: notesSource,
+    });
 
-    const formatCurrency = (amount: number) =>
-      new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
-
-    const itemsHTML = items.map((item, index) => {
-      const gross = item.unit_price * item.quantity;
-      const discPercent = gross > 0 ? Math.round(((gross - item.total_price) / gross) * 100) : 0;
-      return `
-        <tr>
-          <td style="text-align: center;">${index + 1}</td>
-          <td>${item.product_name}${item.size ? ` (${item.size})` : ""}${item.color ? ` - ${item.color}` : ""}</td>
-          <td style="text-align: center; font-family: monospace; font-size: 11px;">${item.product_sku || "-"}</td>
-          <td style="text-align: center;">${item.quantity}</td>
-          <td style="text-align: right;">${formatCurrency(item.unit_price)}</td>
-          <td style="text-align: center;">${discPercent > 0 ? discPercent + "%" : "-"}</td>
-          <td style="text-align: right;">${formatCurrency(item.total_price)}</td>
-        </tr>
-      `;
-    }).join("");
-
-    const logoUrl = `${window.location.origin}/noor-logo-bill.png`;
-    const invoiceHTML = `
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Invoice - ${order.order_number}</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', 'Segoe UI', sans-serif; padding: 10px 15px; max-width: 800px; margin: 0 auto; color: #000; transform: scale(0.9); transform-origin: top center; }
-    .logo-section { text-align: center; margin-bottom: 2px; padding: 0; }
-    .logo-section img { max-width: 160px; height: auto; margin: 0 auto; display: block; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 8px; margin-bottom: 10px; }
-    .header h1 { color: #000; margin: 0; font-size: 22px; font-weight: 900; letter-spacing: 3px; }
-    .header p { margin: 2px 0; color: #000; font-weight: 600; font-size: 12px; }
-    .invoice-details { display: flex; justify-content: space-between; margin-bottom: 20px; color: #000; }
-    .invoice-details p { color: #000; font-weight: 500; margin: 2px 0; }
-    .invoice-details strong { color: #000; font-weight: 800; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 15px; table-layout: fixed; }
-    th { background: #000; color: white; padding: 6px 3px; text-align: left; font-weight: 700; font-size: 10px; }
-    td { padding: 6px 3px; border-bottom: 2px solid #333; color: #000; font-weight: 600; font-size: 10px; word-wrap: break-word; }
-    .col-sno { width: 6%; }
-    .col-item { width: 30%; }
-    .col-sku { width: 14%; }
-    .col-qty { width: 8%; }
-    .col-price { width: 15%; }
-    .col-disc { width: 8%; }
-    .col-net { width: 19%; }
-    .totals { text-align: right; margin-top: 15px; color: #000; }
-    .totals div { margin: 3px 0; font-weight: 600; color: #000; }
-    .totals .total { font-size: 22px; color: #000; font-weight: 900; }
-    .footer { text-align: center; margin-top: 30px; padding-top: 15px; border-top: 2px solid #333; color: #000; font-weight: 500; }
-    @media print { @page { margin: 0; } body { margin: 0; padding: 0; max-width: 100%; } .logo-section { margin-top: 0 !important; padding-top: 0 !important; } }
-  </style>
-</head>
-<body>
-  <div class="logo-section">
-    <img src="${logoUrl}" alt="Noor Creations" onerror="this.style.display='none'" />
-  </div>
-  <div class="header">
-    <h1>NOOR CREATIONS</h1>
-    <p>Moti Bazar Parade Jammu, 180001</p>
-    <p>Phone: 6006364546</p>
-    <p>GSTIN: 01NXZPS2503D1Z8</p>
-    <p style="margin-top: 8px; font-size: 16px; font-weight: 900; letter-spacing: 2px;">TAX INVOICE</p>
-  </div>
-  <div class="invoice-details">
-    <div>
-      <p><strong>Order No:</strong> ${order.order_number}</p>
-      <p><strong>Date:</strong> ${new Date(order.created_at).toLocaleDateString("en-IN")}</p>
-      ${order.customer?.name ? `<p><strong>Customer:</strong> ${order.customer.name}</p>` : ""}
-      ${order.customer?.phone ? `<p><strong>Phone:</strong> ${order.customer.phone}</p>` : ""}
-    </div>
-    <div style="text-align: right;">
-      <p><strong>Payment:</strong> ${order.payment_status?.toUpperCase() || "N/A"}</p>
-      <p><strong>Status:</strong> ${order.status?.toUpperCase() || ""}</p>
-    </div>
-  </div>
-  <table>
-    <thead>
-      <tr>
-        <th class="col-sno" style="text-align: center;">S.No.</th>
-        <th class="col-item">Item</th>
-        <th class="col-sku" style="text-align: center;">SKU</th>
-        <th class="col-qty" style="text-align: center;">Qty</th>
-        <th class="col-price" style="text-align: right;">Price</th>
-        <th class="col-disc" style="text-align: center;">Disc%</th>
-        <th class="col-net" style="text-align: right;">Net</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${itemsHTML}
-    </tbody>
-  </table>
-  <div class="totals">
-    <div>Subtotal: ${formatCurrency(order.subtotal)}</div>
-    ${(order.discount_amount || 0) > 0 ? `<div>Discount: -${formatCurrency(order.discount_amount || 0)}</div>` : ""}
-    <div class="total">Net Total: ${formatCurrency(order.total_amount)}</div>
-    <div style="font-size: 11px; font-style: italic; margin-top: 6px;">Inclusive of all taxes</div>
-  </div>
-  <div class="footer">
-    <p>Thank you for shopping with us!</p>
-  </div>
-</body>
-</html>
-    `;
-
-    const printWindow = window.open("", "_blank", "width=800,height=600");
-    if (printWindow) {
-      printWindow.document.write(invoiceHTML);
-      printWindow.document.close();
-      printWindow.focus();
-      const img = printWindow.document.querySelector(".logo-section img") as HTMLImageElement;
-      const doPrint = () => { printWindow.print(); printWindow.close(); };
-      if (img && img.complete) {
-        setTimeout(doPrint, 100);
-      } else if (img) {
-        img.onload = () => setTimeout(doPrint, 100);
-        img.onerror = () => setTimeout(doPrint, 100);
-      } else {
-        setTimeout(doPrint, 100);
-      }
-    } else {
-      // Fallback: download as HTML
-      const blob = new Blob([invoiceHTML], { type: "text/html" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `invoice-${order.order_number}.html`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
+    printInvoiceHTML(html);
 
     toast({
       title: "Invoice printed",
