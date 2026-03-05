@@ -171,16 +171,13 @@ const AdminProducts = () => {
     try {
       // Export all products (not just filtered)
       const exportData = products?.map((product) => ({
-        "Item Details": product.name,
+        "ITEM DETAILS": product.name,
         "BCN": product.sku || "",
-        "Design Number": product.design_number || "",
-        "Category": product.category?.name || "",
+        "P1": product.design_number || "",
         "MRP": product.price,
-        "Sale Price": product.discount_price || product.price,
-        "Cl. Qty.": product.stock_quantity,
-        "Cost Price": product.cost_price || "",
-        "Status": product.is_active ? "Active" : "Inactive",
-        "Last Updated": format(new Date(product.updated_at), "dd/MM/yyyy HH:mm"),
+        "SALE RATE": product.discount_price || product.price,
+        "UNIT": "PCS",
+        "CL. QTY": product.stock_quantity,
       })) || [];
 
       const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -189,16 +186,13 @@ const AdminProducts = () => {
 
       // Auto-size columns
       const colWidths = [
-        { wch: 40 }, // Item Details
+        { wch: 40 }, // ITEM DETAILS
         { wch: 15 }, // BCN
-        { wch: 15 }, // Design Number
-        { wch: 15 }, // Category
+        { wch: 15 }, // P1
         { wch: 12 }, // MRP
-        { wch: 12 }, // Sale Price
-        { wch: 10 }, // Cl. Qty
-        { wch: 12 }, // Cost Price
-        { wch: 10 }, // Status
-        { wch: 20 }, // Last Updated
+        { wch: 12 }, // SALE RATE
+        { wch: 8 },  // UNIT
+        { wch: 10 }, // CL. QTY
       ];
       worksheet["!cols"] = colWidths;
 
