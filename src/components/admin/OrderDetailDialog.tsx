@@ -183,20 +183,7 @@ const OrderDetailDialog = ({ orderId, open, onOpenChange, onOrderUpdated }: Prop
   const handleDownloadInvoice = async () => {
     if (!order) return;
 
-    // Fetch GST rates for items
-    const productIds = items.map(i => i.product_id).filter(Boolean) as string[];
-    let gstMap: Record<string, number> = {};
-    if (productIds.length > 0) {
-      const { data: products } = await supabase
-        .from("products")
-        .select("id, gst_rate")
-        .in("id", productIds);
-      if (products) {
-        for (const p of products) {
-          gstMap[p.id] = p.gst_rate || 0;
-        }
-      }
-    }
+
 
     const formatCurrency = (amount: number) =>
       new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);

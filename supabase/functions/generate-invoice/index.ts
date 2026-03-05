@@ -35,12 +35,7 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-const generateInvoiceHTML = (order: any, orderItems: any[], customer: any, products: any[]) => {
-  // Build a map of product_id -> gst_rate
-  const productGstMap: Record<string, number> = {};
-  for (const p of products) {
-    productGstMap[p.id] = p.gst_rate || 0;
-  }
+const generateInvoiceHTML = (order: any, orderItems: any[], customer: any) => {
 
   const itemsHTML = orderItems.map((item, index) => {
     const gross = item.unit_price * item.quantity;
@@ -200,16 +195,8 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Failed to fetch order items");
     }
 
-    // Fetch products for GST rates
-    const productIds = (orderItems || []).map(i => i.product_id).filter(Boolean);
-    let products: any[] = [];
-    if (productIds.length > 0) {
-      const { data: productData } = await supabase
-        .from("products")
-        .select("id, gst_rate")
-        .in("id", productIds);
-      products = productData || [];
-    }
+
+
 
     // Fetch customer if exists
     let customer = null;
@@ -262,8 +249,7 @@ const handler = async (req: Request): Promise<Response> => {
     const invoiceHTML = generateInvoiceHTML(
       { ...order, invoice_number: invoice.invoice_number },
       orderItems || [],
-      customer,
-      products
+      customer
     );
 
     console.log("Invoice generated successfully:", invoice.invoice_number);
