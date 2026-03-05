@@ -26,6 +26,7 @@ interface OrderItem {
   color: string | null;
   product_id: string | null;
   isNew?: boolean;
+  discountPercent: number;
 }
 
 interface Product {
@@ -54,12 +55,16 @@ const EditInvoiceDialog = ({
   const [saving, setSaving] = useState(false);
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [orderId, setOrderId] = useState<string | null>(null);
-  const [discountAmount, setDiscountAmount] = useState(0);
   const [paymentStatus, setPaymentStatus] = useState<string>("paid");
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
+  const [creditAmount, setCreditAmount] = useState<number>(0);
+  const [cashAmount, setCashAmount] = useState<number>(0);
+  const [cardUpiAmount, setCardUpiAmount] = useState<number>(0);
+  const [orderNotes, setOrderNotes] = useState<string>("");
   const [items, setItems] = useState<OrderItem[]>([]);
   const [removedItems, setRemovedItems] = useState<OrderItem[]>([]);
-  const [addedItems, setAddedItems] = useState<OrderItem[]>([]);
+  const [addedItemIds, setAddedItemIds] = useState<Set<string>>(new Set());
+  const [originalItemQuantities, setOriginalItemQuantities] = useState<Map<string, number>>(new Map());
   const [products, setProducts] = useState<Product[]>([]);
   const [productSearch, setProductSearch] = useState("");
   const [showProductSearch, setShowProductSearch] = useState(false);
@@ -70,7 +75,8 @@ const EditInvoiceDialog = ({
       fetchInvoice();
       fetchProducts();
       setRemovedItems([]);
-      setAddedItems([]);
+      setAddedItemIds(new Set());
+      setOriginalItemQuantities(new Map());
       setShowProductSearch(false);
       setProductSearch("");
     }
@@ -89,23 +95,50 @@ const EditInvoiceDialog = ({
       if (error) throw error;
       setInvoiceNumber(data.invoice_number);
       setOrderId(data.order_id);
-      setDiscountAmount(data.discount_amount || 0);
       setPaymentStatus(data.payment_status);
 
-      // Fetch order items and payment method if linked to an order
+      // Fetch order details and items if linked
       if (data.order_id) {
         const { data: orderData } = await supabase
           .from("orders")
-          .select("payment_method")
+          .select("payment_method, notes")
           .eq("id", data.order_id)
           .single();
-        if (orderData) setPaymentMethod(orderData.payment_method || "cash");
+
+        const method = orderData?.payment_method || "cash";
+        setPaymentMethod(method);
+        setOrderNotes(orderData?.notes || "");
+
+        // Parse credit/split amounts from notes
+        const notesLower = (orderData?.notes || '').toLowerCase();
+        if (method === 'credit') {
+          const creditMatch = notesLower.match(/credit:\s*₹?([\d,]+)/);
+          setCreditAmount(creditMatch ? Number(creditMatch[1].replace(/,/g, '')) : Number(data.total_amount));
+        } else if (method === 'double') {
+          const cashMatch = notesLower.match(/cash:\s*₹?([\d,]+)/);
+          const cardMatch = notesLower.match(/card\/upi:\s*₹?([\d,]+)/);
+          setCashAmount(cashMatch ? Number(cashMatch[1].replace(/,/g, '')) : 0);
+          setCardUpiAmount(cardMatch ? Number(cardMatch[1].replace(/,/g, '')) : 0);
+        } else {
+          setCreditAmount(0);
+          setCashAmount(0);
+          setCardUpiAmount(0);
+        }
 
         const { data: orderItems } = await supabase
           .from("order_items")
           .select("*")
           .eq("order_id", data.order_id);
-        setItems(orderItems || []);
+
+        const mappedItems = (orderItems || []).map((item: any) => {
+          const gross = item.unit_price * item.quantity;
+          const discPercent = gross > 0 ? Math.round(((gross - item.total_price) / gross) * 100) : 0;
+          return { ...item, discountPercent: discPercent };
+        });
+        setItems(mappedItems);
+        const qtyMap = new Map<string, number>();
+        mappedItems.forEach((item: OrderItem) => qtyMap.set(item.id, item.quantity));
+        setOriginalItemQuantities(qtyMap);
       }
     } catch (error) {
       console.error("Error fetching invoice:", error);
@@ -129,7 +162,7 @@ const EditInvoiceDialog = ({
     if (!item.isNew) {
       setRemovedItems(prev => [...prev, item]);
     } else {
-      setAddedItems(prev => prev.filter(a => a.id !== item.id));
+      setAddedItemIds(prev => { const next = new Set(prev); next.delete(item.id); return next; });
     }
     setItems(prev => prev.filter((_, i) => i !== index));
   };
@@ -147,22 +180,40 @@ const EditInvoiceDialog = ({
       color: null,
       product_id: product.id,
       isNew: true,
+      discountPercent: 0,
     };
     setItems(prev => [...prev, newItem]);
-    setAddedItems(prev => [...prev, newItem]);
+    setAddedItemIds(prev => new Set(prev).add(newItem.id));
     setProductSearch("");
     setShowProductSearch(false);
   };
 
   const updateItemQuantity = (index: number, qty: number) => {
     const newQty = Math.max(1, qty);
-    setItems(prev => prev.map((item, i) =>
-      i === index ? { ...item, quantity: newQty, total_price: item.unit_price * newQty } : item
-    ));
+    setItems(prev => prev.map((item, i) => {
+      if (i !== index) return item;
+      const gross = item.unit_price * newQty;
+      const net = Math.round(gross * (1 - item.discountPercent / 100));
+      return { ...item, quantity: newQty, total_price: net };
+    }));
+  };
+
+  const updateItemDiscount = (index: number, disc: number) => {
+    const newDisc = Math.max(0, Math.min(100, disc));
+    setItems(prev => prev.map((item, i) => {
+      if (i !== index) return item;
+      const gross = item.unit_price * item.quantity;
+      const net = Math.round(gross * (1 - newDisc / 100));
+      return { ...item, discountPercent: newDisc, total_price: net };
+    }));
   };
 
   const subtotal = items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
-  const totalAmount = subtotal - discountAmount;
+  const totalDiscount = items.reduce((sum, item) => {
+    const gross = item.unit_price * item.quantity;
+    return sum + (gross - item.total_price);
+  }, 0);
+  const totalAmount = subtotal - totalDiscount;
 
   const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
@@ -176,23 +227,26 @@ const EditInvoiceDialog = ({
     if (!invoiceId) return;
     setSaving(true);
     try {
-      // 1. Restore inventory for removed items
-      for (const item of removedItems) {
-        if (item.product_id) {
-          const { data: product } = await supabase.from("products").select("stock_quantity").eq("id", item.product_id).single();
-          if (product) {
-            await supabase.from("products").update({ stock_quantity: product.stock_quantity + item.quantity }).eq("id", item.product_id);
+      if (orderId) {
+        // 1. Restore inventory for removed items
+        for (const item of removedItems) {
+          if (item.product_id) {
+            const { data: product } = await supabase.from("products").select("stock_quantity").eq("id", item.product_id).single();
+            if (product) {
+              await supabase.from("products").update({ stock_quantity: product.stock_quantity + item.quantity }).eq("id", item.product_id);
+            }
           }
+          await supabase.from("order_items").delete().eq("id", item.id);
         }
-        await supabase.from("order_items").delete().eq("id", item.id);
-      }
 
-      // 2. Deduct inventory for added items
-      for (const item of addedItems) {
-        if (item.product_id && orderId) {
-          const { data: product } = await supabase.from("products").select("stock_quantity").eq("id", item.product_id).single();
-          if (product) {
-            await supabase.from("products").update({ stock_quantity: product.stock_quantity - item.quantity }).eq("id", item.product_id);
+        // 2. Deduct inventory for newly added items
+        const newItems = items.filter(i => addedItemIds.has(i.id));
+        for (const item of newItems) {
+          if (item.product_id) {
+            const { data: product } = await supabase.from("products").select("stock_quantity").eq("id", item.product_id).single();
+            if (product) {
+              await supabase.from("products").update({ stock_quantity: product.stock_quantity - item.quantity }).eq("id", item.product_id);
+            }
           }
           await supabase.from("order_items").insert({
             order_id: orderId,
@@ -201,40 +255,59 @@ const EditInvoiceDialog = ({
             product_sku: item.product_sku,
             quantity: item.quantity,
             unit_price: item.unit_price,
-            total_price: item.unit_price * item.quantity,
+            total_price: item.total_price,
             size: item.size,
             color: item.color,
           });
         }
-      }
 
-      // 3. Update existing items
-      const originalItems = items.filter(i => !i.isNew);
-      for (const item of originalItems) {
-        await supabase.from("order_items").update({
-          quantity: item.quantity,
-          total_price: item.unit_price * item.quantity,
-        }).eq("id", item.id);
-      }
+        // 3. Update existing items — adjust inventory for quantity changes
+        const existingItems = items.filter(i => !i.isNew);
+        for (const item of existingItems) {
+          const originalQty = originalItemQuantities.get(item.id) || item.quantity;
+          const qtyDiff = item.quantity - originalQty;
 
-      // 4. Update invoice totals + payment status
-      await supabase.from("invoices").update({
-        subtotal,
-        discount_amount: discountAmount,
-        total_amount: totalAmount,
-        payment_status: paymentStatus as any,
-      }).eq("id", invoiceId);
+          if (qtyDiff !== 0 && item.product_id) {
+            const { data: product } = await supabase.from("products").select("stock_quantity").eq("id", item.product_id).single();
+            if (product) {
+              await supabase.from("products").update({ stock_quantity: product.stock_quantity - qtyDiff }).eq("id", item.product_id);
+            }
+          }
 
-      // 5. Update linked order totals + payment status + method
-      if (orderId) {
+          await supabase.from("order_items").update({
+            quantity: item.quantity,
+            total_price: item.total_price,
+          }).eq("id", item.id);
+        }
+
+        // 4. Build notes with payment info
+        let notes = orderNotes;
+        notes = notes.replace(/\n?Payment:.*$/s, '').trim();
+        if (paymentMethod === 'credit') {
+          const amt = creditAmount || totalAmount;
+          notes = notes ? `${notes}\nPayment: Credit: ₹${amt}` : `Payment: Credit: ₹${amt}`;
+        } else if (paymentMethod === 'double') {
+          notes = notes ? `${notes}\nPayment: Cash: ₹${cashAmount}, Card/UPI: ₹${cardUpiAmount}` : `Payment: Cash: ₹${cashAmount}, Card/UPI: ₹${cardUpiAmount}`;
+        }
+
+        // 5. Update order
         await supabase.from("orders").update({
           subtotal,
-          discount_amount: discountAmount,
+          discount_amount: totalDiscount,
           total_amount: totalAmount,
-          payment_status: paymentStatus as any,
+          payment_status: paymentMethod === 'credit' ? 'pending' as any : paymentStatus as any,
           payment_method: paymentMethod,
+          notes,
         }).eq("id", orderId);
       }
+
+      // 6. Update invoice
+      await supabase.from("invoices").update({
+        subtotal,
+        discount_amount: totalDiscount,
+        total_amount: totalAmount,
+        payment_status: paymentMethod === 'credit' ? 'pending' as any : paymentStatus as any,
+      }).eq("id", invoiceId);
 
       toast({ title: "Success", description: "Invoice updated with inventory adjustments" });
       onInvoiceUpdated();
@@ -279,6 +352,7 @@ const EditInvoiceDialog = ({
                           <th className="p-2 text-center">SKU</th>
                           <th className="p-2 text-center">Qty</th>
                           <th className="p-2 text-right">Rate</th>
+                          <th className="p-2 text-center">Disc%</th>
                           <th className="p-2 text-right">Total</th>
                           <th className="p-2 w-10"></th>
                         </tr>
@@ -298,7 +372,17 @@ const EditInvoiceDialog = ({
                               />
                             </td>
                             <td className="p-2 text-right">{formatCurrency(item.unit_price)}</td>
-                            <td className="p-2 text-right font-semibold">{formatCurrency(item.unit_price * item.quantity)}</td>
+                            <td className="p-2 text-center">
+                              <Input
+                                type="number"
+                                min={0}
+                                max={100}
+                                value={item.discountPercent}
+                                onChange={(e) => updateItemDiscount(index, Number(e.target.value))}
+                                className="w-16 h-7 text-center mx-auto"
+                              />
+                            </td>
+                            <td className="p-2 text-right font-semibold">{formatCurrency(item.total_price)}</td>
                             <td className="p-2">
                               <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => removeItem(index)}>
                                 <Trash2 className="h-3.5 w-3.5" />
@@ -307,7 +391,7 @@ const EditInvoiceDialog = ({
                           </tr>
                         ))}
                         {items.length === 0 && (
-                          <tr><td colSpan={6} className="p-4 text-center text-muted-foreground">No items</td></tr>
+                          <tr><td colSpan={7} className="p-4 text-center text-muted-foreground">No items</td></tr>
                         )}
                       </tbody>
                     </table>
@@ -358,16 +442,12 @@ const EditInvoiceDialog = ({
                 <span>Subtotal</span>
                 <span className="font-medium">{formatCurrency(subtotal)}</span>
               </div>
-              <div className="flex justify-between items-center text-sm">
-                <span>Discount (₹)</span>
-                <Input
-                  type="number"
-                  min={0}
-                  value={discountAmount}
-                  onChange={(e) => setDiscountAmount(Number(e.target.value) || 0)}
-                  className="w-28 h-7 text-right"
-                />
-              </div>
+              {totalDiscount > 0 && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>Discount</span>
+                  <span>-{formatCurrency(totalDiscount)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-lg font-bold border-t border-border pt-2">
                 <span>Total</span>
                 <span className="text-primary">{formatCurrency(totalAmount)}</span>
@@ -378,7 +458,12 @@ const EditInvoiceDialog = ({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-sm font-semibold">Payment Method</Label>
-                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <Select value={paymentMethod} onValueChange={(v) => {
+                  setPaymentMethod(v);
+                  setCreditAmount(0);
+                  setCashAmount(0);
+                  setCardUpiAmount(0);
+                }}>
                   <SelectTrigger className="h-9">
                     <SelectValue />
                   </SelectTrigger>
@@ -406,14 +491,65 @@ const EditInvoiceDialog = ({
               </div>
             </div>
 
+            {/* Credit amount input */}
+            {paymentMethod === "credit" && (
+              <div className="space-y-1 p-3 border border-border rounded-lg bg-muted/30">
+                <Label className="text-sm font-semibold">Credit Amount (Pay Later)</Label>
+                <Input
+                  type="number"
+                  value={creditAmount || ""}
+                  onChange={(e) => setCreditAmount(Number(e.target.value))}
+                  placeholder={`Max: ${formatCurrency(totalAmount)}`}
+                  className="h-9"
+                />
+                <p className="text-xs text-muted-foreground">Total: {formatCurrency(totalAmount)}</p>
+              </div>
+            )}
+
+            {/* Split payment inputs */}
+            {paymentMethod === "double" && (
+              <div className="space-y-2 p-3 border border-border rounded-lg bg-muted/30">
+                <Label className="text-sm font-semibold">Split Payment Breakdown</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Cash</Label>
+                    <Input
+                      type="number"
+                      value={cashAmount || ""}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setCashAmount(val);
+                        setCardUpiAmount(Math.max(0, totalAmount - val));
+                      }}
+                      className="h-9"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Card / UPI</Label>
+                    <Input
+                      type="number"
+                      value={cardUpiAmount || ""}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setCardUpiAmount(val);
+                        setCashAmount(Math.max(0, totalAmount - val));
+                      }}
+                      className="h-9"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">Total: {formatCurrency(totalAmount)} | Split: {formatCurrency(cashAmount + cardUpiAmount)}</p>
+              </div>
+            )}
+
             {removedItems.length > 0 && (
               <p className="text-xs text-muted-foreground">
                 ⚠️ {removedItems.length} item(s) will be removed and inventory restored.
               </p>
             )}
-            {addedItems.length > 0 && (
+            {addedItemIds.size > 0 && (
               <p className="text-xs text-muted-foreground">
-                ✅ {addedItems.length} new item(s) will be added and inventory deducted.
+                ✅ {addedItemIds.size} new item(s) will be added and inventory deducted.
               </p>
             )}
           </div>
@@ -421,7 +557,7 @@ const EditInvoiceDialog = ({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSave} disabled={saving || items.length === 0}>
             {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Save Changes
           </Button>
