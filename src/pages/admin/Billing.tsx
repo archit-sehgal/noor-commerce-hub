@@ -1163,8 +1163,10 @@ const AdminBilling = () => {
                         />
                         <span className="text-xs font-medium text-muted-foreground">%</span>
                       </div>
-                      <div className={`text-right text-xs font-semibold ${item.quantity < 0 ? "text-destructive" : "text-primary"}`}>
-                        {item.quantity < 0 && <span>RETURN </span>}
+                      <div className="flex items-center gap-1">
+                        <Label className="text-xs font-medium text-muted-foreground">Net:</Label>
+                        {item.quantity < 0 && <span className="text-xs text-destructive font-semibold">RTN</span>}
+                        <span className="text-xs text-muted-foreground">₹</span>
                         <input
                           type="text"
                           inputMode="decimal"
@@ -1172,13 +1174,12 @@ const AdminBilling = () => {
                             const absQty = Math.abs(item.quantity);
                             const itemTotal = item.unitPrice * absQty;
                             const itemDisc = Math.round((itemTotal * item.discountPercent) / 100);
-                            const net = itemTotal - itemDisc;
-                            return item.quantity < 0 ? String(-net) : String(net);
+                            return String(itemTotal - itemDisc);
                           })()}
                           key={`net-${item.product}-${item.quantity}-${item.discountPercent}-${item.unitPrice}`}
                           onFocus={(e) => e.target.select()}
                           onChange={(e) => {
-                            const val = e.target.value.replace(/[^0-9.-]/g, "");
+                            const val = e.target.value.replace(/[^0-9.]/g, "");
                             e.target.value = val;
                           }}
                           onBlur={(e) => {
@@ -1188,12 +1189,11 @@ const AdminBilling = () => {
                             if (isNaN(desiredNet) || itemTotal === 0) {
                               return;
                             }
-                            const absNet = Math.abs(desiredNet);
-                            const newDiscPercent = Math.max(0, Math.min(100, ((itemTotal - absNet) / itemTotal) * 100));
+                            const newDiscPercent = Math.max(0, Math.min(100, ((itemTotal - desiredNet) / itemTotal) * 100));
                             const rounded = Math.round(newDiscPercent * 100) / 100;
                             updateCartItem(index, { discountPercent: rounded });
                           }}
-                          className={`w-16 h-6 text-xs font-semibold text-right border border-border rounded bg-background focus:outline-none focus:ring-1 focus:ring-ring ${item.quantity < 0 ? "text-destructive" : "text-primary"}`}
+                          className="w-16 h-6 text-xs font-semibold text-right border border-border rounded bg-background focus:outline-none focus:ring-1 focus:ring-ring px-1"
                         />
                       </div>
                     </div>
