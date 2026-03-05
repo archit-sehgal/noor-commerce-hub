@@ -137,7 +137,7 @@ const AdminReports = () => {
       // Fetch orders for the period
       let ordersQuery = supabase
         .from("orders")
-        .select("id, total_amount, created_at, customer_id, order_source, status, notes, payment_status")
+        .select("id, total_amount, created_at, customer_id, order_source, status, notes, payment_status, payment_method")
         .gte("created_at", startDate.toISOString());
       if (endDate) ordersQuery = ordersQuery.lte("created_at", endDate.toISOString());
       const { data: orders } = await ordersQuery;
@@ -158,25 +158,26 @@ const AdminReports = () => {
       const posRevenue = paidOrders.filter(o => o.order_source !== 'online').reduce((sum, o) => sum + Number(o.total_amount), 0);
       const pendingOrders = orders?.filter(o => o.status === 'pending').length || 0;
 
-      // Calculate payment method breakdowns from notes
+      // Calculate payment method breakdowns from payment_method column
       let cashRevenue = 0;
       let cardUpiRevenue = 0;
       let creditRevenue = 0;
-      orders?.forEach((o) => {
+      paidOrders.forEach((o) => {
         const amount = Number(o.total_amount);
-        const notesLower = (o.notes || '').toLowerCase();
-        if (notesLower.includes('- double') || notesLower.includes('- double ')) {
+        const method = (o as any).payment_method || '';
+        if (method === 'double') {
           // Double/split payment — parse cash and card amounts from notes
+          const notesLower = (o.notes || '').toLowerCase();
           const cashMatch = notesLower.match(/cash:\s*₹?([\d,]+)/);
           const cardMatch = notesLower.match(/card\/upi:\s*₹?([\d,]+)/);
           cashRevenue += cashMatch ? Number(cashMatch[1].replace(/,/g, '')) : 0;
           cardUpiRevenue += cardMatch ? Number(cardMatch[1].replace(/,/g, '')) : 0;
-        } else if (notesLower.includes('- credit')) {
+        } else if (method === 'credit') {
           creditRevenue += amount;
-        } else if (notesLower.includes('- card') || notesLower.includes('- card/upi')) {
+        } else if (method === 'card_upi') {
           cardUpiRevenue += amount;
         } else {
-          // Default to cash (includes "- cash" and legacy orders)
+          // Default to cash
           cashRevenue += amount;
         }
       });
