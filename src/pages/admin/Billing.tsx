@@ -1164,15 +1164,37 @@ const AdminBilling = () => {
                         <span className="text-xs font-medium text-muted-foreground">%</span>
                       </div>
                       <div className={`text-right text-xs font-semibold ${item.quantity < 0 ? "text-destructive" : "text-primary"}`}>
-                        {item.quantity < 0 ? "RETURN " : ""}
-                        {formatCurrency(
-                          (() => {
+                        {item.quantity < 0 && <span>RETURN </span>}
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          defaultValue={(() => {
                             const absQty = Math.abs(item.quantity);
                             const itemTotal = item.unitPrice * absQty;
                             const itemDisc = Math.round((itemTotal * item.discountPercent) / 100);
-                            return item.quantity < 0 ? -(itemTotal - itemDisc) : (itemTotal - itemDisc);
-                          })()
-                        )}
+                            const net = itemTotal - itemDisc;
+                            return item.quantity < 0 ? String(-net) : String(net);
+                          })()}
+                          key={`net-${item.product}-${item.quantity}-${item.discountPercent}-${item.unitPrice}`}
+                          onFocus={(e) => e.target.select()}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/[^0-9.-]/g, "");
+                            e.target.value = val;
+                          }}
+                          onBlur={(e) => {
+                            const desiredNet = parseFloat(e.target.value);
+                            const absQty = Math.abs(item.quantity);
+                            const itemTotal = item.unitPrice * absQty;
+                            if (isNaN(desiredNet) || itemTotal === 0) {
+                              return;
+                            }
+                            const absNet = Math.abs(desiredNet);
+                            const newDiscPercent = Math.max(0, Math.min(100, ((itemTotal - absNet) / itemTotal) * 100));
+                            const rounded = Math.round(newDiscPercent * 100) / 100;
+                            updateCartItem(index, { discountPercent: rounded });
+                          }}
+                          className={`w-16 h-6 text-xs font-semibold text-right border border-border rounded bg-background focus:outline-none focus:ring-1 focus:ring-ring ${item.quantity < 0 ? "text-destructive" : "text-primary"}`}
+                        />
                       </div>
                     </div>
                   </div>
