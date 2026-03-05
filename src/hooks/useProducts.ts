@@ -66,7 +66,7 @@ export const useProducts = (options?: {
           *,
           category:categories(id, name, slug)
         `)
-        .order("created_at", { ascending: false });
+        .order("name", { ascending: true });
 
       // Only filter by is_active if includeInactive is not true
       if (!options?.includeInactive) {
