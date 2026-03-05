@@ -538,6 +538,25 @@ const OrderDetailDialog = ({ orderId, open, onOpenChange, onOrderUpdated }: Prop
                     </div>
                   )}
                 </div>
+
+                {/* Credit Note for Exchange Orders */}
+                {order.notes && order.notes.includes("Credit Note: ₹") && (() => {
+                  const match = order.notes!.match(/Credit Note: ₹([\d,]+)/);
+                  const cnAmount = match ? match[1] : "0";
+                  return (
+                    <div className="mt-3 p-3 bg-yellow-50 border-2 border-yellow-400 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <IndianRupee className="h-4 w-4 text-yellow-700" />
+                        <span className="font-bold text-yellow-800 text-base">
+                          CREDIT NOTE: ₹{cnAmount}
+                        </span>
+                      </div>
+                      <p className="text-xs text-yellow-600 mt-1">
+                        This credit note can be used for future purchases
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
