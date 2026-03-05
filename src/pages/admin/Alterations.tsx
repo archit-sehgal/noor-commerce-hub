@@ -7,9 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Search, Scissors, Clock, CheckCircle, Package, AlertCircle } from "lucide-react";
+import { Search, Scissors, Clock, CheckCircle, Package, AlertCircle, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import NewAlterationForm from "@/components/admin/NewAlterationForm";
 
@@ -31,6 +32,7 @@ const Alterations = () => {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [remarksDialog, setRemarksDialog] = useState<{ open: boolean; notes: string; orderNumber: string }>({ open: false, notes: "", orderNumber: "" });
 
   // Fetch orders with alterations
   const { data: alterationOrders, isLoading } = useQuery({
@@ -217,6 +219,9 @@ const Alterations = () => {
                         <div className="flex justify-between items-start mb-3">
                           <div>
                             <p className="font-semibold text-sm">{order.order_number}</p>
+                            {order.invoice_number && (
+                              <p className="text-[10px] font-mono text-muted-foreground">{order.invoice_number}</p>
+                            )}
                             {order.alteration_number && (
                               <p className="text-xs text-gold font-medium">Alt# {order.alteration_number}</p>
                             )}
@@ -261,7 +266,14 @@ const Alterations = () => {
                             </div>
                           )}
                           {order.alteration_notes && (
-                            <p className="text-muted-foreground truncate">{order.alteration_notes}</p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full text-xs"
+                              onClick={() => setRemarksDialog({ open: true, notes: order.alteration_notes || "", orderNumber: order.order_number })}
+                            >
+                              <MessageSquare className="h-3 w-3 mr-1" /> View Remarks
+                            </Button>
                           )}
                         </div>
                         <div className="mt-3 pt-3 border-t">
@@ -293,13 +305,14 @@ const Alterations = () => {
                     <TableHeader>
                       <TableRow className="border-gold/10">
                         <TableHead>Order #</TableHead>
+                        <TableHead>Invoice #</TableHead>
                         <TableHead>Alt #</TableHead>
                         <TableHead>Customer</TableHead>
                         <TableHead className="hidden lg:table-cell">Phone</TableHead>
                         <TableHead>Items / SKU</TableHead>
                         <TableHead>Due Date</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead className="hidden lg:table-cell">Notes</TableHead>
+                        <TableHead>Remarks</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -312,6 +325,7 @@ const Alterations = () => {
                         return (
                           <TableRow key={order.id} className={`border-gold/10 ${isOverdue ? "bg-red-50" : ""}`}>
                             <TableCell className="font-medium">{order.order_number}</TableCell>
+                            <TableCell className="text-xs font-mono text-muted-foreground">{order.invoice_number || "—"}</TableCell>
                             <TableCell className="text-gold font-medium">{order.alteration_number || "—"}</TableCell>
                             <TableCell>{order.customer?.name || "—"}</TableCell>
                             <TableCell className="hidden lg:table-cell">{order.customer?.phone || "—"}</TableCell>
@@ -345,8 +359,17 @@ const Alterations = () => {
                                 {order.alteration_status?.replace("_", " ") || "pending"}
                               </Badge>
                             </TableCell>
-                            <TableCell className="hidden lg:table-cell max-w-[200px] truncate">
-                              {order.alteration_notes || "—"}
+                            <TableCell>
+                              {order.alteration_notes ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-xs h-7 px-2"
+                                  onClick={() => setRemarksDialog({ open: true, notes: order.alteration_notes || "", orderNumber: order.order_number })}
+                                >
+                                  <MessageSquare className="h-3 w-3 mr-1" /> View
+                                </Button>
+                              ) : "—"}
                             </TableCell>
                             <TableCell className="text-right">
                               <Select
@@ -389,6 +412,18 @@ const Alterations = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Remarks Dialog */}
+      <Dialog open={remarksDialog.open} onOpenChange={(open) => setRemarksDialog(prev => ({ ...prev, open }))}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif">Alteration Remarks — {remarksDialog.orderNumber}</DialogTitle>
+          </DialogHeader>
+          <div className="p-4 bg-muted/50 rounded-lg whitespace-pre-wrap text-sm">
+            {remarksDialog.notes || "No remarks available."}
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
