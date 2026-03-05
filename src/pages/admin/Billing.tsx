@@ -1093,17 +1093,27 @@ const AdminBilling = () => {
                       <div className="flex items-center gap-0.5 ml-auto">
                         <input
                           type="text"
-                          inputMode="numeric"
+                          inputMode="text"
                           value={item.quantity}
+                          onFocus={(e) => e.target.select()}
                           onChange={(e) => {
-                            const val = e.target.value.replace(/[^0-9-]/g, "");
-                            if (val === "" || val === "-") {
-                              updateCartItem(index, { quantity: 0 });
+                            const raw = e.target.value;
+                            // Allow typing just "-" without clearing
+                            if (raw === "-" || raw === "") {
+                              // Temporarily show via native input, don't update cart yet
+                              e.target.value = raw;
                               return;
                             }
-                            const num = parseInt(val, 10);
+                            const num = parseInt(raw, 10);
                             if (!isNaN(num)) {
                               updateCartItem(index, { quantity: num });
+                            }
+                          }}
+                          onBlur={(e) => {
+                            // If left as "-" or empty, reset to 1
+                            const num = parseInt(e.target.value, 10);
+                            if (isNaN(num) || num === 0) {
+                              updateCartItem(index, { quantity: 1 });
                             }
                           }}
                           className={`w-10 h-6 text-xs font-bold text-center border rounded bg-background focus:outline-none focus:ring-1 focus:ring-ring ${
