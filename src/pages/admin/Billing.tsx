@@ -1128,13 +1128,19 @@ const AdminBilling = () => {
                         <Label className="text-xs font-medium text-muted-foreground">Disc:</Label>
                         <input
                           type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
+                          inputMode="decimal"
+                          pattern="[0-9.]*"
                           value={item.discountPercent === 0 ? "" : String(item.discountPercent)}
                           onChange={(e) => {
-                            const val = e.target.value.replace(/[^0-9]/g, "");
-                            const num = val === "" ? 0 : Math.min(100, Math.max(0, Number(val)));
-                            updateCartItem(index, { discountPercent: num });
+                            const val = e.target.value.replace(/[^0-9.]/g, "");
+                            if (val === "" || val === ".") {
+                              updateCartItem(index, { discountPercent: 0 });
+                              return;
+                            }
+                            const num = Math.min(100, Math.max(0, parseFloat(val)));
+                            if (!isNaN(num)) {
+                              updateCartItem(index, { discountPercent: num });
+                            }
                           }}
                           className="w-8 h-6 text-xs font-medium text-center border border-border rounded bg-background focus:outline-none focus:ring-1 focus:ring-ring"
                           placeholder="0"
