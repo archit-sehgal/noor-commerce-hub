@@ -258,7 +258,7 @@ const Settings = () => {
   };
 
   const handleClearData = async () => {
-    if (clearCode !== "2486") {
+    if (clearCode !== "2004") {
       toast.error("Invalid security code");
       return;
     }
