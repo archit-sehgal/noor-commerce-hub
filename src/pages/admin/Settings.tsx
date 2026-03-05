@@ -561,7 +561,7 @@ const Settings = () => {
                     Clear Data
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-md">
+                <DialogContent className="max-w-md max-h-[50vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle className="font-display text-xl flex items-center gap-2 text-destructive">
                       <AlertTriangle className="h-5 w-5" />
