@@ -92,6 +92,19 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
     return `${baseSlug}-${bcn.toLowerCase()}`;
   };
 
+  // Build a meaningful product name from item details and design number
+  const buildProductName = (itemDetails: string, designNumber: string): string => {
+    // Extract category prefix (before first "-")
+    const hyphenIndex = itemDetails.indexOf("-");
+    const categoryPrefix = hyphenIndex > 0 ? itemDetails.substring(0, hyphenIndex).trim() : itemDetails.trim();
+    
+    if (designNumber && designNumber.trim()) {
+      return `${categoryPrefix} - ${designNumber.trim()}`;
+    }
+    // Fallback to full item details if no design number
+    return itemDetails;
+  };
+
   // Category detection from item name prefix (before "-")
   // Categories are matched case-insensitively and with flexible matching
   const CATEGORY_MAP: Record<string, string> = {
@@ -365,10 +378,12 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
                 const previousQty = existing.stock_quantity;
                 const newQty = product.closingQty;
 
+                const productName = buildProductName(product.itemDetails, product.designNumber);
+                
                 const { error: updateError } = await supabase
                   .from("products")
                   .update({
-                    name: product.itemDetails,
+                    name: productName,
                     design_number: product.designNumber,
                     price: product.mrp,
                     discount_price: product.salePrice !== product.mrp ? product.salePrice : null,
@@ -396,12 +411,13 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
                 result.updated++;
               } else {
                 // Create new product
-                const slug = generateSlug(product.itemDetails, product.bcn);
+                const productName = buildProductName(product.itemDetails, product.designNumber);
+                const slug = generateSlug(productName, product.bcn);
                 
                 const { data: newProduct, error: insertError } = await supabase
                   .from("products")
                   .insert({
-                    name: product.itemDetails,
+                    name: productName,
                     slug,
                     sku: product.bcn,
                     design_number: product.designNumber,
