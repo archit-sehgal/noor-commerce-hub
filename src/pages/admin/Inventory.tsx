@@ -65,23 +65,30 @@ const AdminInventory = () => {
 
   const fetchProducts = async () => {
     try {
-      const { data, error } = await supabase
-        .from("products")
-        .select(`
-          id,
-          name,
-          sku,
-          stock_quantity,
-          min_stock_alert,
-          price,
-          categories(name)
-        `)
-        .order("name");
+      // Fetch all products using pagination to avoid the 1000-row limit
+      const allProducts: Product[] = [];
+      const pageSize = 1000;
+      let offset = 0;
+      let hasMore = true;
 
-      if (error) throw error;
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from("products")
+          .select(`
+            id,
+            name,
+            sku,
+            stock_quantity,
+            min_stock_alert,
+            price,
+            categories(name)
+          `)
+          .order("name")
+          .range(offset, offset + pageSize - 1);
 
-      setProducts(
-        data?.map((p) => ({
+        if (error) throw error;
+
+        const mapped = (data || []).map((p) => ({
           id: p.id,
           name: p.name,
           sku: p.sku,
@@ -89,8 +96,14 @@ const AdminInventory = () => {
           min_stock_alert: p.min_stock_alert,
           price: p.price,
           category_name: (p.categories as { name: string } | null)?.name || null,
-        })) || []
-      );
+        }));
+
+        allProducts.push(...mapped);
+        hasMore = (data?.length || 0) === pageSize;
+        offset += pageSize;
+      }
+
+      setProducts(allProducts);
     } catch (error) {
       console.error("Error fetching products:", error);
       toast({
