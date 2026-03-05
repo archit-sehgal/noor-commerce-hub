@@ -1226,14 +1226,36 @@ const AdminBilling = () => {
                       }}
                       onBlur={(e) => {
                         const desiredTotal = parseFloat(e.target.value);
-                        const purchaseGross = purchaseItems.reduce((s, item) => s + item.unitPrice * item.quantity, 0);
+                        const pItems = cart.filter(item => item.quantity > 0);
+                        const purchaseGross = pItems.reduce((s, item) => s + item.unitPrice * item.quantity, 0);
                         if (isNaN(desiredTotal) || purchaseGross === 0) return;
                         const desiredPurchaseNet = desiredTotal + returnTotal;
-                        const overallDiscPercent = Math.max(0, Math.min(100, ((purchaseGross - desiredPurchaseNet) / purchaseGross) * 100));
-                        const rounded = Math.round(overallDiscPercent * 100) / 100;
-                        cart.forEach((item, idx) => {
-                          if (item.quantity > 0) {
-                            updateCartItem(idx, { discountPercent: rounded });
+                        const totalDiscNeeded = Math.max(0, purchaseGross - desiredPurchaseNet);
+                        
+                        const purchaseIndices = cart.map((item, idx) => item.quantity > 0 ? idx : -1).filter(i => i >= 0);
+                        let discAllocated = 0;
+                        
+                        purchaseIndices.forEach((cartIdx, i) => {
+                          const item = cart[cartIdx];
+                          const itemGross = item.unitPrice * item.quantity;
+                          let itemDisc: number;
+                          if (i === purchaseIndices.length - 1) {
+                            itemDisc = totalDiscNeeded - discAllocated;
+                          } else {
+                            itemDisc = Math.round((itemGross / purchaseGross) * totalDiscNeeded);
+                          }
+                          discAllocated += itemDisc;
+                          // Find the 2-decimal discountPercent that makes Math.round((itemGross * dp) / 100) === itemDisc
+                          if (itemGross > 0) {
+                            const rawPercent = (itemDisc * 100) / itemGross;
+                            // Try floor and ceil at 2 decimals
+                            const floor2 = Math.floor(rawPercent * 100) / 100;
+                            const ceil2 = Math.ceil(rawPercent * 100) / 100;
+                            const floorResult = Math.round((itemGross * floor2) / 100);
+                            const dp = floorResult === itemDisc ? floor2 : ceil2;
+                            updateCartItem(cartIdx, { discountPercent: dp });
+                          } else {
+                            updateCartItem(cartIdx, { discountPercent: 0 });
                           }
                         });
                       }}
