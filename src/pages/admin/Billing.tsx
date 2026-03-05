@@ -1130,11 +1130,16 @@ const AdminBilling = () => {
                           type="text"
                           inputMode="decimal"
                           pattern="[0-9.]*"
-                          value={item.discountPercent === 0 ? "" : String(item.discountPercent)}
+                          defaultValue={item.discountPercent === 0 ? "" : String(item.discountPercent)}
+                          key={`disc-${item.product}-${item.discountPercent === 0 ? "empty" : ""}`}
+                          onFocus={(e) => e.target.select()}
                           onChange={(e) => {
                             const val = e.target.value.replace(/[^0-9.]/g, "");
-                            if (val === "" || val === ".") {
-                              updateCartItem(index, { discountPercent: 0 });
+                            e.target.value = val;
+                            if (val === "" || val === "." || val.endsWith(".")) {
+                              if (val === "" || val === ".") {
+                                updateCartItem(index, { discountPercent: 0 });
+                              }
                               return;
                             }
                             const num = Math.min(100, Math.max(0, parseFloat(val)));
@@ -1142,7 +1147,18 @@ const AdminBilling = () => {
                               updateCartItem(index, { discountPercent: num });
                             }
                           }}
-                          className="w-8 h-6 text-xs font-medium text-center border border-border rounded bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                          onBlur={(e) => {
+                            const num = parseFloat(e.target.value);
+                            if (isNaN(num) || num === 0) {
+                              e.target.value = "";
+                              updateCartItem(index, { discountPercent: 0 });
+                            } else {
+                              const clamped = Math.min(100, Math.max(0, num));
+                              e.target.value = String(clamped);
+                              updateCartItem(index, { discountPercent: clamped });
+                            }
+                          }}
+                          className="w-10 h-6 text-xs font-medium text-center border border-border rounded bg-background focus:outline-none focus:ring-1 focus:ring-ring"
                           placeholder="0"
                         />
                         <span className="text-xs font-medium text-muted-foreground">%</span>
