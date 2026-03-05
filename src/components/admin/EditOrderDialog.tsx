@@ -56,6 +56,10 @@ const EditOrderDialog = ({
   const [orderNumber, setOrderNumber] = useState("");
   const [paymentStatus, setPaymentStatus] = useState<string>("paid");
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
+  const [creditAmount, setCreditAmount] = useState<number>(0);
+  const [cashAmount, setCashAmount] = useState<number>(0);
+  const [cardUpiAmount, setCardUpiAmount] = useState<number>(0);
+  const [orderNotes, setOrderNotes] = useState<string>("");
   const [items, setItems] = useState<OrderItem[]>([]);
   const [removedItems, setRemovedItems] = useState<OrderItem[]>([]);
   const [addedItemIds, setAddedItemIds] = useState<Set<string>>(new Set());
@@ -89,15 +93,32 @@ const EditOrderDialog = ({
 
       setOrderNumber(data.order_number);
       setPaymentStatus(data.payment_status);
-      setPaymentMethod(data.payment_method || "cash");
-      // Discount is now per-item, no global discount state needed
+      const method = data.payment_method || "cash";
+      setPaymentMethod(method);
+      setOrderNotes(data.notes || "");
+      
+      // Parse credit/split amounts from notes
+      const notesLower = (data.notes || '').toLowerCase();
+      if (method === 'credit') {
+        const creditMatch = notesLower.match(/credit:\s*₹?([\d,]+)/);
+        setCreditAmount(creditMatch ? Number(creditMatch[1].replace(/,/g, '')) : Number(data.total_amount));
+      } else if (method === 'double') {
+        const cashMatch = notesLower.match(/cash:\s*₹?([\d,]+)/);
+        const cardMatch = notesLower.match(/card\/upi:\s*₹?([\d,]+)/);
+        setCashAmount(cashMatch ? Number(cashMatch[1].replace(/,/g, '')) : 0);
+        setCardUpiAmount(cardMatch ? Number(cardMatch[1].replace(/,/g, '')) : 0);
+      } else {
+        setCreditAmount(0);
+        setCashAmount(0);
+        setCardUpiAmount(0);
+      }
+      
       const orderItems = (data.order_items || []).map((item: any) => {
         const gross = item.unit_price * item.quantity;
         const discPercent = gross > 0 ? Math.round(((gross - item.total_price) / gross) * 100) : 0;
         return { ...item, discountPercent: discPercent };
       });
       setItems(orderItems);
-      // Store original quantities for existing items to detect changes
       const qtyMap = new Map<string, number>();
       orderItems.forEach((item: OrderItem) => qtyMap.set(item.id, item.quantity));
       setOriginalItemQuantities(qtyMap);
@@ -242,13 +263,25 @@ const EditOrderDialog = ({
         }).eq("id", item.id);
       }
 
-      // 4. Update order totals + payment status
+      // 4. Build notes with payment info
+      let notes = orderNotes;
+      // Strip old payment info lines from notes
+      notes = notes.replace(/\n?Payment:.*$/s, '').trim();
+      if (paymentMethod === 'credit') {
+        const amt = creditAmount || totalAmount;
+        notes = notes ? `${notes}\nPayment: Credit: ₹${amt}` : `Payment: Credit: ₹${amt}`;
+      } else if (paymentMethod === 'double') {
+        notes = notes ? `${notes}\nPayment: Cash: ₹${cashAmount}, Card/UPI: ₹${cardUpiAmount}` : `Payment: Cash: ₹${cashAmount}, Card/UPI: ₹${cardUpiAmount}`;
+      }
+
+      // 5. Update order totals + payment status
       await supabase.from("orders").update({
         subtotal,
         discount_amount: totalDiscount,
         total_amount: totalAmount,
-        payment_status: paymentStatus as any,
+        payment_status: paymentMethod === 'credit' ? 'pending' as any : paymentStatus as any,
         payment_method: paymentMethod,
+        notes,
       }).eq("id", orderId);
 
       // 5. Update linked invoice totals + payment status
@@ -425,6 +458,57 @@ const EditOrderDialog = ({
                 </Select>
               </div>
             </div>
+
+            {/* Credit amount input */}
+            {paymentMethod === "credit" && (
+              <div className="space-y-1 p-3 border border-border rounded-lg bg-muted/30">
+                <Label className="text-sm font-semibold">Credit Amount (Pay Later)</Label>
+                <Input
+                  type="number"
+                  value={creditAmount || ""}
+                  onChange={(e) => setCreditAmount(Number(e.target.value))}
+                  placeholder={`Max: ${formatCurrency(totalAmount)}`}
+                  className="h-9"
+                />
+                <p className="text-xs text-muted-foreground">Total: {formatCurrency(totalAmount)}</p>
+              </div>
+            )}
+
+            {/* Split payment inputs */}
+            {paymentMethod === "double" && (
+              <div className="space-y-2 p-3 border border-border rounded-lg bg-muted/30">
+                <Label className="text-sm font-semibold">Split Payment Breakdown</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Cash</Label>
+                    <Input
+                      type="number"
+                      value={cashAmount || ""}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setCashAmount(val);
+                        setCardUpiAmount(Math.max(0, totalAmount - val));
+                      }}
+                      className="h-9"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Card / UPI</Label>
+                    <Input
+                      type="number"
+                      value={cardUpiAmount || ""}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setCardUpiAmount(val);
+                        setCashAmount(Math.max(0, totalAmount - val));
+                      }}
+                      className="h-9"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">Total: {formatCurrency(totalAmount)} | Split: {formatCurrency(cashAmount + cardUpiAmount)}</p>
+              </div>
+            )}
 
             {removedItems.length > 0 && (
               <p className="text-xs text-muted-foreground">
