@@ -55,6 +55,7 @@ const EditOrderDialog = ({
   const [saving, setSaving] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
   const [paymentStatus, setPaymentStatus] = useState<string>("paid");
+  const [paymentMethod, setPaymentMethod] = useState<string>("cash");
   const [items, setItems] = useState<OrderItem[]>([]);
   const [removedItems, setRemovedItems] = useState<OrderItem[]>([]);
   const [addedItemIds, setAddedItemIds] = useState<Set<string>>(new Set());
@@ -88,6 +89,7 @@ const EditOrderDialog = ({
 
       setOrderNumber(data.order_number);
       setPaymentStatus(data.payment_status);
+      setPaymentMethod(data.payment_method || "cash");
       // Discount is now per-item, no global discount state needed
       const orderItems = (data.order_items || []).map((item: any) => {
         const gross = item.unit_price * item.quantity;
@@ -246,6 +248,7 @@ const EditOrderDialog = ({
         discount_amount: totalDiscount,
         total_amount: totalAmount,
         payment_status: paymentStatus as any,
+        payment_method: paymentMethod,
       }).eq("id", orderId);
 
       // 5. Update linked invoice totals + payment status
@@ -391,20 +394,36 @@ const EditOrderDialog = ({
               </div>
             </div>
 
-            {/* Payment Status */}
-            <div className="space-y-1">
-              <Label className="text-sm font-semibold">Payment Status</Label>
-              <Select value={paymentStatus} onValueChange={setPaymentStatus}>
-                <SelectTrigger className="h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="paid">Paid</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                  <SelectItem value="refunded">Refunded</SelectItem>
-                </SelectContent>
-              </Select>
+            {/* Payment Method & Status */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-sm font-semibold">Payment Method</Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="card_upi">Card/UPI</SelectItem>
+                    <SelectItem value="credit">Credit (Pay Later)</SelectItem>
+                    <SelectItem value="double">Split (Cash + Card)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-sm font-semibold">Payment Status</Label>
+                <Select value={paymentStatus} onValueChange={setPaymentStatus}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="paid">Paid</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
+                    <SelectItem value="refunded">Refunded</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {removedItems.length > 0 && (

@@ -619,6 +619,7 @@ const AdminBilling = () => {
           salesman_id: selectedSalesman?.id || null,
           status: needsAlteration ? "processing" : "delivered",
           payment_status: creditNoteAmount > 0 ? "paid" : (paymentMethod === "credit" ? "pending" : "paid"),
+          payment_method: paymentMethod,
           subtotal: purchaseTotal,
           tax_amount: 0,
           discount_amount: discountAmount,

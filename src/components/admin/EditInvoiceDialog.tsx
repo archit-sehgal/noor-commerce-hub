@@ -56,6 +56,7 @@ const EditInvoiceDialog = ({
   const [orderId, setOrderId] = useState<string | null>(null);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [paymentStatus, setPaymentStatus] = useState<string>("paid");
+  const [paymentMethod, setPaymentMethod] = useState<string>("cash");
   const [items, setItems] = useState<OrderItem[]>([]);
   const [removedItems, setRemovedItems] = useState<OrderItem[]>([]);
   const [addedItems, setAddedItems] = useState<OrderItem[]>([]);
@@ -91,8 +92,15 @@ const EditInvoiceDialog = ({
       setDiscountAmount(data.discount_amount || 0);
       setPaymentStatus(data.payment_status);
 
-      // Fetch order items if linked to an order
+      // Fetch order items and payment method if linked to an order
       if (data.order_id) {
+        const { data: orderData } = await supabase
+          .from("orders")
+          .select("payment_method")
+          .eq("id", data.order_id)
+          .single();
+        if (orderData) setPaymentMethod(orderData.payment_method || "cash");
+
         const { data: orderItems } = await supabase
           .from("order_items")
           .select("*")
@@ -217,13 +225,14 @@ const EditInvoiceDialog = ({
         payment_status: paymentStatus as any,
       }).eq("id", invoiceId);
 
-      // 5. Update linked order totals + payment status
+      // 5. Update linked order totals + payment status + method
       if (orderId) {
         await supabase.from("orders").update({
           subtotal,
           discount_amount: discountAmount,
           total_amount: totalAmount,
           payment_status: paymentStatus as any,
+          payment_method: paymentMethod,
         }).eq("id", orderId);
       }
 
@@ -365,20 +374,36 @@ const EditInvoiceDialog = ({
               </div>
             </div>
 
-            {/* Payment Status */}
-            <div className="space-y-1">
-              <Label className="text-sm font-semibold">Payment Status</Label>
-              <Select value={paymentStatus} onValueChange={setPaymentStatus}>
-                <SelectTrigger className="h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="paid">Paid</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                  <SelectItem value="refunded">Refunded</SelectItem>
-                </SelectContent>
-              </Select>
+            {/* Payment Method & Status */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-sm font-semibold">Payment Method</Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="card_upi">Card/UPI</SelectItem>
+                    <SelectItem value="credit">Credit (Pay Later)</SelectItem>
+                    <SelectItem value="double">Split (Cash + Card)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-sm font-semibold">Payment Status</Label>
+                <Select value={paymentStatus} onValueChange={setPaymentStatus}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="paid">Paid</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
+                    <SelectItem value="refunded">Refunded</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {removedItems.length > 0 && (
