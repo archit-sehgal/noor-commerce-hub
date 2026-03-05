@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Trash2, Plus, Search } from "lucide-react";
@@ -53,6 +54,7 @@ const EditOrderDialog = ({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState<string>("paid");
   const [items, setItems] = useState<OrderItem[]>([]);
   const [removedItems, setRemovedItems] = useState<OrderItem[]>([]);
   const [addedItemIds, setAddedItemIds] = useState<Set<string>>(new Set());
@@ -84,8 +86,8 @@ const EditOrderDialog = ({
         .eq("id", orderId)
         .single();
 
-      if (error) throw error;
       setOrderNumber(data.order_number);
+      setPaymentStatus(data.payment_status);
       // Discount is now per-item, no global discount state needed
       const orderItems = (data.order_items || []).map((item: any) => {
         const gross = item.unit_price * item.quantity;
@@ -238,18 +240,20 @@ const EditOrderDialog = ({
         }).eq("id", item.id);
       }
 
-      // 4. Update order totals
+      // 4. Update order totals + payment status
       await supabase.from("orders").update({
         subtotal,
         discount_amount: totalDiscount,
         total_amount: totalAmount,
+        payment_status: paymentStatus as any,
       }).eq("id", orderId);
 
-      // 5. Update linked invoice totals
+      // 5. Update linked invoice totals + payment status
       await supabase.from("invoices").update({
         subtotal,
         discount_amount: totalDiscount,
         total_amount: totalAmount,
+        payment_status: paymentStatus as any,
       }).eq("order_id", orderId);
 
       toast({ title: "Success", description: "Order updated with inventory adjustments" });
@@ -385,6 +389,22 @@ const EditOrderDialog = ({
                 <span>Total</span>
                 <span className="text-primary">{formatCurrency(totalAmount)}</span>
               </div>
+            </div>
+
+            {/* Payment Status */}
+            <div className="space-y-1">
+              <Label className="text-sm font-semibold">Payment Status</Label>
+              <Select value={paymentStatus} onValueChange={setPaymentStatus}>
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="failed">Failed</SelectItem>
+                  <SelectItem value="refunded">Refunded</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {removedItems.length > 0 && (
