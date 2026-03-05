@@ -23,7 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Search,
   Plus,
-  Minus,
+  
   Trash2,
   Printer,
   Loader2,
@@ -131,7 +131,6 @@ const AdminBilling = () => {
           .from("products")
           .select("id, name, sku, price, discount_price, stock_quantity, sizes, colors, design_number")
           .eq("is_active", true)
-          .gt("stock_quantity", 0)
           .order("name")
           .range(from, from + PAGE_SIZE - 1);
 
@@ -226,16 +225,8 @@ const AdminBilling = () => {
     const existingIndex = cart.findIndex((item) => item.product.id === product.id);
     if (existingIndex >= 0) {
       const updated = [...cart];
-      if (updated[existingIndex].quantity < product.stock_quantity) {
-        updated[existingIndex].quantity += 1;
-        setCart(updated);
-      } else {
-        toast({
-          title: "Stock Limit",
-          description: "Cannot add more than available stock",
-          variant: "destructive",
-        });
-      }
+      updated[existingIndex].quantity += 1;
+      setCart(updated);
     } else {
       const unitPrice = product.discount_price || product.price;
       setCart([
@@ -262,12 +253,29 @@ const AdminBilling = () => {
     setCart(cart.filter((_, i) => i !== index));
   };
 
-  const subtotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  const discountAmount = cart.reduce((sum, item) => {
+  // Separate returned items (negative qty) and purchased items (positive qty)
+  const returnItems = cart.filter(item => item.quantity < 0);
+  const purchaseItems = cart.filter(item => item.quantity > 0);
+  const hasExchange = returnItems.length > 0 && purchaseItems.length > 0;
+  const hasReturnsOnly = returnItems.length > 0 && purchaseItems.length === 0;
+
+  const subtotal = cart.reduce((sum, item) => sum + item.unitPrice * Math.abs(item.quantity), 0);
+  const returnTotal = returnItems.reduce((sum, item) => {
+    const itemTotal = item.unitPrice * Math.abs(item.quantity);
+    return sum + (itemTotal - Math.round((itemTotal * item.discountPercent) / 100));
+  }, 0);
+  const purchaseTotal = purchaseItems.reduce((sum, item) => {
     const itemTotal = item.unitPrice * item.quantity;
+    return sum + (itemTotal - Math.round((itemTotal * item.discountPercent) / 100));
+  }, 0);
+  const discountAmount = cart.reduce((sum, item) => {
+    const itemTotal = item.unitPrice * Math.abs(item.quantity);
     return sum + Math.round((itemTotal * item.discountPercent) / 100);
   }, 0);
-  const totalAmount = subtotal - discountAmount;
+  const netBalance = purchaseTotal - returnTotal;
+  // If negative balance, customer gets a credit note (we don't pay back)
+  const creditNoteAmount = netBalance < 0 ? Math.abs(netBalance) : 0;
+  const totalAmount = Math.max(0, netBalance);
 
   const createNewCustomer = async () => {
     if (!newCustomerName.trim()) {
@@ -324,26 +332,97 @@ const AdminBilling = () => {
 
   // Fast print function - uses iframe for reliable printing
   const printInvoiceDirectly = useCallback((invoiceData: any) => {
-    const itemsHtml = invoiceData.items
-      .map(
-        (item: CartItem, index: number) => {
+    const isExchange = invoiceData.hasExchange;
+    const allItems = invoiceData.items as CartItem[];
+    
+    // Build items HTML - separate returns and purchases for exchange bills
+    let itemsHtml = "";
+    let sno = 1;
+    
+    if (isExchange) {
+      // Show returned items first
+      const returns = allItems.filter((item: CartItem) => item.quantity < 0);
+      const purchases = allItems.filter((item: CartItem) => item.quantity > 0);
+      
+      if (returns.length > 0) {
+        itemsHtml += `<tr><td colspan="7" style="background: #fee; font-weight: 800; font-size: 11px; padding: 6px; border-bottom: 2px solid #c00;">⬇ RETURNED ITEMS</td></tr>`;
+        returns.forEach((item: CartItem) => {
+          const absQty = Math.abs(item.quantity);
+          const itemTotal = item.unitPrice * absQty;
+          const itemDiscount = Math.round((itemTotal * item.discountPercent) / 100);
+          const itemNet = itemTotal - itemDiscount;
+          itemsHtml += `
+            <tr style="color: #c00;">
+              <td style="text-align: center;">${sno++}</td>
+              <td>${item.product.name}${item.size ? ` (${item.size})` : ""}${item.color ? ` - ${item.color}` : ""}</td>
+              <td style="text-align: center; font-family: monospace; font-size: 11px;">${item.product.sku || "-"}</td>
+              <td style="text-align: center;">${absQty}</td>
+              <td style="text-align: right;">${formatCurrency(item.unitPrice)}</td>
+              <td style="text-align: center;">${item.discountPercent > 0 ? item.discountPercent + '%' : '-'}</td>
+              <td style="text-align: right;">-${formatCurrency(itemNet)}</td>
+            </tr>`;
+        });
+      }
+      
+      if (purchases.length > 0) {
+        itemsHtml += `<tr><td colspan="7" style="background: #efe; font-weight: 800; font-size: 11px; padding: 6px; border-bottom: 2px solid #090;">⬆ PURCHASED ITEMS</td></tr>`;
+        purchases.forEach((item: CartItem) => {
           const itemTotal = item.unitPrice * item.quantity;
           const itemDiscount = Math.round((itemTotal * item.discountPercent) / 100);
           const itemNet = itemTotal - itemDiscount;
-          return `
+          itemsHtml += `
+            <tr>
+              <td style="text-align: center;">${sno++}</td>
+              <td>${item.product.name}${item.size ? ` (${item.size})` : ""}${item.color ? ` - ${item.color}` : ""}</td>
+              <td style="text-align: center; font-family: monospace; font-size: 11px;">${item.product.sku || "-"}</td>
+              <td style="text-align: center;">${item.quantity}</td>
+              <td style="text-align: right;">${formatCurrency(item.unitPrice)}</td>
+              <td style="text-align: center;">${item.discountPercent > 0 ? item.discountPercent + '%' : '-'}</td>
+              <td style="text-align: right;">${formatCurrency(itemNet)}</td>
+            </tr>`;
+        });
+      }
+    } else {
+      // Normal bill - no exchange
+      allItems.forEach((item: CartItem) => {
+        const itemTotal = item.unitPrice * item.quantity;
+        const itemDiscount = Math.round((itemTotal * item.discountPercent) / 100);
+        const itemNet = itemTotal - itemDiscount;
+        itemsHtml += `
           <tr>
-            <td style="text-align: center;">${index + 1}</td>
+            <td style="text-align: center;">${sno++}</td>
             <td>${item.product.name}${item.size ? ` (${item.size})` : ""}${item.color ? ` - ${item.color}` : ""}</td>
             <td style="text-align: center; font-family: monospace; font-size: 11px;">${item.product.sku || "-"}</td>
             <td style="text-align: center;">${item.quantity}</td>
             <td style="text-align: right;">${formatCurrency(item.unitPrice)}</td>
             <td style="text-align: center;">${item.discountPercent > 0 ? item.discountPercent + '%' : '-'}</td>
             <td style="text-align: right;">${formatCurrency(itemNet)}</td>
-          </tr>
-        `;
-        }
-      )
-      .join("");
+          </tr>`;
+      });
+    }
+
+    // Build totals section
+    let totalsHtml = "";
+    if (isExchange) {
+      totalsHtml += `<div>Return Value: -${formatCurrency(invoiceData.returnTotal)}</div>`;
+      totalsHtml += `<div>Purchase Value: ${formatCurrency(invoiceData.purchaseTotal)}</div>`;
+      if (invoiceData.discountAmount > 0) {
+        totalsHtml += `<div>Discount: -${formatCurrency(invoiceData.discountAmount)}</div>`;
+      }
+      if (invoiceData.creditNoteAmount > 0) {
+        totalsHtml += `<div style="font-size: 16px; color: #b45309; font-weight: 900; margin-top: 8px; padding: 8px; border: 2px solid #b45309; background: #fef3c7;">CREDIT NOTE: ${formatCurrency(invoiceData.creditNoteAmount)}</div>`;
+        totalsHtml += `<div style="font-size: 11px; font-style: italic; margin-top: 4px;">This credit note can be used for future purchases</div>`;
+      } else {
+        totalsHtml += `<div class="total">Balance to Pay: ${formatCurrency(invoiceData.totalAmount)}</div>`;
+      }
+    } else {
+      if (invoiceData.discountAmount > 0) {
+        totalsHtml += `<div>Subtotal: ${formatCurrency(invoiceData.purchaseTotal + invoiceData.discountAmount)}</div>`;
+        totalsHtml += `<div>Discount: -${formatCurrency(invoiceData.discountAmount)}</div>`;
+      }
+      totalsHtml += `<div class="total">Net Total: ${formatCurrency(invoiceData.totalAmount)}</div>`;
+    }
+    totalsHtml += `<div class="gst-note" style="font-size: 11px; font-style: italic; margin-top: 6px;">Inclusive of all taxes</div>`;
 
     const logoUrl = `${window.location.origin}/noor-logo-bill.png`;
     const printContent = `
@@ -359,6 +438,7 @@ const AdminBilling = () => {
             .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 8px; margin-bottom: 10px; }
             .header h1 { color: #000; margin: 0; font-size: 22px; font-weight: 900; letter-spacing: 3px; }
             .header p { margin: 2px 0; color: #000; font-weight: 600; font-size: 12px; }
+            .exchange-badge { display: inline-block; background: #000; color: #fff; padding: 3px 12px; font-size: 10px; font-weight: 800; letter-spacing: 2px; margin-top: 4px; }
             .invoice-details { display: flex; justify-content: space-between; margin-bottom: 20px; color: #000; }
             .invoice-details p { color: #000; font-weight: 500; margin: 2px 0; }
             .invoice-details strong { color: #000; font-weight: 800; }
@@ -389,7 +469,8 @@ const AdminBilling = () => {
             <p>Moti Bazar Parade Jammu, 180001</p>
             <p>Phone: 6006364546</p>
             <p>GSTIN: 01NXZPS2503D1Z8</p>
-            <p style="margin-top: 8px; font-size: 16px; font-weight: 900; letter-spacing: 2px;">TAX INVOICE</p>
+            <p style="margin-top: 8px; font-size: 16px; font-weight: 900; letter-spacing: 2px;">${isExchange ? "EXCHANGE INVOICE" : "TAX INVOICE"}</p>
+            ${isExchange ? `<span class="exchange-badge">EXCHANGE / RETURN</span>` : ""}
           </div>
           <div class="invoice-details">
             <div>
@@ -400,6 +481,7 @@ const AdminBilling = () => {
             </div>
             <div>
               <p><strong>Payment:</strong> ${invoiceData.paymentMethod.toUpperCase()}</p>
+              ${isExchange ? `<p><strong>Type:</strong> EXCHANGE</p>` : ""}
             </div>
           </div>
           <table>
@@ -418,11 +500,8 @@ const AdminBilling = () => {
               ${itemsHtml}
             </tbody>
           </table>
-           <div class="totals">
-            <div>Subtotal: ${formatCurrency(invoiceData.subtotal)}</div>
-            ${invoiceData.discountAmount > 0 ? `<div>Discount: -${formatCurrency(invoiceData.discountAmount)}</div>` : ""}
-            <div class="total">Net Total: ${formatCurrency(invoiceData.totalAmount)}</div>
-            <div class="gst-note" style="font-size: 11px; font-style: italic; margin-top: 6px;">Inclusive of all taxes</div>
+          <div class="totals">
+            ${totalsHtml}
           </div>
           <div class="footer">
             <p>Thank you for shopping with us!</p>
@@ -505,13 +584,32 @@ const AdminBilling = () => {
       return;
     }
 
+    // Validate no zero-qty items
+    const zeroQtyItems = cart.filter(item => item.quantity === 0);
+    if (zeroQtyItems.length > 0) {
+      toast({
+        title: "Error",
+        description: "Remove items with 0 quantity",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSubmitting(true);
     const startTime = Date.now();
 
     try {
       const orderNumber = generateOrderNumber();
+      const isExchange = returnItems.length > 0;
+      const orderNotes = [
+        notes,
+        `In-store ${isExchange ? "exchange" : "purchase"} - ${paymentMethod}`,
+        paymentMethod === "double" ? `(Cash: ₹${cashAmount}, Card/UPI: ₹${cardUpiAmount})` : "",
+        paymentMethod === "credit" ? `(Credit: ₹${creditAmount || totalAmount})` : "",
+        creditNoteAmount > 0 ? `CREDIT NOTE ISSUED: ₹${creditNoteAmount}` : "",
+      ].filter(Boolean).join(" ");
 
-      // Run order creation and items preparation in parallel
+      // Run order creation
       const orderPromise = supabase
         .from("orders")
         .insert({
@@ -520,12 +618,12 @@ const AdminBilling = () => {
           user_id: null,
           salesman_id: selectedSalesman?.id || null,
           status: needsAlteration ? "processing" : "delivered",
-          payment_status: paymentMethod === "credit" ? "pending" : "paid",
-          subtotal: subtotal,
+          payment_status: creditNoteAmount > 0 ? "paid" : (paymentMethod === "credit" ? "pending" : "paid"),
+          subtotal: purchaseTotal,
           tax_amount: 0,
           discount_amount: discountAmount,
           total_amount: totalAmount,
-          notes: notes || `In-store purchase - ${paymentMethod}${paymentMethod === "double" ? ` (Cash: ₹${cashAmount}, Card/UPI: ₹${cardUpiAmount})` : ""}${paymentMethod === "credit" ? ` (Credit: ₹${creditAmount || totalAmount})` : ""}`,
+          notes: orderNotes,
           created_by: user?.id,
           needs_alteration: needsAlteration,
           alteration_due_date: needsAlteration && alterationDueDate ? alterationDueDate : null,
@@ -540,18 +638,23 @@ const AdminBilling = () => {
       const { data: order, error: orderError } = await orderPromise;
       if (orderError) throw orderError;
 
-      // Prepare invoice data immediately for printing
-      // Invoice number will be generated by DB trigger
-      const invoiceNumber = "pending";
+      // Prepare invoice data for printing
       const invoiceData = {
-        invoiceNumber,
+        invoiceNumber: "pending",
         orderNumber,
         customer: selectedCustomer,
         salesman: selectedSalesman,
         items: [...cart],
+        returnItems: [...returnItems],
+        purchaseItems: [...purchaseItems],
+        returnTotal,
+        purchaseTotal,
         subtotal,
         discountAmount,
         totalAmount,
+        creditNoteAmount,
+        netBalance,
+        hasExchange: isExchange,
         paymentMethod,
         cashAmount,
         cardUpiAmount,
@@ -559,60 +662,64 @@ const AdminBilling = () => {
         date: new Date(),
       };
 
-      // Print after DB operations so we get real invoice number
-
-      // Run remaining operations in parallel
+      // Order items - store abs quantity, mark returns with negative total_price
       const orderItems = cart.map((item) => ({
         order_id: order.id,
         product_id: item.product.id,
         product_name: item.product.name,
         product_sku: item.product.sku || null,
-        quantity: item.quantity,
+        quantity: item.quantity, // negative for returns
         unit_price: item.unitPrice,
-        total_price: Math.round(item.unitPrice * item.quantity * (1 - item.discountPercent / 100)),
+        total_price: (() => {
+          const absQty = Math.abs(item.quantity);
+          const itemTotal = item.unitPrice * absQty;
+          const itemDisc = Math.round((itemTotal * item.discountPercent) / 100);
+          return item.quantity < 0 ? -(itemTotal - itemDisc) : (itemTotal - itemDisc);
+        })(),
         size: item.size,
         color: item.color,
       }));
 
-      // Execute all remaining DB operations in parallel
+      // Execute all DB operations in parallel
       const [, invoiceResult] = await Promise.all([
         // Insert order items
         supabase.from("order_items").insert(orderItems),
         // Create invoice (invoice_number auto-generated by trigger)
         supabase.from("invoices").insert({
-          invoice_number: "placeholder", // Will be overwritten by trigger
+          invoice_number: "placeholder",
           order_id: order.id,
           customer_id: selectedCustomer?.id || null,
           salesman_id: selectedSalesman?.id || null,
-          subtotal: subtotal,
+          subtotal: purchaseTotal,
           tax_amount: 0,
           discount_amount: discountAmount,
           total_amount: totalAmount,
-          payment_status: paymentMethod === "credit" ? "pending" : "paid",
-          notes: notes,
+          payment_status: creditNoteAmount > 0 ? "paid" : (paymentMethod === "credit" ? "pending" : "paid"),
+          notes: creditNoteAmount > 0 ? `Credit Note: ₹${creditNoteAmount}` : notes,
           created_by: user?.id,
         }).select("invoice_number").single(),
-        // Update stock for each product (batch)
-        ...cart.map((item) =>
+        // Update stock for each product
+        // Positive qty -> deduct stock, Negative qty -> add back stock
+        ...cart.filter(item => item.quantity !== 0).map((item) =>
           supabase
             .from("products")
             .update({ stock_quantity: item.product.stock_quantity - item.quantity })
             .eq("id", item.product.id)
         ),
-        // Record stock history (batch)
-        ...cart.map((item) =>
+        // Record stock history
+        ...cart.filter(item => item.quantity !== 0).map((item) =>
           supabase.from("stock_history").insert({
             product_id: item.product.id,
-            change_type: "sale",
-            change_amount: -item.quantity,
+            change_type: item.quantity < 0 ? "return" : "sale",
+            change_amount: -item.quantity, // positive for returns (stock added back), negative for sales
             previous_quantity: item.product.stock_quantity,
             new_quantity: item.product.stock_quantity - item.quantity,
-            notes: `In-store sale - Order ${orderNumber}`,
+            notes: `${item.quantity < 0 ? "Return" : "Sale"} - Order ${orderNumber}`,
             reference_id: order.id,
             created_by: user?.id,
           })
         ),
-        // Update customer stats if selected
+        // Update customer stats (only add positive amount to total_spent)
         selectedCustomer
           ? supabase
               .from("customers")
@@ -623,7 +730,7 @@ const AdminBilling = () => {
               })
               .eq("id", selectedCustomer.id)
           : Promise.resolve(),
-        // Update salesman stats if selected
+        // Update salesman stats
         selectedSalesman
           ? (async () => {
               const { data: currentSalesman } = await supabase
@@ -646,7 +753,7 @@ const AdminBilling = () => {
         createOrderNotification(orderNumber, totalAmount, "pos"),
       ]);
 
-      // Print with real invoice number from DB
+      // Print with real invoice number
       if (invoiceResult?.data?.invoice_number) {
         invoiceData.invoiceNumber = invoiceResult.data.invoice_number;
       }
@@ -657,13 +764,10 @@ const AdminBilling = () => {
 
       toast({
         title: "Success",
-        description: `Bill generated in ${elapsed}ms!`,
+        description: `${isExchange ? "Exchange" : "Bill"} generated in ${elapsed}ms!`,
       });
 
-      // Invalidate product cache so stock reflects correctly everywhere
       queryClient.invalidateQueries({ queryKey: ["products"] });
-
-      // Navigate to dashboard immediately
       navigate("/admin");
     } catch (error) {
       console.error("Error generating bill:", error);
@@ -922,9 +1026,11 @@ const AdminBilling = () => {
             ) : (
               <div className="grid grid-cols-2 gap-2">
                 {cart.map((item, index) => (
-                  <div
+                    <div
                     key={index}
-                    className="border border-border rounded-lg p-2 space-y-1"
+                    className={`border rounded-lg p-2 space-y-1 ${
+                      item.quantity < 0 ? "border-destructive/50 bg-destructive/5" : "border-border"
+                    }`}
                   >
                     <div className="flex justify-between items-start gap-1">
                       <div className="flex-1 min-w-0">
@@ -985,33 +1091,25 @@ const AdminBilling = () => {
                       )}
 
                       <div className="flex items-center gap-0.5 ml-auto">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() =>
-                            updateCartItem(index, {
-                              quantity: Math.max(1, item.quantity - 1),
-                            })
-                          }
-                        >
-                          <Minus className="h-2.5 w-2.5" />
-                        </Button>
-                        <span className="w-5 text-center text-xs font-medium">
-                          {item.quantity}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() => {
-                            if (item.quantity < item.product.stock_quantity) {
-                              updateCartItem(index, { quantity: item.quantity + 1 });
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={item.quantity}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/[^0-9-]/g, "");
+                            if (val === "" || val === "-") {
+                              updateCartItem(index, { quantity: 0 });
+                              return;
+                            }
+                            const num = parseInt(val, 10);
+                            if (!isNaN(num)) {
+                              updateCartItem(index, { quantity: num });
                             }
                           }}
-                        >
-                          <Plus className="h-2.5 w-2.5" />
-                        </Button>
+                          className={`w-10 h-6 text-xs font-bold text-center border rounded bg-background focus:outline-none focus:ring-1 focus:ring-ring ${
+                            item.quantity < 0 ? "border-destructive text-destructive" : "border-border"
+                          }`}
+                        />
                       </div>
                     </div>
 
@@ -1033,8 +1131,16 @@ const AdminBilling = () => {
                         />
                         <span className="text-xs font-medium text-muted-foreground">%</span>
                       </div>
-                      <div className="text-right text-xs font-semibold text-primary">
-                        {formatCurrency(item.unitPrice * item.quantity - Math.round((item.unitPrice * item.quantity * item.discountPercent) / 100))}
+                      <div className={`text-right text-xs font-semibold ${item.quantity < 0 ? "text-destructive" : "text-primary"}`}>
+                        {item.quantity < 0 ? "RETURN " : ""}
+                        {formatCurrency(
+                          (() => {
+                            const absQty = Math.abs(item.quantity);
+                            const itemTotal = item.unitPrice * absQty;
+                            const itemDisc = Math.round((itemTotal * item.discountPercent) / 100);
+                            return item.quantity < 0 ? -(itemTotal - itemDisc) : (itemTotal - itemDisc);
+                          })()
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1046,19 +1152,35 @@ const AdminBilling = () => {
           {/* Billing Summary */}
           <div className="bg-background rounded-lg p-4 shadow-sm space-y-4">
             <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-foreground">Subtotal</span>
-                <span>{formatCurrency(subtotal)}</span>
-              </div>
+              {returnTotal > 0 && (
+                <div className="flex justify-between text-sm text-destructive">
+                  <span>Return Value</span>
+                  <span>-{formatCurrency(returnTotal)}</span>
+                </div>
+              )}
+              {purchaseTotal > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-foreground">Purchase Value</span>
+                  <span>{formatCurrency(purchaseTotal)}</span>
+                </div>
+              )}
               {discountAmount > 0 && (
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Discount</span>
+                  <span>Total Discount</span>
                   <span>-{formatCurrency(discountAmount)}</span>
                 </div>
               )}
+              {creditNoteAmount > 0 && (
+                <div className="flex justify-between text-sm font-semibold text-amber-600">
+                  <span>Credit Note Issued</span>
+                  <span>{formatCurrency(creditNoteAmount)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-lg font-bold pt-2 border-t border-border">
-                <span>Net Total</span>
-                <span className="text-primary">{formatCurrency(totalAmount)}</span>
+                <span>{creditNoteAmount > 0 ? "Credit Note" : (hasExchange ? "Balance to Pay" : "Net Total")}</span>
+                <span className={creditNoteAmount > 0 ? "text-amber-600" : "text-primary"}>
+                  {creditNoteAmount > 0 ? formatCurrency(creditNoteAmount) : formatCurrency(totalAmount)}
+                </span>
               </div>
             </div>
 
