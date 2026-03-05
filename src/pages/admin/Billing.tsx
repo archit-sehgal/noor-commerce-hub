@@ -1226,13 +1226,15 @@ const AdminBilling = () => {
                       }}
                       onBlur={(e) => {
                         const desiredTotal = parseFloat(e.target.value);
-                        if (isNaN(desiredTotal) || subtotal === 0) return;
-                        // Calculate the overall discount % needed
-                        const overallDiscPercent = Math.max(0, Math.min(100, ((subtotal - desiredTotal) / subtotal) * 100));
+                        const purchaseGross = purchaseItems.reduce((s, item) => s + item.unitPrice * item.quantity, 0);
+                        if (isNaN(desiredTotal) || purchaseGross === 0) return;
+                        const desiredPurchaseNet = desiredTotal + returnTotal;
+                        const overallDiscPercent = Math.max(0, Math.min(100, ((purchaseGross - desiredPurchaseNet) / purchaseGross) * 100));
                         const rounded = Math.round(overallDiscPercent * 100) / 100;
-                        // Apply equally to all items
-                        cart.forEach((_, idx) => {
-                          updateCartItem(idx, { discountPercent: rounded });
+                        cart.forEach((item, idx) => {
+                          if (item.quantity > 0) {
+                            updateCartItem(idx, { discountPercent: rounded });
+                          }
                         });
                       }}
                       onKeyDown={(e) => {
