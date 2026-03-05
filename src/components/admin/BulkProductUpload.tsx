@@ -94,40 +94,17 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
 
   // Category detection from item name prefix (before "-")
   // Categories are matched case-insensitively and with flexible matching
-  const CATEGORY_MAP: Record<string, string> = {
-    "LEHENGA": "LEHENGA",
-    "RM DRESS": "RM DRESS", 
-    "SAREE": "SAREE",
-    "SUIT": "SUIT",
-  };
+  // No hardcoded category map - categories are auto-detected from item details prefix
 
   const detectCategory = (itemDetails: string): string | null => {
     if (!itemDetails) return null;
     
-    // Get prefix before first hyphen, handle case where no hyphen exists
-    const parts = itemDetails.split("-");
-    const prefix = parts[0]?.trim().toUpperCase();
-    if (!prefix) return null;
+    // Get prefix before first hyphen
+    const hyphenIndex = itemDetails.indexOf("-");
+    if (hyphenIndex <= 0) return null;
     
-    // Check for exact match first
-    if (CATEGORY_MAP[prefix]) return CATEGORY_MAP[prefix];
-    
-    // Check if prefix starts with any known category (handles variations like "LEHENGA SET")
-    for (const category of Object.keys(CATEGORY_MAP)) {
-      if (prefix.startsWith(category) || prefix.includes(category)) {
-        return CATEGORY_MAP[category];
-      }
-    }
-    
-    // Also check if any category keyword exists anywhere in the item details
-    const upperDetails = itemDetails.toUpperCase();
-    for (const category of Object.keys(CATEGORY_MAP)) {
-      if (upperDetails.startsWith(category + " ") || upperDetails.startsWith(category + "-")) {
-        return CATEGORY_MAP[category];
-      }
-    }
-    
-    return null; // No category match
+    const prefix = itemDetails.substring(0, hyphenIndex).trim().toUpperCase();
+    return prefix || null;
   };
 
   const parseExcelFile = useCallback(async (selectedFile: File) => {
@@ -177,23 +154,14 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
         return;
       }
 
-      // Parse data rows (limit to 2000 rows max to prevent performance issues)
-      const MAX_ROWS = 10000;
+      // No row limit - process all rows from the file
       const MAX_TEXT_LENGTH = 300;
       const MAX_BCN_LENGTH = 50;
       const MAX_PRICE = 10000000; // 1 crore
       const MAX_STOCK = 1000000;
 
       const products: ParsedProduct[] = [];
-      const dataRows = Math.min(jsonData.length, MAX_ROWS + 1); // +1 for header
-      
-      if (jsonData.length > MAX_ROWS + 1) {
-        toast({
-          title: "Row Limit Exceeded",
-          description: `Only the first ${MAX_ROWS} rows will be processed. File has ${jsonData.length - 1} data rows.`,
-          variant: "destructive",
-        });
-      }
+      const dataRows = jsonData.length;
 
       for (let i = 1; i < dataRows; i++) {
         const row = jsonData[i] as (string | number)[];

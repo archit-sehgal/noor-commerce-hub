@@ -65,8 +65,9 @@ export const useProducts = (options?: {
         .select(`
           *,
           category:categories(id, name, slug)
-        `)
-        .order("name", { ascending: true });
+        `, { count: 'exact' })
+        .order("name", { ascending: true })
+        .range(0, 9999);
 
       // Only filter by is_active if includeInactive is not true
       if (!options?.includeInactive) {
