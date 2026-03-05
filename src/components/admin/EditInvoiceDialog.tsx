@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Trash2, Plus, Search } from "lucide-react";
@@ -54,6 +55,7 @@ const EditInvoiceDialog = ({
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [orderId, setOrderId] = useState<string | null>(null);
   const [discountAmount, setDiscountAmount] = useState(0);
+  const [paymentStatus, setPaymentStatus] = useState<string>("paid");
   const [items, setItems] = useState<OrderItem[]>([]);
   const [removedItems, setRemovedItems] = useState<OrderItem[]>([]);
   const [addedItems, setAddedItems] = useState<OrderItem[]>([]);
@@ -87,6 +89,7 @@ const EditInvoiceDialog = ({
       setInvoiceNumber(data.invoice_number);
       setOrderId(data.order_id);
       setDiscountAmount(data.discount_amount || 0);
+      setPaymentStatus(data.payment_status);
 
       // Fetch order items if linked to an order
       if (data.order_id) {
@@ -206,19 +209,21 @@ const EditInvoiceDialog = ({
         }).eq("id", item.id);
       }
 
-      // 4. Update invoice totals
+      // 4. Update invoice totals + payment status
       await supabase.from("invoices").update({
         subtotal,
         discount_amount: discountAmount,
         total_amount: totalAmount,
+        payment_status: paymentStatus as any,
       }).eq("id", invoiceId);
 
-      // 5. Update linked order totals
+      // 5. Update linked order totals + payment status
       if (orderId) {
         await supabase.from("orders").update({
           subtotal,
           discount_amount: discountAmount,
           total_amount: totalAmount,
+          payment_status: paymentStatus as any,
         }).eq("id", orderId);
       }
 
@@ -358,6 +363,22 @@ const EditInvoiceDialog = ({
                 <span>Total</span>
                 <span className="text-primary">{formatCurrency(totalAmount)}</span>
               </div>
+            </div>
+
+            {/* Payment Status */}
+            <div className="space-y-1">
+              <Label className="text-sm font-semibold">Payment Status</Label>
+              <Select value={paymentStatus} onValueChange={setPaymentStatus}>
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="failed">Failed</SelectItem>
+                  <SelectItem value="refunded">Refunded</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {removedItems.length > 0 && (
