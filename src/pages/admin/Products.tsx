@@ -226,7 +226,7 @@ const AdminProducts = () => {
         {/* Top Row - Main Actions */}
         <div className="flex flex-wrap gap-2 justify-between">
           <div className="flex gap-2 flex-wrap">
-            <AlertDialog>
+            <AlertDialog onOpenChange={(open) => { if (!open) setRemoveAllCode(""); }}>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" disabled={isClearing || !products?.length}>
                   <AlertTriangle className="h-4 w-4 mr-2" />
@@ -251,22 +251,22 @@ const AdminProducts = () => {
                   />
                 </div>
                 <AlertDialogFooter>
-                  <AlertDialogCancel onClick={() => setRemoveAllCode("")}>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={(e) => {
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <Button
+                    variant="destructive"
+                    disabled={!removeAllCode}
+                    onClick={() => {
                       if (removeAllCode !== "2004") {
-                        e.preventDefault();
                         toast({ title: "Invalid security code", variant: "destructive" });
+                        setRemoveAllCode("");
                         return;
                       }
                       setRemoveAllCode("");
                       handleRemoveAllInventory();
                     }}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    disabled={!removeAllCode}
                   >
                     Yes, Remove All
-                  </AlertDialogAction>
+                  </Button>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
