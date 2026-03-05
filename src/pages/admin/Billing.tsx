@@ -1163,38 +1163,15 @@ const AdminBilling = () => {
                         />
                         <span className="text-xs font-medium text-muted-foreground">%</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Label className="text-xs font-medium text-muted-foreground">Net:</Label>
-                        {item.quantity < 0 && <span className="text-xs text-destructive font-semibold">RTN</span>}
-                        <span className="text-xs text-muted-foreground">₹</span>
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          defaultValue={(() => {
-                            const absQty = Math.abs(item.quantity);
-                            const itemTotal = item.unitPrice * absQty;
-                            const itemDisc = Math.round((itemTotal * item.discountPercent) / 100);
-                            return String(itemTotal - itemDisc);
-                          })()}
-                          key={`net-${item.product}-${item.quantity}-${item.discountPercent}-${item.unitPrice}`}
-                          onFocus={(e) => e.target.select()}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/[^0-9.]/g, "");
-                            e.target.value = val;
-                          }}
-                          onBlur={(e) => {
-                            const desiredNet = parseFloat(e.target.value);
-                            const absQty = Math.abs(item.quantity);
-                            const itemTotal = item.unitPrice * absQty;
-                            if (isNaN(desiredNet) || itemTotal === 0) {
-                              return;
-                            }
-                            const newDiscPercent = Math.max(0, Math.min(100, ((itemTotal - desiredNet) / itemTotal) * 100));
-                            const rounded = Math.round(newDiscPercent * 100) / 100;
-                            updateCartItem(index, { discountPercent: rounded });
-                          }}
-                          className="w-16 h-6 text-xs font-semibold text-right border border-border rounded bg-background focus:outline-none focus:ring-1 focus:ring-ring px-1"
-                        />
+                      <div className={`text-right text-xs font-semibold ${item.quantity < 0 ? "text-destructive" : "text-primary"}`}>
+                        {item.quantity < 0 && <span>RETURN </span>}
+                        {formatCurrency((() => {
+                          const absQty = Math.abs(item.quantity);
+                          const itemTotal = item.unitPrice * absQty;
+                          const itemDisc = Math.round((itemTotal * item.discountPercent) / 100);
+                          const net = itemTotal - itemDisc;
+                          return item.quantity < 0 ? -net : net;
+                        })())}
                       </div>
                     </div>
                   </div>
@@ -1230,11 +1207,40 @@ const AdminBilling = () => {
                   <span>{formatCurrency(creditNoteAmount)}</span>
                 </div>
               )}
-              <div className="flex justify-between text-lg font-bold pt-2 border-t border-border">
+              <div className="flex justify-between items-center text-lg font-bold pt-2 border-t border-border">
                 <span>{creditNoteAmount > 0 ? "Credit Note" : (hasExchange ? "Balance to Pay" : "Net Total")}</span>
-                <span className={creditNoteAmount > 0 ? "text-amber-600" : "text-primary"}>
-                  {creditNoteAmount > 0 ? formatCurrency(creditNoteAmount) : formatCurrency(totalAmount)}
-                </span>
+                {creditNoteAmount > 0 ? (
+                  <span className="text-amber-600">{formatCurrency(creditNoteAmount)}</span>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm text-muted-foreground">₹</span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      defaultValue={String(totalAmount)}
+                      key={`total-net-${totalAmount}-${cart.map(i => `${i.discountPercent}`).join(",")}`}
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => {
+                        e.target.value = e.target.value.replace(/[^0-9.]/g, "");
+                      }}
+                      onBlur={(e) => {
+                        const desiredTotal = parseFloat(e.target.value);
+                        if (isNaN(desiredTotal) || subtotal === 0) return;
+                        // Calculate the overall discount % needed
+                        const overallDiscPercent = Math.max(0, Math.min(100, ((subtotal - desiredTotal) / subtotal) * 100));
+                        const rounded = Math.round(overallDiscPercent * 100) / 100;
+                        // Apply equally to all items
+                        cart.forEach((_, idx) => {
+                          updateCartItem(idx, { discountPercent: rounded });
+                        });
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") e.currentTarget.blur();
+                      }}
+                      className="w-24 h-8 text-lg font-bold text-right border border-border rounded bg-background focus:outline-none focus:ring-2 focus:ring-ring px-2 text-primary"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
