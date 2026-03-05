@@ -47,7 +47,6 @@ interface Product {
   stock_quantity: number;
   sizes: string[] | null;
   colors: string[] | null;
-  gst_rate: number | null;
 }
 
 interface CartItem {
@@ -123,7 +122,7 @@ const AdminBilling = () => {
     try {
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, sku, price, discount_price, stock_quantity, sizes, colors, gst_rate")
+        .select("id, name, sku, price, discount_price, stock_quantity, sizes, colors")
         .eq("is_active", true)
         .gt("stock_quantity", 0)
         .order("name");
@@ -246,14 +245,6 @@ const AdminBilling = () => {
   };
 
   const subtotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  // Calculate GST amount extracted from inclusive prices
-  const gstAmount = cart.reduce((sum, item) => {
-    const gstRate = item.product.gst_rate || 0;
-    const itemTotal = item.unitPrice * item.quantity;
-    const gst = gstRate > 0 ? itemTotal - (itemTotal / (1 + gstRate / 100)) : 0;
-    return sum + Math.round(gst);
-  }, 0);
-  const baseAmount = subtotal - gstAmount; // Price before GST
   const discountAmount = cart.reduce((sum, item) => {
     const itemTotal = item.unitPrice * item.quantity;
     return sum + Math.round((itemTotal * item.discountPercent) / 100);
@@ -513,7 +504,7 @@ const AdminBilling = () => {
           status: needsAlteration ? "processing" : "delivered",
           payment_status: paymentMethod === "credit" ? "pending" : "paid",
           subtotal: subtotal,
-          tax_amount: gstAmount,
+          tax_amount: 0,
           discount_amount: discountAmount,
           total_amount: totalAmount,
           notes: notes || `In-store purchase - ${paymentMethod}${paymentMethod === "double" ? ` (Cash: ₹${cashAmount}, Card/UPI: ₹${cardUpiAmount})` : ""}${paymentMethod === "credit" ? ` (Credit: ₹${creditAmount || totalAmount})` : ""}`,
@@ -541,8 +532,6 @@ const AdminBilling = () => {
         salesman: selectedSalesman,
         items: [...cart],
         subtotal,
-        gstAmount,
-        baseAmount,
         discountAmount,
         totalAmount,
         paymentMethod,
@@ -578,7 +567,7 @@ const AdminBilling = () => {
           customer_id: selectedCustomer?.id || null,
           salesman_id: selectedSalesman?.id || null,
           subtotal: subtotal,
-          tax_amount: gstAmount,
+          tax_amount: 0,
           discount_amount: discountAmount,
           total_amount: totalAmount,
           payment_status: paymentMethod === "credit" ? "pending" : "paid",

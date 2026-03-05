@@ -55,7 +55,6 @@ interface OrderItem {
   total_price: number;
   size: string | null;
   color: string | null;
-  gst_rate?: number;
 }
 
 const AdminInvoices = () => {
@@ -117,24 +116,7 @@ const AdminInvoices = () => {
       .eq("order_id", orderId);
 
     if (!error && data) {
-      // Fetch GST rates for products
-      const productIds = data.map(i => i.product_id).filter(Boolean) as string[];
-      let gstMap: Record<string, number> = {};
-      if (productIds.length > 0) {
-        const { data: products } = await supabase
-          .from("products")
-          .select("id, gst_rate")
-          .in("id", productIds);
-        if (products) {
-          for (const p of products) {
-            gstMap[p.id] = p.gst_rate || 0;
-          }
-        }
-      }
-      setOrderItems(data.map(item => ({
-        ...item,
-        gst_rate: item.product_id ? (gstMap[item.product_id] || 0) : 0,
-      })));
+      setOrderItems(data);
     }
   };
 
