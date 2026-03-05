@@ -92,19 +92,6 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
     return `${baseSlug}-${bcn.toLowerCase()}`;
   };
 
-  // Build a meaningful product name from item details and design number
-  const buildProductName = (itemDetails: string, designNumber: string): string => {
-    // Extract category prefix (before first "-")
-    const hyphenIndex = itemDetails.indexOf("-");
-    const categoryPrefix = hyphenIndex > 0 ? itemDetails.substring(0, hyphenIndex).trim() : itemDetails.trim();
-    
-    if (designNumber && designNumber.trim()) {
-      return `${categoryPrefix} - ${designNumber.trim()}`;
-    }
-    // Fallback to full item details if no design number
-    return itemDetails;
-  };
-
   // Category detection from item name prefix (before "-")
   // Categories are matched case-insensitively and with flexible matching
   const CATEGORY_MAP: Record<string, string> = {
@@ -347,7 +334,7 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
           (batchIndex + 1) * batchSize
         );
 
-        // Fetch categories once per batch to reduce queries
+        // Fetch existing categories
         const { data: categories } = await supabase
           .from("categories")
           .select("id, name");
@@ -356,6 +343,24 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
         categories?.forEach(cat => {
           categoryMap.set(cat.name.toUpperCase(), cat.id);
         });
+
+        // Auto-create missing categories detected in this batch
+        const batchCategories = new Set(
+          batch.map(p => p.detectedCategory).filter(Boolean) as string[]
+        );
+        for (const catName of batchCategories) {
+          if (!categoryMap.has(catName)) {
+            const slug = catName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+            const { data: newCat } = await supabase
+              .from("categories")
+              .insert({ name: catName, slug, is_active: true })
+              .select("id")
+              .single();
+            if (newCat) {
+              categoryMap.set(catName, newCat.id);
+            }
+          }
+        }
 
         await Promise.all(
           batch.map(async (product, idx) => {
@@ -378,12 +383,10 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
                 const previousQty = existing.stock_quantity;
                 const newQty = product.closingQty;
 
-                const productName = buildProductName(product.itemDetails, product.designNumber);
-                
                 const { error: updateError } = await supabase
                   .from("products")
                   .update({
-                    name: productName,
+                    name: product.itemDetails,
                     design_number: product.designNumber,
                     price: product.mrp,
                     discount_price: product.salePrice !== product.mrp ? product.salePrice : null,
@@ -411,13 +414,12 @@ const BulkProductUpload = ({ open, onOpenChange }: BulkProductUploadProps) => {
                 result.updated++;
               } else {
                 // Create new product
-                const productName = buildProductName(product.itemDetails, product.designNumber);
-                const slug = generateSlug(productName, product.bcn);
+                const slug = generateSlug(product.itemDetails, product.bcn);
                 
                 const { data: newProduct, error: insertError } = await supabase
                   .from("products")
                   .insert({
-                    name: productName,
+                    name: product.itemDetails,
                     slug,
                     sku: product.bcn,
                     design_number: product.designNumber,
