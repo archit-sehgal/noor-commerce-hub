@@ -671,7 +671,8 @@ const AdminOrders = () => {
         order.order_number.toLowerCase().includes(q) ||
         order.customer?.name?.toLowerCase().includes(q) ||
         order.customer?.email?.toLowerCase().includes(q) ||
-        order.customer?.phone?.includes(searchQuery);
+        order.customer?.phone?.includes(searchQuery) ||
+        order.invoice_number?.toLowerCase().includes(q);
 
       const matchesStatus =
         statusFilter === "all" || order.status === statusFilter;
@@ -1090,7 +1091,7 @@ const AdminOrders = () => {
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
-            <Input placeholder="Search orders..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
+            <Input placeholder="Search by order #, invoice #, customer name, phone..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-[180px]">

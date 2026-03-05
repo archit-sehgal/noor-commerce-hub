@@ -41,7 +41,8 @@ const Alterations = () => {
         .select(`
           *,
           customer:customers(id, name, phone, email),
-          order_items(id, product_name, product_sku, quantity, size, color)
+          order_items(id, product_name, product_sku, quantity, size, color),
+          invoices(invoice_number)
         `)
         .eq("needs_alteration", true)
         .order("alteration_due_date", { ascending: true });
@@ -52,7 +53,10 @@ const Alterations = () => {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return (data || []).map((order: any) => ({
+        ...order,
+        invoice_number: order.invoices?.[0]?.invoice_number || null,
+      }));
     },
   });
 
@@ -75,14 +79,15 @@ const Alterations = () => {
   });
 
   // Filter orders based on search (by alteration number, customer phone, or order number)
-  const filteredOrders = alterationOrders?.filter((order) => {
+  const filteredOrders = alterationOrders?.filter((order: any) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
       order.order_number?.toLowerCase().includes(query) ||
       order.customer?.name?.toLowerCase().includes(query) ||
       order.customer?.phone?.toLowerCase().includes(query) ||
-      order.alteration_number?.toLowerCase().includes(query)
+      order.alteration_number?.toLowerCase().includes(query) ||
+      order.invoice_number?.toLowerCase().includes(query)
     );
   });
 
@@ -171,7 +176,7 @@ const Alterations = () => {
                 <div className="relative flex-1 md:w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                    <Input
-                    placeholder="Search by alteration #, phone, order #..."
+                    placeholder="Search by alteration #, invoice #, customer name, phone..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9 border-gold/20"
