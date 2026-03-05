@@ -60,44 +60,63 @@ export const useProducts = (options?: {
   return useQuery({
     queryKey: ["products", options],
     queryFn: async () => {
-      let query = supabase
-        .from("products")
-        .select(`
-          *,
-          category:categories(id, name, slug)
-        `, { count: 'exact' })
-        .order("name", { ascending: true })
-        .range(0, 9999);
+      // Fetch all products using pagination to bypass the 1000 row default limit
+      const PAGE_SIZE = 1000;
+      let allData: any[] = [];
+      let from = 0;
+      let hasMore = true;
 
-      // Only filter by is_active if includeInactive is not true
-      if (!options?.includeInactive) {
-        query = query.eq("is_active", true);
-      }
-
-      if (options?.featured) {
-        query = query.eq("is_featured", true);
-      }
-
+      // Build category filter if needed
+      let categoryId: string | null = null;
       if (options?.categorySlug) {
         const { data: category } = await supabase
           .from("categories")
           .select("id")
           .eq("slug", options.categorySlug)
           .single();
+        categoryId = category?.id || null;
+      }
 
-        if (category) {
-          query = query.eq("category_id", category.id);
+      while (hasMore) {
+        let query = supabase
+          .from("products")
+          .select(`
+            *,
+            category:categories(id, name, slug)
+          `)
+          .order("name", { ascending: true })
+          .range(from, from + PAGE_SIZE - 1);
+
+        if (!options?.includeInactive) {
+          query = query.eq("is_active", true);
+        }
+
+        if (options?.featured) {
+          query = query.eq("is_featured", true);
+        }
+
+        if (categoryId) {
+          query = query.eq("category_id", categoryId);
+        }
+
+        if (options?.limit && allData.length + PAGE_SIZE >= options.limit) {
+          query = query.limit(options.limit - allData.length);
+          hasMore = false;
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        allData = allData.concat(data || []);
+        
+        if (!data || data.length < PAGE_SIZE) {
+          hasMore = false;
+        } else {
+          from += PAGE_SIZE;
         }
       }
 
-      if (options?.limit) {
-        query = query.limit(options.limit);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      return data as Product[];
+      return allData as Product[];
     },
   });
 };
