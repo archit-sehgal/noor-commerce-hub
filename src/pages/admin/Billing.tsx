@@ -57,7 +57,15 @@ interface CartItem {
   color: string | null;
   unitPrice: number;
   discountPercent: number;
+  discountOverride?: number; // exact discount amount, overrides percent calculation
 }
+
+// Helper: get the actual discount amount for a cart item
+const getItemDiscount = (item: CartItem): number => {
+  const itemTotal = item.unitPrice * Math.abs(item.quantity);
+  if (item.discountOverride !== undefined) return item.discountOverride;
+  return Math.round((itemTotal * item.discountPercent) / 100);
+};
 
 interface Customer {
   id: string;
@@ -261,17 +269,12 @@ const AdminBilling = () => {
 
   const subtotal = cart.reduce((sum, item) => sum + item.unitPrice * Math.abs(item.quantity), 0);
   const returnTotal = returnItems.reduce((sum, item) => {
-    const itemTotal = item.unitPrice * Math.abs(item.quantity);
-    return sum + (itemTotal - Math.round((itemTotal * item.discountPercent) / 100));
+    return sum + (item.unitPrice * Math.abs(item.quantity) - getItemDiscount(item));
   }, 0);
   const purchaseTotal = purchaseItems.reduce((sum, item) => {
-    const itemTotal = item.unitPrice * item.quantity;
-    return sum + (itemTotal - Math.round((itemTotal * item.discountPercent) / 100));
+    return sum + (item.unitPrice * item.quantity - getItemDiscount(item));
   }, 0);
-  const discountAmount = cart.reduce((sum, item) => {
-    const itemTotal = item.unitPrice * Math.abs(item.quantity);
-    return sum + Math.round((itemTotal * item.discountPercent) / 100);
-  }, 0);
+  const discountAmount = cart.reduce((sum, item) => sum + getItemDiscount(item), 0);
   const netBalance = purchaseTotal - returnTotal;
   // If negative balance, customer gets a credit note (we don't pay back)
   const creditNoteAmount = netBalance < 0 ? Math.abs(netBalance) : 0;
@@ -349,7 +352,7 @@ const AdminBilling = () => {
         returns.forEach((item: CartItem) => {
           const absQty = Math.abs(item.quantity);
           const itemTotal = item.unitPrice * absQty;
-          const itemDiscount = Math.round((itemTotal * item.discountPercent) / 100);
+          const itemDiscount = getItemDiscount(item);
           const itemNet = itemTotal - itemDiscount;
           itemsHtml += `
             <tr style="color: #c00;">
@@ -368,7 +371,7 @@ const AdminBilling = () => {
         itemsHtml += `<tr><td colspan="7" style="background: #efe; font-weight: 800; font-size: 11px; padding: 6px; border-bottom: 2px solid #090;">⬆ PURCHASED ITEMS</td></tr>`;
         purchases.forEach((item: CartItem) => {
           const itemTotal = item.unitPrice * item.quantity;
-          const itemDiscount = Math.round((itemTotal * item.discountPercent) / 100);
+          const itemDiscount = getItemDiscount(item);
           const itemNet = itemTotal - itemDiscount;
           itemsHtml += `
             <tr>
@@ -386,7 +389,7 @@ const AdminBilling = () => {
       // Normal bill - no exchange
       allItems.forEach((item: CartItem) => {
         const itemTotal = item.unitPrice * item.quantity;
-        const itemDiscount = Math.round((itemTotal * item.discountPercent) / 100);
+        const itemDiscount = getItemDiscount(item);
         const itemNet = itemTotal - itemDiscount;
         itemsHtml += `
           <tr>
@@ -674,7 +677,7 @@ const AdminBilling = () => {
         total_price: (() => {
           const absQty = Math.abs(item.quantity);
           const itemTotal = item.unitPrice * absQty;
-          const itemDisc = Math.round((itemTotal * item.discountPercent) / 100);
+          const itemDisc = getItemDiscount(item);
           return item.quantity < 0 ? -(itemTotal - itemDisc) : (itemTotal - itemDisc);
         })(),
         size: item.size,
@@ -1139,27 +1142,27 @@ const AdminBilling = () => {
                             e.target.value = val;
                             if (val === "" || val === "." || val.endsWith(".")) {
                               if (val === "" || val === ".") {
-                                updateCartItem(index, { discountPercent: 0 });
+                                updateCartItem(index, { discountPercent: 0, discountOverride: undefined });
                               }
                               return;
                             }
                             const num = Math.min(100, Math.max(0, parseFloat(val)));
                             if (!isNaN(num)) {
-                              updateCartItem(index, { discountPercent: num });
+                              updateCartItem(index, { discountPercent: num, discountOverride: undefined });
                             }
                           }}
                           onBlur={(e) => {
                             const num = parseFloat(e.target.value);
                             if (isNaN(num) || num === 0) {
                               e.target.value = "";
-                              updateCartItem(index, { discountPercent: 0 });
+                              updateCartItem(index, { discountPercent: 0, discountOverride: undefined });
                             } else {
                               const clamped = Math.min(100, Math.max(0, num));
                               e.target.value = String(clamped);
-                              updateCartItem(index, { discountPercent: clamped });
+                              updateCartItem(index, { discountPercent: clamped, discountOverride: undefined });
                             }
                           }}
-                          className="w-10 h-6 text-xs font-medium text-center border border-border rounded bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                          className="w-14 h-6 text-xs font-medium text-center border border-border rounded bg-background focus:outline-none focus:ring-1 focus:ring-ring"
                           placeholder="0"
                         />
                         <span className="text-xs font-medium text-muted-foreground">%</span>
@@ -1169,7 +1172,7 @@ const AdminBilling = () => {
                         {formatCurrency((() => {
                           const absQty = Math.abs(item.quantity);
                           const itemTotal = item.unitPrice * absQty;
-                          const itemDisc = Math.round((itemTotal * item.discountPercent) / 100);
+                          const itemDisc = getItemDiscount(item);
                           const net = itemTotal - itemDisc;
                           return item.quantity < 0 ? -net : net;
                         })())}
@@ -1219,7 +1222,7 @@ const AdminBilling = () => {
                       type="text"
                       inputMode="decimal"
                       defaultValue={String(totalAmount)}
-                      key={`total-net-${totalAmount}-${cart.map(i => `${i.discountPercent}`).join(",")}`}
+                      key={`total-net-${totalAmount}-${cart.map(i => `${i.discountPercent}-${i.discountOverride}`).join(",")}`}
                       onFocus={(e) => e.target.select()}
                       onChange={(e) => {
                         e.target.value = e.target.value.replace(/[^0-9.]/g, "");
@@ -1231,21 +1234,12 @@ const AdminBilling = () => {
                         const totalDiscNeeded = Math.max(0, purchaseGross - (desiredTotal + returnTotal));
                         const pIdx = cart.map((x, i) => x.quantity > 0 ? i : -1).filter(i => i >= 0);
                         let allocated = 0;
-                        const findPct = (g: number, t: number) => {
-                          if (g === 0) return 0;
-                          const r = (t * 100) / g;
-                          for (let o = 0; o <= 30; o++) {
-                            for (const d of [Math.round(r*1000)/1000, Math.floor(r*1000+o)/1000, Math.ceil(r*1000-o)/1000]) {
-                              if (d >= 0 && d <= 100 && Math.round((g * d) / 100) === t) return d;
-                            }
-                          }
-                          return Math.round(r * 1000) / 1000;
-                        };
                         pIdx.forEach((ci, i) => {
                           const g = cart[ci].unitPrice * cart[ci].quantity;
                           const disc = i === pIdx.length - 1 ? totalDiscNeeded - allocated : Math.round((g / purchaseGross) * totalDiscNeeded);
                           allocated += disc;
-                          updateCartItem(ci, { discountPercent: findPct(g, disc) });
+                          const closestPct = g > 0 ? Math.round((disc * 100 / g) * 1000) / 1000 : 0;
+                          updateCartItem(ci, { discountPercent: closestPct, discountOverride: disc });
                         });
                       }}
                       onKeyDown={(e) => {
