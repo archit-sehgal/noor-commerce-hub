@@ -1131,7 +1131,7 @@ const AdminBilling = () => {
                           inputMode="decimal"
                           pattern="[0-9.]*"
                           defaultValue={item.discountPercent === 0 ? "" : String(item.discountPercent)}
-                          key={`disc-${item.product}-${item.discountPercent === 0 ? "empty" : ""}`}
+                          key={`disc-${item.product}-${item.discountPercent}`}
                           onFocus={(e) => e.target.select()}
                           onChange={(e) => {
                             const val = e.target.value.replace(/[^0-9.]/g, "");
