@@ -77,6 +77,7 @@ interface Order {
   shipping_city: string | null;
   shipping_state: string | null;
   shipping_pincode: string | null;
+  invoice_number?: string | null;
   customer?: {
     name: string;
     email: string | null;
@@ -143,12 +144,18 @@ const AdminOrders = () => {
           *,
           customer:customers(name, email, phone),
           salesman:salesman(name),
-          order_items(id, product_name, product_sku, quantity, unit_price, total_price, size, color, product_id)
+          order_items(id, product_name, product_sku, quantity, unit_price, total_price, size, color, product_id),
+          invoices(invoice_number)
         `)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setOrders(data || []);
+      // Map invoice_number from the joined invoices
+      const ordersWithInvoice = (data || []).map((order: any) => ({
+        ...order,
+        invoice_number: order.invoices?.[0]?.invoice_number || null,
+      }));
+      setOrders(ordersWithInvoice);
     } catch (error) {
       console.error("Error fetching orders:", error);
     } finally {
@@ -718,17 +725,18 @@ const AdminOrders = () => {
       itemsByOrder[item.order_id]!.push(item);
     });
 
-    const headers = ["Order Number", "Order Date", "Customer Name", "Item Name", "SKU", "Qty", "MRP", "Disc%", "Net Rate", "Order Total", "Payment Status", "Status"];
+    const headers = ["Order Number", "Invoice Number", "Order Date", "Customer Name", "Item Name", "SKU", "Qty", "MRP", "Disc%", "Net Rate", "Order Total", "Payment Status", "Status"];
     const csvRows = [headers.join(",")];
 
     filtered.forEach((order) => {
       const customerName = order.customer?.name || "Walk-in";
       const orderDate = format(new Date(order.created_at), "yyyy-MM-dd HH:mm");
       const escapedCustomer = `"${customerName.replace(/"/g, '""')}"`;
+      const invoiceNum = order.invoice_number || "";
       const items = itemsByOrder[order.id] || [];
 
       if (items.length === 0) {
-        csvRows.push([order.order_number, orderDate, escapedCustomer, "", "", "", "", "", "", order.total_amount, order.payment_status, order.status].join(","));
+        csvRows.push([order.order_number, invoiceNum, orderDate, escapedCustomer, "", "", "", "", "", "", order.total_amount, order.payment_status, order.status].join(","));
       } else {
         items.forEach(item => {
           const gross = item.unit_price * item.quantity;
@@ -737,6 +745,7 @@ const AdminOrders = () => {
           const escapedName = `"${(item.product_name || "").replace(/"/g, '""')}"`;
           csvRows.push([
             order.order_number,
+            invoiceNum,
             orderDate,
             escapedCustomer,
             escapedName,
@@ -806,6 +815,9 @@ const AdminOrders = () => {
               <span className="font-medium text-sm">{order.order_number}</span>
             </div>
           </TableCell>
+          <TableCell>
+            <span className="font-mono text-xs text-muted-foreground">{order.invoice_number || "-"}</span>
+          </TableCell>
           <TableCell className="hidden md:table-cell">
             <span className="font-mono text-xs text-muted-foreground max-w-[150px] truncate block" title={skuList}>{skuList}</span>
           </TableCell>
@@ -862,7 +874,7 @@ const AdminOrders = () => {
         </TableRow>
         {isExpanded && (
           <TableRow className="bg-muted/30">
-            <TableCell colSpan={9} className="p-0">
+            <TableCell colSpan={10} className="p-0">
               <div className="p-4 space-y-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div><p className="text-foreground text-xs">Subtotal</p><p className="font-medium">{formatCurrency(order.subtotal)}</p></div>
@@ -935,6 +947,7 @@ const AdminOrders = () => {
                     <div className="flex justify-between items-start mb-2">
                       <div>
                         <p className="font-semibold text-sm">{order.order_number}</p>
+                        {order.invoice_number && <p className="text-[10px] font-mono text-muted-foreground">{order.invoice_number}</p>}
                         <p className="text-xs text-foreground">{format(new Date(order.created_at), "MMM dd, HH:mm")}</p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -983,6 +996,7 @@ const AdminOrders = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Order #</TableHead>
+                <TableHead>Invoice #</TableHead>
                 <TableHead className="hidden md:table-cell">SKU(s)</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead className="hidden lg:table-cell">Date</TableHead>
