@@ -66,6 +66,7 @@ const AdminProducts = () => {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [removeAllCode, setRemoveAllCode] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   
   const { data: products, isLoading } = useProducts();
@@ -237,14 +238,32 @@ const AdminProducts = () => {
                   <AlertDialogTitle>Remove All Inventory</AlertDialogTitle>
                   <AlertDialogDescription>
                     This will permanently delete ALL {products?.length || 0} products.
-                    This action cannot be undone.
+                    This action cannot be undone. Enter the security code to confirm.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
+                <div className="py-3">
+                  <Input
+                    type="password"
+                    placeholder="Enter 4-digit security code"
+                    value={removeAllCode}
+                    onChange={(e) => setRemoveAllCode(e.target.value)}
+                    className="border-destructive/20 focus:border-destructive"
+                  />
+                </div>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel onClick={() => setRemoveAllCode("")}>Cancel</AlertDialogCancel>
                   <AlertDialogAction
-                    onClick={handleRemoveAllInventory}
+                    onClick={(e) => {
+                      if (removeAllCode !== "2004") {
+                        e.preventDefault();
+                        toast({ title: "Invalid security code", variant: "destructive" });
+                        return;
+                      }
+                      setRemoveAllCode("");
+                      handleRemoveAllInventory();
+                    }}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    disabled={!removeAllCode}
                   >
                     Yes, Remove All
                   </AlertDialogAction>
