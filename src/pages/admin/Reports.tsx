@@ -162,7 +162,7 @@ const AdminReports = () => {
       let cashRevenue = 0;
       let cardUpiRevenue = 0;
       let creditRevenue = 0;
-      paidOrders.forEach((o) => {
+      revenueOrders.forEach((o) => {
         const amount = Number(o.total_amount);
         const method = (o as any).payment_method || '';
         if (method === 'double') {
