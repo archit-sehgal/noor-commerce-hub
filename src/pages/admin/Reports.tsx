@@ -149,9 +149,9 @@ const AdminReports = () => {
         .gte("created_at", prevStartDate.toISOString())
         .lt("created_at", startDate.toISOString());
 
-      // Calculate summary - only count paid orders as revenue
-      const paidOrders = orders?.filter(o => o.payment_status === 'paid') || [];
-      const totalRevenue = paidOrders.reduce((sum, o) => sum + Number(o.total_amount), 0);
+      // Calculate summary - count paid orders AND credit (pay later) orders as revenue
+      const revenueOrders = orders?.filter(o => o.payment_status === 'paid' || (o as any).payment_method === 'credit') || [];
+      const totalRevenue = revenueOrders.reduce((sum, o) => sum + Number(o.total_amount), 0);
       const totalOrders = orders?.length || 0;
       const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
       const onlineRevenue = paidOrders.filter(o => o.order_source === 'online').reduce((sum, o) => sum + Number(o.total_amount), 0);
