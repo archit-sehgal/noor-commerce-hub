@@ -1133,30 +1133,17 @@ const AdminBilling = () => {
                           inputMode="decimal"
                           pattern="[0-9.]*"
                           defaultValue={item.discountPercent === 0 ? "" : String(item.discountPercent)}
-                          key={`disc-${item.product}-${item.discountPercent}`}
+                          key={`disc-${index}-${item.product.id}`}
                           onFocus={(e) => e.target.select()}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/[^0-9.]/g, "");
-                            e.target.value = val;
-                            if (val === "" || val === "." || val.endsWith(".")) {
-                              if (val === "" || val === ".") {
-                                updateCartItem(index, { discountPercent: 0 });
-                              }
-                              return;
-                            }
-                            const num = Math.min(100, Math.max(0, parseFloat(val)));
-                            if (!isNaN(num)) {
-                              updateCartItem(index, { discountPercent: Math.round(num * 100) / 100 });
-                            }
-                          }}
                           onBlur={(e) => {
-                            const num = parseFloat(e.target.value);
-                            if (isNaN(num) || num === 0) {
+                            const val = e.target.value.replace(/[^0-9.]/g, "");
+                            if (!val || val === ".") {
                               e.target.value = "";
                               updateCartItem(index, { discountPercent: 0 });
                             } else {
-                              const clamped = Math.min(100, Math.max(0, Math.round(num * 100) / 100));
-                              e.target.value = String(clamped);
+                              const num = Math.min(100, Math.max(0, parseFloat(val)));
+                              const clamped = isNaN(num) ? 0 : Math.round(num * 100) / 100;
+                              e.target.value = clamped === 0 ? "" : String(clamped);
                               updateCartItem(index, { discountPercent: clamped });
                             }
                           }}
