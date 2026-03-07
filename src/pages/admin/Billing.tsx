@@ -1147,17 +1147,6 @@ const AdminBilling = () => {
                               updateCartItem(index, { discountPercent: clamped });
                             }
                           }}
-                          onBlur={(e) => {
-                            const num = parseFloat(e.target.value);
-                            if (isNaN(num) || num === 0) {
-                              e.target.value = "";
-                              updateCartItem(index, { discountPercent: 0 });
-                            } else {
-                              const clamped = Math.min(100, Math.max(0, Math.round(num * 100) / 100));
-                              e.target.value = String(clamped);
-                              updateCartItem(index, { discountPercent: clamped });
-                            }
-                          }}
                           className="w-14 h-6 text-xs font-medium text-center border border-border rounded bg-background focus:outline-none focus:ring-1 focus:ring-ring"
                           placeholder="0"
                         />
