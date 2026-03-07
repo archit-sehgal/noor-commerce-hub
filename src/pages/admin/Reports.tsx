@@ -102,6 +102,27 @@ const AdminReports = () => {
     fetchReportData();
   }, [period, customDate, dateRangeFrom, dateRangeTo]);
 
+  // Helper to fetch all rows from a table (bypasses 1000 row limit)
+  const fetchAllRows = async (table: string, select: string, filters?: (query: any) => any): Promise<any[]> => {
+    const PAGE_SIZE = 1000;
+    let allData: any[] = [];
+    let from = 0;
+    let hasMore = true;
+    while (hasMore) {
+      let query = (supabase as any).from(table).select(select).range(from, from + PAGE_SIZE - 1);
+      if (filters) query = filters(query);
+      const { data, error } = await query;
+      if (error || !data || data.length === 0) {
+        hasMore = false;
+      } else {
+        allData = allData.concat(data);
+        hasMore = data.length === PAGE_SIZE;
+        from += PAGE_SIZE;
+      }
+    }
+    return allData;
+  };
+
   const fetchReportData = async () => {
     setLoading(true);
     try {
@@ -255,13 +276,11 @@ const AdminReports = () => {
         }))
       );
 
-      // Fetch top products with category
-      const { data: orderItems } = await supabase
-        .from("order_items")
-        .select("product_name, quantity, total_price, product_id");
+      // Fetch ALL order items (paginated to bypass 1000 limit)
+      const orderItems = await fetchAllRows("order_items", "product_name, quantity, total_price, product_id");
 
       const productStats: Record<string, { quantity: number; revenue: number }> = {};
-      orderItems?.forEach((item) => {
+      orderItems.forEach((item: any) => {
         if (!productStats[item.product_name]) {
           productStats[item.product_name] = { quantity: 0, revenue: 0 };
         }
@@ -276,33 +295,22 @@ const AdminReports = () => {
           .slice(0, 5)
       );
 
-      // Fetch category-wise sales — join order_items → products → categories
+      // Fetch category-wise sales
       const { data: categories } = await supabase
         .from("categories")
         .select("id, name");
 
       const categoryMap = new Map(categories?.map(c => [c.id, c.name]) || []);
 
-      // Build a product→category map from products table
-      const { data: allProductsWithCat } = await supabase
-        .from("products")
-        .select("id, category_id")
-        .not("category_id", "is", null);
+      // Fetch ALL products with categories (paginated)
+      const allProductsWithCat = await fetchAllRows("products", "id, name, category_id", (q: any) => q.not("category_id", "is", null));
 
-      const productCategoryMap = new Map(allProductsWithCat?.map(p => [p.id, p.category_id]) || []);
-
-      // Also try matching by product_name if product_id is missing
-      const { data: allProductsByName } = await supabase
-        .from("products")
-        .select("name, category_id")
-        .not("category_id", "is", null);
-
-      const productNameCategoryMap = new Map(allProductsByName?.map(p => [p.name.toLowerCase(), p.category_id]) || []);
+      const productCategoryMap = new Map(allProductsWithCat.map((p: any) => [p.id, p.category_id]));
+      const productNameCategoryMap = new Map(allProductsWithCat.map((p: any) => [p.name.toLowerCase(), p.category_id]));
 
       const categorySalesMap: Record<string, number> = {};
-      orderItems?.forEach((item) => {
+      orderItems.forEach((item: any) => {
         let categoryId = item.product_id ? productCategoryMap.get(item.product_id) : null;
-        // Fallback: match by product name
         if (!categoryId) {
           categoryId = productNameCategoryMap.get(item.product_name.toLowerCase()) || null;
         }
