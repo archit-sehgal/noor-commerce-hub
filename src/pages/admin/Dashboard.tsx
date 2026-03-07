@@ -23,6 +23,8 @@ interface DashboardStats {
   totalRevenue: number;
   lowStockProducts: number;
   pendingOrders: number;
+  creditPayments: number;
+  creditCount: number;
 }
 
 const AdminDashboard = () => {
