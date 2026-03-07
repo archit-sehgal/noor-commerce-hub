@@ -14,6 +14,7 @@ import {
   TrendingUp,
   FileText,
   Loader2,
+  CreditCard,
 } from "lucide-react";
 
 interface DashboardStats {
