@@ -65,28 +65,44 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Run all queries in parallel for faster dashboard load
+        // Helper to fetch all rows beyond 1000 limit
+        const fetchAllRows = async (table: string, select: string, filters?: (q: any) => any) => {
+          const PAGE = 1000;
+          let all: any[] = [];
+          let from = 0;
+          let hasMore = true;
+          while (hasMore) {
+            let q = (supabase as any).from(table).select(select).range(from, from + PAGE - 1);
+            if (filters) q = filters(q);
+            const { data } = await q;
+            if (!data || data.length === 0) { hasMore = false; }
+            else { all = all.concat(data); hasMore = data.length === PAGE; from += PAGE; }
+          }
+          return all;
+        };
+
         const [
           productsRes,
           ordersRes,
           customersRes,
-          revenueRes,
           lowStockRes,
           pendingRes,
         ] = await Promise.all([
           supabase.from("products").select("*", { count: "exact", head: true }),
           supabase.from("orders").select("*", { count: "exact", head: true }),
           supabase.from("customers").select("*", { count: "exact", head: true }),
-          supabase.from("orders").select("total_amount").eq("payment_status", "paid"),
           supabase.from("products").select("*", { count: "exact", head: true }).lte("stock_quantity", 5),
           supabase.from("orders").select("*", { count: "exact", head: true }).eq("status", "pending"),
         ]);
 
-        const totalRevenue =
-          revenueRes.data?.reduce(
-            (acc, order) => acc + (Number(order.total_amount) || 0),
-            0,
-          ) || 0;
+        // Fetch revenue and credit data (all rows)
+        const [paidOrders, creditOrders] = await Promise.all([
+          fetchAllRows("orders", "total_amount", (q: any) => q.eq("payment_status", "paid")),
+          fetchAllRows("orders", "total_amount", (q: any) => q.eq("payment_method", "credit").eq("payment_status", "pending")),
+        ]);
+
+        const totalRevenue = paidOrders.reduce((acc: number, o: any) => acc + (Number(o.total_amount) || 0), 0);
+        const creditPayments = creditOrders.reduce((acc: number, o: any) => acc + (Number(o.total_amount) || 0), 0);
 
         setStats({
           totalProducts: productsRes.count || 0,
@@ -95,6 +111,8 @@ const AdminDashboard = () => {
           totalRevenue,
           lowStockProducts: lowStockRes.count || 0,
           pendingOrders: pendingRes.count || 0,
+          creditPayments,
+          creditCount: creditOrders.length,
         });
       } catch (error) {
         console.error("Error fetching stats:", error);
