@@ -36,6 +36,8 @@ const AdminDashboard = () => {
     totalRevenue: 0,
     lowStockProducts: 0,
     pendingOrders: 0,
+    creditPayments: 0,
+    creditCount: 0,
   });
   const [loading, setLoading] = useState(true);
   const [showWelcomeLoader, setShowWelcomeLoader] = useState(false);
