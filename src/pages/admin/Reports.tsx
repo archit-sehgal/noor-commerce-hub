@@ -149,20 +149,20 @@ const AdminReports = () => {
         .gte("created_at", prevStartDate.toISOString())
         .lt("created_at", startDate.toISOString());
 
-      // Calculate summary - only count paid orders as revenue
-      const paidOrders = orders?.filter(o => o.payment_status === 'paid') || [];
-      const totalRevenue = paidOrders.reduce((sum, o) => sum + Number(o.total_amount), 0);
+      // Calculate summary - count paid orders AND credit (pay later) orders as revenue
+      const revenueOrders = orders?.filter(o => o.payment_status === 'paid' || (o as any).payment_method === 'credit') || [];
+      const totalRevenue = revenueOrders.reduce((sum, o) => sum + Number(o.total_amount), 0);
       const totalOrders = orders?.length || 0;
       const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-      const onlineRevenue = paidOrders.filter(o => o.order_source === 'online').reduce((sum, o) => sum + Number(o.total_amount), 0);
-      const posRevenue = paidOrders.filter(o => o.order_source !== 'online').reduce((sum, o) => sum + Number(o.total_amount), 0);
+      const onlineRevenue = revenueOrders.filter(o => o.order_source === 'online').reduce((sum, o) => sum + Number(o.total_amount), 0);
+      const posRevenue = revenueOrders.filter(o => o.order_source !== 'online').reduce((sum, o) => sum + Number(o.total_amount), 0);
       const pendingOrders = orders?.filter(o => o.status === 'pending').length || 0;
 
       // Calculate payment method breakdowns from payment_method column
       let cashRevenue = 0;
       let cardUpiRevenue = 0;
       let creditRevenue = 0;
-      paidOrders.forEach((o) => {
+      revenueOrders.forEach((o) => {
         const amount = Number(o.total_amount);
         const method = (o as any).payment_method || '';
         if (method === 'double') {
