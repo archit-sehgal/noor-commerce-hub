@@ -102,6 +102,27 @@ const AdminReports = () => {
     fetchReportData();
   }, [period, customDate, dateRangeFrom, dateRangeTo]);
 
+  // Helper to fetch all rows from a table (bypasses 1000 row limit)
+  const fetchAllRows = async <T,>(table: string, select: string, filters?: (query: any) => any): Promise<T[]> => {
+    const PAGE_SIZE = 1000;
+    let allData: T[] = [];
+    let from = 0;
+    let hasMore = true;
+    while (hasMore) {
+      let query = supabase.from(table).select(select).range(from, from + PAGE_SIZE - 1);
+      if (filters) query = filters(query);
+      const { data, error } = await query;
+      if (error || !data || data.length === 0) {
+        hasMore = false;
+      } else {
+        allData = allData.concat(data as T[]);
+        hasMore = data.length === PAGE_SIZE;
+        from += PAGE_SIZE;
+      }
+    }
+    return allData;
+  };
+
   const fetchReportData = async () => {
     setLoading(true);
     try {
