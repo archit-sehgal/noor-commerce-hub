@@ -210,6 +210,23 @@ const AdminDashboard = () => {
               <p className="text-xs text-muted-foreground mt-1">Active products</p>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Credit (Pay Later)
+              </CardTitle>
+              <CreditCard className="h-4 w-4 text-gold" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {loading ? "…" : `₹${stats.creditPayments.toLocaleString()}`}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {loading ? "" : `${stats.creditCount} pending payment(s)`}
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Alerts */}
