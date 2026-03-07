@@ -154,8 +154,8 @@ const AdminReports = () => {
       const totalRevenue = revenueOrders.reduce((sum, o) => sum + Number(o.total_amount), 0);
       const totalOrders = orders?.length || 0;
       const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-      const onlineRevenue = paidOrders.filter(o => o.order_source === 'online').reduce((sum, o) => sum + Number(o.total_amount), 0);
-      const posRevenue = paidOrders.filter(o => o.order_source !== 'online').reduce((sum, o) => sum + Number(o.total_amount), 0);
+      const onlineRevenue = revenueOrders.filter(o => o.order_source === 'online').reduce((sum, o) => sum + Number(o.total_amount), 0);
+      const posRevenue = revenueOrders.filter(o => o.order_source !== 'online').reduce((sum, o) => sum + Number(o.total_amount), 0);
       const pendingOrders = orders?.filter(o => o.status === 'pending').length || 0;
 
       // Calculate payment method breakdowns from payment_method column
