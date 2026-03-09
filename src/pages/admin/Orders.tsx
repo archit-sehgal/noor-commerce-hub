@@ -63,6 +63,7 @@ interface Order {
   order_number: string;
   status: string;
   payment_status: string;
+  payment_method: string | null;
   total_amount: number;
   subtotal: number;
   discount_amount: number | null;
