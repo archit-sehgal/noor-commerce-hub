@@ -685,8 +685,10 @@ const AdminOrders = () => {
         matchesPayment = pm === 'cash';
       } else if (paymentFilter === "credit") {
         matchesPayment = pm === 'credit';
-      } else if (paymentFilter === "card") {
-        matchesPayment = pm === 'card_upi' || pm === 'double';
+      } else if (paymentFilter === "card_upi") {
+        matchesPayment = pm === 'card_upi';
+      } else if (paymentFilter === "double") {
+        matchesPayment = pm === 'double';
       } else if (paymentFilter === "paid") {
         matchesPayment = order.payment_status === 'paid';
       } else if (paymentFilter === "pending") {
