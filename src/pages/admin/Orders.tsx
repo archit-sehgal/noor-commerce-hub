@@ -73,6 +73,7 @@ interface Order {
   needs_alteration: boolean | null;
   alteration_status: string | null;
   notes: string | null;
+  payment_method: string | null;
   shipping_address: string | null;
   shipping_city: string | null;
   shipping_state: string | null;
