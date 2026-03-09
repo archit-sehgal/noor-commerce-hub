@@ -679,7 +679,7 @@ const AdminOrders = () => {
         statusFilter === "all" || order.status === statusFilter;
 
       // Payment method filter using the payment_method column
-      const pm = ((order as any).payment_method || 'cash').toLowerCase();
+      const pm = (order.payment_method || 'cash').toLowerCase();
       let matchesPayment = true;
       if (paymentFilter === "cash") {
         matchesPayment = pm === 'cash';
