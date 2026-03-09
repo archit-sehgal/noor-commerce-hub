@@ -63,6 +63,7 @@ interface Order {
   order_number: string;
   status: string;
   payment_status: string;
+  payment_method: string | null;
   total_amount: number;
   subtotal: number;
   discount_amount: number | null;
@@ -677,14 +678,15 @@ const AdminOrders = () => {
       const matchesStatus =
         statusFilter === "all" || order.status === statusFilter;
 
-      // Payment method filter (cash/credit from notes)
+      // Payment method filter using the payment_method column
+      const pm = (order.payment_method || 'cash').toLowerCase();
       let matchesPayment = true;
       if (paymentFilter === "cash") {
-        matchesPayment = getPaymentMethodFromNotes(order.notes) === 'cash';
+        matchesPayment = pm === 'cash';
       } else if (paymentFilter === "credit") {
-        matchesPayment = getPaymentMethodFromNotes(order.notes) === 'credit';
+        matchesPayment = pm === 'credit';
       } else if (paymentFilter === "card") {
-        matchesPayment = getPaymentMethodFromNotes(order.notes) === 'card' || getPaymentMethodFromNotes(order.notes) === 'double';
+        matchesPayment = pm === 'card_upi' || pm === 'double';
       } else if (paymentFilter === "paid") {
         matchesPayment = order.payment_status === 'paid';
       } else if (paymentFilter === "pending") {
