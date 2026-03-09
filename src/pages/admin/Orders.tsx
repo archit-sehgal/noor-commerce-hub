@@ -1120,8 +1120,9 @@ const AdminOrders = () => {
               <SelectItem value="paid">Paid</SelectItem>
               <SelectItem value="pending">Payment Pending</SelectItem>
               <SelectItem value="cash">Cash</SelectItem>
-              <SelectItem value="card">Card/UPI</SelectItem>
-              <SelectItem value="credit">Credit</SelectItem>
+              <SelectItem value="card_upi">Card/UPI</SelectItem>
+              <SelectItem value="credit">Credit (Pay Later)</SelectItem>
+              <SelectItem value="double">Split (Cash + Card)</SelectItem>
             </SelectContent>
           </Select>
         </div>
