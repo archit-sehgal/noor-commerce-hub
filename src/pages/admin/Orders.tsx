@@ -73,7 +73,6 @@ interface Order {
   needs_alteration: boolean | null;
   alteration_status: string | null;
   notes: string | null;
-  payment_method: string | null;
   shipping_address: string | null;
   shipping_city: string | null;
   shipping_state: string | null;
@@ -678,15 +677,14 @@ const AdminOrders = () => {
       const matchesStatus =
         statusFilter === "all" || order.status === statusFilter;
 
-      // Payment method filter using payment_method column
+      // Payment method filter (cash/credit from notes)
       let matchesPayment = true;
-      const pm = (order.payment_method || 'cash').toLowerCase();
       if (paymentFilter === "cash") {
-        matchesPayment = pm === 'cash';
+        matchesPayment = getPaymentMethodFromNotes(order.notes) === 'cash';
       } else if (paymentFilter === "credit") {
-        matchesPayment = pm === 'credit';
+        matchesPayment = getPaymentMethodFromNotes(order.notes) === 'credit';
       } else if (paymentFilter === "card") {
-        matchesPayment = pm === 'card' || pm === 'card/upi' || pm === 'double';
+        matchesPayment = getPaymentMethodFromNotes(order.notes) === 'card' || getPaymentMethodFromNotes(order.notes) === 'double';
       } else if (paymentFilter === "paid") {
         matchesPayment = order.payment_status === 'paid';
       } else if (paymentFilter === "pending") {
