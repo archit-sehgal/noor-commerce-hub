@@ -685,8 +685,10 @@ const AdminOrders = () => {
         matchesPayment = pm === 'cash';
       } else if (paymentFilter === "credit") {
         matchesPayment = pm === 'credit';
-      } else if (paymentFilter === "card") {
-        matchesPayment = pm === 'card_upi' || pm === 'double';
+      } else if (paymentFilter === "card_upi") {
+        matchesPayment = pm === 'card_upi';
+      } else if (paymentFilter === "double") {
+        matchesPayment = pm === 'double';
       } else if (paymentFilter === "paid") {
         matchesPayment = order.payment_status === 'paid';
       } else if (paymentFilter === "pending") {
@@ -1118,8 +1120,9 @@ const AdminOrders = () => {
               <SelectItem value="paid">Paid</SelectItem>
               <SelectItem value="pending">Payment Pending</SelectItem>
               <SelectItem value="cash">Cash</SelectItem>
-              <SelectItem value="card">Card/UPI</SelectItem>
-              <SelectItem value="credit">Credit</SelectItem>
+              <SelectItem value="card_upi">Card/UPI</SelectItem>
+              <SelectItem value="credit">Credit (Pay Later)</SelectItem>
+              <SelectItem value="double">Split (Cash + Card)</SelectItem>
             </SelectContent>
           </Select>
         </div>
