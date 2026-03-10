@@ -39,6 +39,8 @@ const Alterations = () => {
   const [editNotes, setEditNotes] = useState("");
   const [editDueDate, setEditDueDate] = useState("");
   const [editAltNumber, setEditAltNumber] = useState("");
+  const [editCustomerName, setEditCustomerName] = useState("");
+  const [editCustomerPhone, setEditCustomerPhone] = useState("");
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; orderId: string; orderNumber: string }>({ open: false, orderId: "", orderNumber: "" });
   const [deleteCode, setDeleteCode] = useState("");
 
@@ -105,6 +107,7 @@ const Alterations = () => {
   const editMutation = useMutation({
     mutationFn: async () => {
       if (!editDialog.order) return;
+      // Update alteration fields on order
       const { error } = await supabase
         .from("orders")
         .update({
@@ -114,6 +117,18 @@ const Alterations = () => {
         })
         .eq("id", editDialog.order.id);
       if (error) throw error;
+
+      // Update customer details if customer exists
+      if (editDialog.order.customer_id) {
+        const { error: custError } = await supabase
+          .from("customers")
+          .update({
+            name: editCustomerName,
+            phone: editCustomerPhone || null,
+          })
+          .eq("id", editDialog.order.customer_id);
+        if (custError) throw custError;
+      }
     },
     onSuccess: () => {
       toast.success("Alteration updated");
@@ -151,6 +166,8 @@ const Alterations = () => {
     setEditNotes(order.alteration_notes || "");
     setEditDueDate(order.alteration_due_date ? new Date(order.alteration_due_date).toISOString().split("T")[0] : "");
     setEditAltNumber(order.alteration_number || "");
+    setEditCustomerName(order.customer?.name || "");
+    setEditCustomerPhone(order.customer?.phone || "");
     setEditDialog({ open: true, order });
   };
 
@@ -505,7 +522,32 @@ const Alterations = () => {
           <DialogHeader>
             <DialogTitle className="font-serif">Edit Alteration — {editDialog.order?.order_number}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+            {/* Customer Details */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-muted-foreground uppercase tracking-wide text-[11px]">Customer Details</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-sm font-medium">Name</Label>
+                  <Input
+                    value={editCustomerName}
+                    onChange={(e) => setEditCustomerName(e.target.value)}
+                    placeholder="Customer name"
+                    className="border-gold/20"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-sm font-medium">Phone</Label>
+                  <Input
+                    value={editCustomerPhone}
+                    onChange={(e) => setEditCustomerPhone(e.target.value)}
+                    placeholder="Phone number"
+                    className="border-gold/20"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="border-t border-gold/10" />
             <div className="space-y-2">
               <Label className="text-sm font-medium">Alteration Number</Label>
               <Input
