@@ -522,7 +522,32 @@ const Alterations = () => {
           <DialogHeader>
             <DialogTitle className="font-serif">Edit Alteration — {editDialog.order?.order_number}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+            {/* Customer Details */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-muted-foreground uppercase tracking-wide text-[11px]">Customer Details</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-sm font-medium">Name</Label>
+                  <Input
+                    value={editCustomerName}
+                    onChange={(e) => setEditCustomerName(e.target.value)}
+                    placeholder="Customer name"
+                    className="border-gold/20"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-sm font-medium">Phone</Label>
+                  <Input
+                    value={editCustomerPhone}
+                    onChange={(e) => setEditCustomerPhone(e.target.value)}
+                    placeholder="Phone number"
+                    className="border-gold/20"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="border-t border-gold/10" />
             <div className="space-y-2">
               <Label className="text-sm font-medium">Alteration Number</Label>
               <Input
