@@ -107,6 +107,7 @@ const Alterations = () => {
   const editMutation = useMutation({
     mutationFn: async () => {
       if (!editDialog.order) return;
+      // Update alteration fields on order
       const { error } = await supabase
         .from("orders")
         .update({
@@ -116,6 +117,18 @@ const Alterations = () => {
         })
         .eq("id", editDialog.order.id);
       if (error) throw error;
+
+      // Update customer details if customer exists
+      if (editDialog.order.customer_id) {
+        const { error: custError } = await supabase
+          .from("customers")
+          .update({
+            name: editCustomerName,
+            phone: editCustomerPhone || null,
+          })
+          .eq("id", editDialog.order.customer_id);
+        if (custError) throw custError;
+      }
     },
     onSuccess: () => {
       toast.success("Alteration updated");
