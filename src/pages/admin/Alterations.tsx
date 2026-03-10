@@ -39,6 +39,8 @@ const Alterations = () => {
   const [editNotes, setEditNotes] = useState("");
   const [editDueDate, setEditDueDate] = useState("");
   const [editAltNumber, setEditAltNumber] = useState("");
+  const [editCustomerName, setEditCustomerName] = useState("");
+  const [editCustomerPhone, setEditCustomerPhone] = useState("");
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; orderId: string; orderNumber: string }>({ open: false, orderId: "", orderNumber: "" });
   const [deleteCode, setDeleteCode] = useState("");
 
