@@ -499,6 +499,89 @@ const Alterations = () => {
           </div>
         </DialogContent>
       </Dialog>
+      {/* Edit Alteration Dialog */}
+      <Dialog open={editDialog.open} onOpenChange={(open) => { if (!open) setEditDialog({ open: false, order: null }); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif">Edit Alteration — {editDialog.order?.order_number}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Alteration Number</Label>
+              <Input
+                value={editAltNumber}
+                onChange={(e) => setEditAltNumber(e.target.value)}
+                placeholder="e.g., ALT-001"
+                className="border-gold/20"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Due Date</Label>
+              <Input
+                type="date"
+                value={editDueDate}
+                onChange={(e) => setEditDueDate(e.target.value)}
+                className="border-gold/20"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Remarks / Notes</Label>
+              <Textarea
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                className="border-gold/20 min-h-[100px]"
+                placeholder="Alteration details..."
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={() => editMutation.mutate()}
+                disabled={editMutation.isPending}
+                className="bg-gold hover:bg-gold-dark text-white flex-1"
+              >
+                {editMutation.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+              <Button variant="outline" onClick={() => setEditDialog({ open: false, order: null })} className="border-gold/20">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Alteration Dialog */}
+      <Dialog open={deleteDialog.open} onOpenChange={(open) => { if (!open) { setDeleteDialog({ open: false, orderId: "", orderNumber: "" }); setDeleteCode(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-destructive">Delete Alteration — {deleteDialog.orderNumber}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              This will remove the alteration from this order. Enter the security code to confirm.
+            </p>
+            <Input
+              type="password"
+              placeholder="Enter security code"
+              value={deleteCode}
+              onChange={(e) => setDeleteCode(e.target.value)}
+              className="border-gold/20"
+            />
+            <div className="flex gap-3">
+              <Button
+                variant="destructive"
+                className="flex-1"
+                disabled={deleteCode !== "2486" || deleteMutation.isPending}
+                onClick={() => deleteMutation.mutate(deleteDialog.orderId)}
+              >
+                {deleteMutation.isPending ? "Deleting..." : "Delete Alteration"}
+              </Button>
+              <Button variant="outline" onClick={() => { setDeleteDialog({ open: false, orderId: "", orderNumber: "" }); setDeleteCode(""); }}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
