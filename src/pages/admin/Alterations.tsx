@@ -101,7 +101,60 @@ const Alterations = () => {
     );
   });
 
-  // Stats
+  // Edit alteration
+  const editMutation = useMutation({
+    mutationFn: async () => {
+      if (!editDialog.order) return;
+      const { error } = await supabase
+        .from("orders")
+        .update({
+          alteration_notes: editNotes,
+          alteration_due_date: editDueDate ? new Date(editDueDate).toISOString() : null,
+          alteration_number: editAltNumber || null,
+        })
+        .eq("id", editDialog.order.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Alteration updated");
+      queryClient.invalidateQueries({ queryKey: ["alteration-orders"] });
+      setEditDialog({ open: false, order: null });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  // Delete alteration (remove alteration flag from order)
+  const deleteMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const { error } = await supabase
+        .from("orders")
+        .update({
+          needs_alteration: false,
+          alteration_status: null,
+          alteration_due_date: null,
+          alteration_notes: null,
+          alteration_number: null,
+        })
+        .eq("id", orderId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Alteration removed");
+      queryClient.invalidateQueries({ queryKey: ["alteration-orders"] });
+      setDeleteDialog({ open: false, orderId: "", orderNumber: "" });
+      setDeleteCode("");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const openEditDialog = (order: any) => {
+    setEditNotes(order.alteration_notes || "");
+    setEditDueDate(order.alteration_due_date ? new Date(order.alteration_due_date).toISOString().split("T")[0] : "");
+    setEditAltNumber(order.alteration_number || "");
+    setEditDialog({ open: true, order });
+  };
+
+  
   const stats = {
     pending: alterationOrders?.filter((o) => o.alteration_status === "pending").length || 0,
     in_progress: alterationOrders?.filter((o) => o.alteration_status === "in_progress").length || 0,
