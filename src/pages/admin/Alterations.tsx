@@ -337,14 +337,14 @@ const Alterations = () => {
                             </Button>
                           )}
                         </div>
-                        <div className="mt-3 pt-3 border-t">
+                        <div className="mt-3 pt-3 border-t flex gap-2">
                           <Select
                             value={order.alteration_status || "pending"}
                             onValueChange={(value) =>
                               updateStatusMutation.mutate({ orderId: order.id, status: value })
                             }
                           >
-                            <SelectTrigger className="w-full border-gold/20">
+                            <SelectTrigger className="flex-1 border-gold/20">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -354,6 +354,12 @@ const Alterations = () => {
                               <SelectItem value="delivered">Delivered</SelectItem>
                             </SelectContent>
                           </Select>
+                          <Button variant="outline" size="icon" className="border-gold/20" onClick={() => openEditDialog(order)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="icon" className="border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => setDeleteDialog({ open: true, orderId: order.id, orderNumber: order.order_number })}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     );
