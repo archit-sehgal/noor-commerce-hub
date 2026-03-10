@@ -10,7 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Search, Scissors, Clock, CheckCircle, Package, AlertCircle, MessageSquare } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Search, Scissors, Clock, CheckCircle, Package, AlertCircle, MessageSquare, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import NewAlterationForm from "@/components/admin/NewAlterationForm";
 
