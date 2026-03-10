@@ -10,7 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Search, Scissors, Clock, CheckCircle, Package, AlertCircle, MessageSquare } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Search, Scissors, Clock, CheckCircle, Package, AlertCircle, MessageSquare, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import NewAlterationForm from "@/components/admin/NewAlterationForm";
 
@@ -33,6 +35,12 @@ const Alterations = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [remarksDialog, setRemarksDialog] = useState<{ open: boolean; notes: string; orderNumber: string }>({ open: false, notes: "", orderNumber: "" });
+  const [editDialog, setEditDialog] = useState<{ open: boolean; order: any | null }>({ open: false, order: null });
+  const [editNotes, setEditNotes] = useState("");
+  const [editDueDate, setEditDueDate] = useState("");
+  const [editAltNumber, setEditAltNumber] = useState("");
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; orderId: string; orderNumber: string }>({ open: false, orderId: "", orderNumber: "" });
+  const [deleteCode, setDeleteCode] = useState("");
 
   // Fetch orders with alterations
   const { data: alterationOrders, isLoading } = useQuery({
@@ -93,7 +101,60 @@ const Alterations = () => {
     );
   });
 
-  // Stats
+  // Edit alteration
+  const editMutation = useMutation({
+    mutationFn: async () => {
+      if (!editDialog.order) return;
+      const { error } = await supabase
+        .from("orders")
+        .update({
+          alteration_notes: editNotes,
+          alteration_due_date: editDueDate ? new Date(editDueDate).toISOString() : null,
+          alteration_number: editAltNumber || null,
+        })
+        .eq("id", editDialog.order.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Alteration updated");
+      queryClient.invalidateQueries({ queryKey: ["alteration-orders"] });
+      setEditDialog({ open: false, order: null });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  // Delete alteration (remove alteration flag from order)
+  const deleteMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const { error } = await supabase
+        .from("orders")
+        .update({
+          needs_alteration: false,
+          alteration_status: null,
+          alteration_due_date: null,
+          alteration_notes: null,
+          alteration_number: null,
+        })
+        .eq("id", orderId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Alteration removed");
+      queryClient.invalidateQueries({ queryKey: ["alteration-orders"] });
+      setDeleteDialog({ open: false, orderId: "", orderNumber: "" });
+      setDeleteCode("");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const openEditDialog = (order: any) => {
+    setEditNotes(order.alteration_notes || "");
+    setEditDueDate(order.alteration_due_date ? new Date(order.alteration_due_date).toISOString().split("T")[0] : "");
+    setEditAltNumber(order.alteration_number || "");
+    setEditDialog({ open: true, order });
+  };
+
+  
   const stats = {
     pending: alterationOrders?.filter((o) => o.alteration_status === "pending").length || 0,
     in_progress: alterationOrders?.filter((o) => o.alteration_status === "in_progress").length || 0,
@@ -276,14 +337,14 @@ const Alterations = () => {
                             </Button>
                           )}
                         </div>
-                        <div className="mt-3 pt-3 border-t">
+                        <div className="mt-3 pt-3 border-t flex gap-2">
                           <Select
                             value={order.alteration_status || "pending"}
                             onValueChange={(value) =>
                               updateStatusMutation.mutate({ orderId: order.id, status: value })
                             }
                           >
-                            <SelectTrigger className="w-full border-gold/20">
+                            <SelectTrigger className="flex-1 border-gold/20">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -293,6 +354,12 @@ const Alterations = () => {
                               <SelectItem value="delivered">Delivered</SelectItem>
                             </SelectContent>
                           </Select>
+                          <Button variant="outline" size="icon" className="border-gold/20" onClick={() => openEditDialog(order)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="icon" className="border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => setDeleteDialog({ open: true, orderId: order.id, orderNumber: order.order_number })}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     );
@@ -372,22 +439,30 @@ const Alterations = () => {
                               ) : "—"}
                             </TableCell>
                             <TableCell className="text-right">
-                              <Select
-                                value={order.alteration_status || "pending"}
-                                onValueChange={(value) =>
-                                  updateStatusMutation.mutate({ orderId: order.id, status: value })
-                                }
-                              >
-                                <SelectTrigger className="w-28 border-gold/20">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="pending">Pending</SelectItem>
-                                  <SelectItem value="in_progress">In Progress</SelectItem>
-                                  <SelectItem value="ready">Ready</SelectItem>
-                                  <SelectItem value="delivered">Delivered</SelectItem>
-                                </SelectContent>
-                              </Select>
+                              <div className="flex items-center justify-end gap-1">
+                                <Select
+                                  value={order.alteration_status || "pending"}
+                                  onValueChange={(value) =>
+                                    updateStatusMutation.mutate({ orderId: order.id, status: value })
+                                  }
+                                >
+                                  <SelectTrigger className="w-28 border-gold/20">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pending">Pending</SelectItem>
+                                    <SelectItem value="in_progress">In Progress</SelectItem>
+                                    <SelectItem value="ready">Ready</SelectItem>
+                                    <SelectItem value="delivered">Delivered</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(order)}>
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteDialog({ open: true, orderId: order.id, orderNumber: order.order_number })}>
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         );
@@ -421,6 +496,89 @@ const Alterations = () => {
           </DialogHeader>
           <div className="p-4 bg-muted/50 rounded-lg whitespace-pre-wrap text-sm">
             {remarksDialog.notes || "No remarks available."}
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Edit Alteration Dialog */}
+      <Dialog open={editDialog.open} onOpenChange={(open) => { if (!open) setEditDialog({ open: false, order: null }); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif">Edit Alteration — {editDialog.order?.order_number}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Alteration Number</Label>
+              <Input
+                value={editAltNumber}
+                onChange={(e) => setEditAltNumber(e.target.value)}
+                placeholder="e.g., ALT-001"
+                className="border-gold/20"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Due Date</Label>
+              <Input
+                type="date"
+                value={editDueDate}
+                onChange={(e) => setEditDueDate(e.target.value)}
+                className="border-gold/20"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Remarks / Notes</Label>
+              <Textarea
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                className="border-gold/20 min-h-[100px]"
+                placeholder="Alteration details..."
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={() => editMutation.mutate()}
+                disabled={editMutation.isPending}
+                className="bg-gold hover:bg-gold-dark text-white flex-1"
+              >
+                {editMutation.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+              <Button variant="outline" onClick={() => setEditDialog({ open: false, order: null })} className="border-gold/20">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Alteration Dialog */}
+      <Dialog open={deleteDialog.open} onOpenChange={(open) => { if (!open) { setDeleteDialog({ open: false, orderId: "", orderNumber: "" }); setDeleteCode(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-destructive">Delete Alteration — {deleteDialog.orderNumber}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              This will remove the alteration from this order. Enter the security code to confirm.
+            </p>
+            <Input
+              type="password"
+              placeholder="Enter security code"
+              value={deleteCode}
+              onChange={(e) => setDeleteCode(e.target.value)}
+              className="border-gold/20"
+            />
+            <div className="flex gap-3">
+              <Button
+                variant="destructive"
+                className="flex-1"
+                disabled={deleteCode !== "2486" || deleteMutation.isPending}
+                onClick={() => deleteMutation.mutate(deleteDialog.orderId)}
+              >
+                {deleteMutation.isPending ? "Deleting..." : "Delete Alteration"}
+              </Button>
+              <Button variant="outline" onClick={() => { setDeleteDialog({ open: false, orderId: "", orderNumber: "" }); setDeleteCode(""); }}>
+                Cancel
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
