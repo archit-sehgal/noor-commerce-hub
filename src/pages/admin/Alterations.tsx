@@ -439,22 +439,30 @@ const Alterations = () => {
                               ) : "—"}
                             </TableCell>
                             <TableCell className="text-right">
-                              <Select
-                                value={order.alteration_status || "pending"}
-                                onValueChange={(value) =>
-                                  updateStatusMutation.mutate({ orderId: order.id, status: value })
-                                }
-                              >
-                                <SelectTrigger className="w-28 border-gold/20">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="pending">Pending</SelectItem>
-                                  <SelectItem value="in_progress">In Progress</SelectItem>
-                                  <SelectItem value="ready">Ready</SelectItem>
-                                  <SelectItem value="delivered">Delivered</SelectItem>
-                                </SelectContent>
-                              </Select>
+                              <div className="flex items-center justify-end gap-1">
+                                <Select
+                                  value={order.alteration_status || "pending"}
+                                  onValueChange={(value) =>
+                                    updateStatusMutation.mutate({ orderId: order.id, status: value })
+                                  }
+                                >
+                                  <SelectTrigger className="w-28 border-gold/20">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pending">Pending</SelectItem>
+                                    <SelectItem value="in_progress">In Progress</SelectItem>
+                                    <SelectItem value="ready">Ready</SelectItem>
+                                    <SelectItem value="delivered">Delivered</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(order)}>
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteDialog({ open: true, orderId: order.id, orderNumber: order.order_number })}>
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         );
