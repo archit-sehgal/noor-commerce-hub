@@ -35,6 +35,12 @@ const Alterations = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [remarksDialog, setRemarksDialog] = useState<{ open: boolean; notes: string; orderNumber: string }>({ open: false, notes: "", orderNumber: "" });
+  const [editDialog, setEditDialog] = useState<{ open: boolean; order: any | null }>({ open: false, order: null });
+  const [editNotes, setEditNotes] = useState("");
+  const [editDueDate, setEditDueDate] = useState("");
+  const [editAltNumber, setEditAltNumber] = useState("");
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; orderId: string; orderNumber: string }>({ open: false, orderId: "", orderNumber: "" });
+  const [deleteCode, setDeleteCode] = useState("");
 
   // Fetch orders with alterations
   const { data: alterationOrders, isLoading } = useQuery({
