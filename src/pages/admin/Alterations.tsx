@@ -166,6 +166,8 @@ const Alterations = () => {
     setEditNotes(order.alteration_notes || "");
     setEditDueDate(order.alteration_due_date ? new Date(order.alteration_due_date).toISOString().split("T")[0] : "");
     setEditAltNumber(order.alteration_number || "");
+    setEditCustomerName(order.customer?.name || "");
+    setEditCustomerPhone(order.customer?.phone || "");
     setEditDialog({ open: true, order });
   };
 
