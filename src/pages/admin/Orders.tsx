@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { fetchAllPaginated } from "@/lib/paginatedFetch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -139,18 +140,19 @@ const AdminOrders = () => {
 
   const fetchOrders = async () => {
     try {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(`
-          *,
-          customer:customers(name, email, phone),
-          salesman:salesman(name),
-          order_items(id, product_name, product_sku, quantity, unit_price, total_price, size, color, product_id),
-          invoices(invoice_number)
-        `)
-        .order("created_at", { ascending: false });
+      const data = await fetchAllPaginated(() =>
+        supabase
+          .from("orders")
+          .select(`
+            *,
+            customer:customers(name, email, phone),
+            salesman:salesman(name),
+            order_items(id, product_name, product_sku, quantity, unit_price, total_price, size, color, product_id),
+            invoices(invoice_number)
+          `)
+          .order("created_at", { ascending: false })
+      );
 
-      if (error) throw error;
       // Map invoice_number from the joined invoices
       const ordersWithInvoice = (data || []).map((order: any) => ({
         ...order,
@@ -349,12 +351,14 @@ const AdminOrders = () => {
   };
 
   const fetchAllProducts = async () => {
-    const { data } = await supabase
-      .from("products")
-      .select("id, name, sku, price, discount_price, stock_quantity")
-      .eq("is_active", true)
-      .gt("stock_quantity", 0)
-      .order("name");
+    const data = await fetchAllPaginated(() =>
+      supabase
+        .from("products")
+        .select("id, name, sku, price, discount_price, stock_quantity")
+        .eq("is_active", true)
+        .gt("stock_quantity", 0)
+        .order("name")
+    );
     setAllProducts(data || []);
   };
 

@@ -156,19 +156,20 @@ const AdminReports = () => {
       prevStartDate.setDate(prevStartDate.getDate() - daysAgo * 2);
 
       // Fetch orders for the period
-      let ordersQuery = supabase
-        .from("orders")
-        .select("id, total_amount, created_at, customer_id, order_source, status, notes, payment_status, payment_method")
-        .gte("created_at", startDate.toISOString());
-      if (endDate) ordersQuery = ordersQuery.lte("created_at", endDate.toISOString());
-      const { data: orders } = await ordersQuery;
+      const orders = await fetchAllRows("orders",
+        "id, total_amount, created_at, customer_id, order_source, status, notes, payment_status, payment_method",
+        (q: any) => {
+          let query = q.gte("created_at", startDate.toISOString());
+          if (endDate) query = query.lte("created_at", endDate.toISOString());
+          return query;
+        }
+      );
 
       // Fetch previous period orders for comparison
-      const { data: prevOrders } = await supabase
-        .from("orders")
-        .select("id, total_amount, created_at")
-        .gte("created_at", prevStartDate.toISOString())
-        .lt("created_at", startDate.toISOString());
+      const prevOrders = await fetchAllRows("orders",
+        "id, total_amount, created_at",
+        (q: any) => q.gte("created_at", prevStartDate.toISOString()).lt("created_at", startDate.toISOString())
+      );
 
       // Calculate summary - count paid orders AND credit (pay later) orders as revenue
       const revenueOrders = orders?.filter(o => o.payment_status === 'paid' || (o as any).payment_method === 'credit') || [];
@@ -204,20 +205,15 @@ const AdminReports = () => {
       });
 
       // Fetch new customers
-      const { data: newCustomersData } = await supabase
-        .from("customers")
-        .select("id")
-        .gte("created_at", startDate.toISOString());
+      const newCustomersData = await fetchAllRows("customers", "id",
+        (q: any) => q.gte("created_at", startDate.toISOString())
+      );
 
       // Fetch all customers
-      const { data: allCustomers } = await supabase
-        .from("customers")
-        .select("id, total_orders");
+      const allCustomers = await fetchAllRows("customers", "id, total_orders");
 
       // Fetch products
-      const { data: products } = await supabase
-        .from("products")
-        .select("id, stock_quantity, min_stock_alert");
+      const products = await fetchAllRows("products", "id, stock_quantity, min_stock_alert");
 
       const lowStockProducts = products?.filter(p => p.stock_quantity <= (p.min_stock_alert || 10)).length || 0;
       

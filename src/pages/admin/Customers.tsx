@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { fetchAllPaginated } from "@/lib/paginatedFetch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -82,12 +83,13 @@ const AdminCustomers = () => {
 
   const fetchCustomers = async () => {
     try {
-      const { data, error } = await supabase
-        .from("customers")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const data = await fetchAllPaginated(() =>
+        supabase
+          .from("customers")
+          .select("*")
+          .order("created_at", { ascending: false })
+      );
 
-      if (error) throw error;
       setCustomers(data || []);
     } catch (error) {
       console.error("Error fetching customers:", error);

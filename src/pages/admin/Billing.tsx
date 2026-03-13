@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
+import { fetchAllPaginated } from "@/lib/paginatedFetch";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import AdminLayout from "@/components/admin/AdminLayout";
@@ -159,12 +160,13 @@ const AdminBilling = () => {
 
   const fetchCustomers = async () => {
     try {
-      const { data, error } = await supabase
-        .from("customers")
-        .select("id, name, phone, email")
-        .order("name");
+      const data = await fetchAllPaginated(() =>
+        supabase
+          .from("customers")
+          .select("id, name, phone, email")
+          .order("name")
+      );
 
-      if (error) throw error;
       setCustomers(data || []);
     } catch (error) {
       console.error("Error fetching customers:", error);
