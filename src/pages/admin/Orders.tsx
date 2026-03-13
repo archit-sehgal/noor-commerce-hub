@@ -140,18 +140,19 @@ const AdminOrders = () => {
 
   const fetchOrders = async () => {
     try {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(`
-          *,
-          customer:customers(name, email, phone),
-          salesman:salesman(name),
-          order_items(id, product_name, product_sku, quantity, unit_price, total_price, size, color, product_id),
-          invoices(invoice_number)
-        `)
-        .order("created_at", { ascending: false });
+      const data = await fetchAllPaginated(() =>
+        supabase
+          .from("orders")
+          .select(`
+            *,
+            customer:customers(name, email, phone),
+            salesman:salesman(name),
+            order_items(id, product_name, product_sku, quantity, unit_price, total_price, size, color, product_id),
+            invoices(invoice_number)
+          `)
+          .order("created_at", { ascending: false })
+      );
 
-      if (error) throw error;
       // Map invoice_number from the joined invoices
       const ordersWithInvoice = (data || []).map((order: any) => ({
         ...order,
