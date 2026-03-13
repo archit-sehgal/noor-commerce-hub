@@ -160,12 +160,13 @@ const AdminBilling = () => {
 
   const fetchCustomers = async () => {
     try {
-      const { data, error } = await supabase
-        .from("customers")
-        .select("id, name, phone, email")
-        .order("name");
+      const data = await fetchAllPaginated(() =>
+        supabase
+          .from("customers")
+          .select("id, name, phone, email")
+          .order("name")
+      );
 
-      if (error) throw error;
       setCustomers(data || []);
     } catch (error) {
       console.error("Error fetching customers:", error);

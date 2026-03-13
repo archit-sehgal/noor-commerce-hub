@@ -83,16 +83,18 @@ const AdminInvoices = () => {
 
   const fetchInvoices = async () => {
     try {
-      const { data, error } = await supabase
-        .from("invoices")
-        .select(`
-          *,
-          customers(name, phone, email),
-          orders(order_number, status)
-        `)
-        .order("created_at", { ascending: false });
+      const data = await fetchAllPaginated(() =>
+        supabase
+          .from("invoices")
+          .select(`
+            *,
+            customers(name, phone, email),
+            orders(order_number, status)
+          `)
+          .order("created_at", { ascending: false })
+      );
 
-      if (error) throw error;
+      if (!data) throw new Error("No data");
 
       setInvoices(
         data?.map((inv) => ({

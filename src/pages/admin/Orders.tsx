@@ -351,12 +351,14 @@ const AdminOrders = () => {
   };
 
   const fetchAllProducts = async () => {
-    const { data } = await supabase
-      .from("products")
-      .select("id, name, sku, price, discount_price, stock_quantity")
-      .eq("is_active", true)
-      .gt("stock_quantity", 0)
-      .order("name");
+    const data = await fetchAllPaginated(() =>
+      supabase
+        .from("products")
+        .select("id, name, sku, price, discount_price, stock_quantity")
+        .eq("is_active", true)
+        .gt("stock_quantity", 0)
+        .order("name")
+    );
     setAllProducts(data || []);
   };
 
