@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { fetchAllPaginated } from "@/lib/paginatedFetch";
 import { generateInvoiceHTML, printInvoiceHTML } from "@/lib/invoiceTemplate";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
