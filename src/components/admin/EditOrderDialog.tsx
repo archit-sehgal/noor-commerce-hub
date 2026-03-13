@@ -131,12 +131,22 @@ const EditOrderDialog = ({
   };
 
   const fetchProducts = async () => {
-    const { data } = await supabase
-      .from("products")
-      .select("id, name, sku, price, discount_price, stock_quantity")
-      .eq("is_active", true)
-      .order("name");
-    setProducts(data || []);
+    let allProducts: Product[] = [];
+    let from = 0;
+    const pageSize = 1000;
+    while (true) {
+      const { data } = await supabase
+        .from("products")
+        .select("id, name, sku, price, discount_price, stock_quantity")
+        .eq("is_active", true)
+        .order("name")
+        .range(from, from + pageSize - 1);
+      if (!data || data.length === 0) break;
+      allProducts = [...allProducts, ...data];
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
+    setProducts(allProducts);
   };
 
   const removeItem = (index: number) => {
