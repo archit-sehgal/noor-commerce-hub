@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,73 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Trash2, UserCog, Shield, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, UserCog, Shield, AlertTriangle, Percent } from "lucide-react";
+
+const DefaultDiscountSetting = () => {
+  const [discountValue, setDiscountValue] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    const fetchSetting = async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "default_discount_percent")
+        .maybeSingle();
+      setDiscountValue(data?.value || "15");
+      setLoaded(true);
+    };
+    fetchSetting();
+  }, []);
+
+  const saveSetting = async () => {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("app_settings")
+        .update({ value: discountValue })
+        .eq("key", "default_discount_percent");
+      if (error) throw error;
+      toast.success("Default discount updated");
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!loaded) return <div className="text-sm text-muted-foreground">Loading...</div>;
+
+  return (
+    <div className="flex items-end gap-4">
+      <div className="space-y-2 flex-1 max-w-xs">
+        <Label htmlFor="default-discount" className="flex items-center gap-2">
+          <Percent className="h-4 w-4 text-gold" />
+          Default Discount % (POS Billing)
+        </Label>
+        <Input
+          id="default-discount"
+          type="number"
+          min={0}
+          max={100}
+          step={0.01}
+          value={discountValue}
+          onChange={(e) => setDiscountValue(e.target.value)}
+          className="border-gold/20 focus:border-gold"
+        />
+        <p className="text-xs text-muted-foreground">Applied automatically when adding items in billing</p>
+      </div>
+      <Button
+        onClick={saveSetting}
+        disabled={saving}
+        className="bg-gold hover:bg-gold-dark text-charcoal"
+      >
+        {saving ? "Saving..." : "Save"}
+      </Button>
+    </div>
+  );
+};
 
 interface Employee {
   id: string;
@@ -483,6 +549,19 @@ const Settings = () => {
                 </div>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Billing Settings */}
+        <Card className="border-gold/20">
+          <CardHeader className="bg-gradient-to-r from-cream to-cream-dark border-b border-gold/10">
+            <CardTitle className="font-display text-xl">Billing Settings</CardTitle>
+            <CardDescription>
+              Configure default billing preferences
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-4">
+            <DefaultDiscountSetting />
           </CardContent>
         </Card>
 

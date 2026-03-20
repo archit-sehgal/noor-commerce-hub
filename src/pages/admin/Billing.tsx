@@ -110,6 +110,7 @@ const AdminBilling = () => {
   const [alterationNotes, setAlterationNotes] = useState("");
   const [alterationNumber, setAlterationNumber] = useState("");
   const [alterationItemIndices, setAlterationItemIndices] = useState<number[]>([]);
+  const [defaultDiscountPercent, setDefaultDiscountPercent] = useState(15);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -117,6 +118,7 @@ const AdminBilling = () => {
     fetchProducts();
     fetchCustomers();
     fetchSalesmen();
+    fetchDefaultDiscount();
   }, []);
 
   // Focus on barcode input when component mounts
@@ -125,6 +127,19 @@ const AdminBilling = () => {
       barcodeInputRef.current.focus();
     }
   }, []);
+
+  const fetchDefaultDiscount = async () => {
+    try {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "default_discount_percent")
+        .maybeSingle();
+      if (data?.value) setDefaultDiscountPercent(parseFloat(data.value));
+    } catch (e) {
+      console.error("Error fetching default discount:", e);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -245,7 +260,7 @@ const AdminBilling = () => {
           size: product.sizes?.[0] || null,
           color: product.colors?.[0] || null,
           unitPrice,
-          discountPercent: 10,
+          discountPercent: defaultDiscountPercent,
         },
       ]);
     }
