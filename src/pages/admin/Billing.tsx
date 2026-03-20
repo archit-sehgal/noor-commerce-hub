@@ -260,7 +260,7 @@ const AdminBilling = () => {
           size: product.sizes?.[0] || null,
           color: product.colors?.[0] || null,
           unitPrice,
-          discountPercent: 10,
+          discountPercent: defaultDiscountPercent,
         },
       ]);
     }
