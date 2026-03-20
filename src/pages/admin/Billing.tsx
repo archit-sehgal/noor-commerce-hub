@@ -110,6 +110,7 @@ const AdminBilling = () => {
   const [alterationNotes, setAlterationNotes] = useState("");
   const [alterationNumber, setAlterationNumber] = useState("");
   const [alterationItemIndices, setAlterationItemIndices] = useState<number[]>([]);
+  const [defaultDiscountPercent, setDefaultDiscountPercent] = useState(15);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -117,6 +118,7 @@ const AdminBilling = () => {
     fetchProducts();
     fetchCustomers();
     fetchSalesmen();
+    fetchDefaultDiscount();
   }, []);
 
   // Focus on barcode input when component mounts
