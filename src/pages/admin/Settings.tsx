@@ -486,6 +486,19 @@ const Settings = () => {
           </CardContent>
         </Card>
 
+        {/* Billing Settings */}
+        <Card className="border-gold/20">
+          <CardHeader className="bg-gradient-to-r from-cream to-cream-dark border-b border-gold/10">
+            <CardTitle className="font-display text-xl">Billing Settings</CardTitle>
+            <CardDescription>
+              Configure default billing preferences
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-4">
+            <DefaultDiscountSetting />
+          </CardContent>
+        </Card>
+
         {/* Store Settings Section */}
         <Card className="border-gold/20">
           <CardHeader className="bg-gradient-to-r from-cream to-cream-dark border-b border-gold/10">
