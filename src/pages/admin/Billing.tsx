@@ -128,6 +128,19 @@ const AdminBilling = () => {
     }
   }, []);
 
+  const fetchDefaultDiscount = async () => {
+    try {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "default_discount_percent")
+        .maybeSingle();
+      if (data?.value) setDefaultDiscountPercent(parseFloat(data.value));
+    } catch (e) {
+      console.error("Error fetching default discount:", e);
+    }
+  };
+
   const fetchProducts = async () => {
     try {
       const PAGE_SIZE = 1000;
