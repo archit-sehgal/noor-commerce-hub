@@ -143,6 +143,43 @@ const AdminCustomers = () => {
           description: "The customer has been successfully updated.",
         });
       } else {
+        // Check if a customer with this phone number already exists
+        if (formData.phone.trim()) {
+          const { data: existing } = await supabase
+            .from("customers")
+            .select("id, name")
+            .eq("phone", formData.phone.trim())
+            .maybeSingle();
+
+          if (existing) {
+            // Update existing customer with latest details instead of creating duplicate
+            const { error } = await supabase
+              .from("customers")
+              .update({
+                name: formData.name,
+                email: formData.email || null,
+                address: formData.address || null,
+                city: formData.city || null,
+                state: formData.state || null,
+                pincode: formData.pincode || null,
+                notes: formData.notes || null,
+              })
+              .eq("id", existing.id);
+
+            if (error) throw error;
+
+            toast({
+              title: "Customer updated",
+              description: `A customer with this phone number already existed (${existing.name}). Details have been updated.`,
+            });
+
+            setIsDialogOpen(false);
+            resetForm();
+            fetchCustomers();
+            return;
+          }
+        }
+
         const { error } = await supabase.from("customers").insert({
           name: formData.name,
           email: formData.email || null,
