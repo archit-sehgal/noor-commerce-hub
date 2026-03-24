@@ -306,6 +306,37 @@ const AdminBilling = () => {
     }
 
     try {
+      // Check if customer with this phone already exists
+      if (newCustomerPhone.trim()) {
+        const { data: existing } = await supabase
+          .from("customers")
+          .select("id, name, phone, email")
+          .eq("phone", newCustomerPhone.trim())
+          .maybeSingle();
+
+        if (existing) {
+          // Update name if changed, then select existing customer
+          await supabase
+            .from("customers")
+            .update({ name: newCustomerName.trim(), email: newCustomerEmail.trim() || existing.email })
+            .eq("id", existing.id);
+
+          const updatedCustomer = { ...existing, name: newCustomerName.trim(), email: newCustomerEmail.trim() || existing.email };
+          setCustomers(customers.map(c => c.id === existing.id ? updatedCustomer : c));
+          setSelectedCustomer(updatedCustomer);
+          setShowNewCustomer(false);
+          setNewCustomerName("");
+          setNewCustomerPhone("");
+          setNewCustomerEmail("");
+
+          toast({
+            title: "Existing Customer Found",
+            description: `Customer with this phone already exists. Selected ${updatedCustomer.name}.`,
+          });
+          return;
+        }
+      }
+
       const { data, error } = await supabase
         .from("customers")
         .insert({
