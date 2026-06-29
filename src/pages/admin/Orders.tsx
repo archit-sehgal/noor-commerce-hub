@@ -102,7 +102,7 @@ interface ExchangeProduct {
 }
 
 const AdminOrders = () => {
-  const [loading, setLoading] = useState(false);
+  const loading = false;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
