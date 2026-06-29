@@ -1050,15 +1050,42 @@ const AdminOrders = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((order) => (
+              {paged.map((order) => (
                 <OrderRow key={order.id} order={order} />
               ))}
             </TableBody>
           </Table>
         </div>
+
+        {/* Pagination */}
+        <div className="flex items-center justify-between pt-4">
+          <p className="text-sm text-muted-foreground">
+            Showing {(safePage - 1) * PAGE_SIZE + 1}-{Math.min(safePage * PAGE_SIZE, filtered.length)} of {filtered.length}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={safePage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            >
+              <ChevronUp className="h-4 w-4 mr-1" /> Prev
+            </Button>
+            <span className="text-sm">Page {safePage} / {totalPages}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={safePage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            >
+              Next <ChevronDown className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        </div>
       </>
     );
   };
+
 
   // Calculate revenue only from paid orders
   const todayPaidRevenue = orders
