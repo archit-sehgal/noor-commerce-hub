@@ -114,7 +114,15 @@ const AdminOrders = () => {
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 25;
   const { toast } = useToast();
+
+  // Reset to first page whenever filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, sourceFilter, paymentFilter, dateFrom, dateTo]);
+
 
   // Delete order state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
