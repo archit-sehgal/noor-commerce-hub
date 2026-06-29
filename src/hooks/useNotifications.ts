@@ -167,7 +167,7 @@ export const useNotifications = () => {
           lastNotificationId.current = newNotification.id;
           
           setNotifications((prev) => [newNotification, ...prev]);
-          setUnreadCount((prev) => prev + 1);
+
           
           // Play sound and haptic for new orders
           if (newNotification.type === 'order') {
