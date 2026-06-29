@@ -981,7 +981,7 @@ const AdminOrders = () => {
       <>
         {/* Mobile View */}
         <div className="md:hidden space-y-3">
-          {filtered.map((order) => (
+          {paged.map((order) => (
             <Collapsible key={order.id} open={expandedOrders.has(order.id)} onOpenChange={() => toggleExpand(order.id)}>
               <div className="bg-card border border-border rounded-lg overflow-hidden">
                 <CollapsibleTrigger asChild>
