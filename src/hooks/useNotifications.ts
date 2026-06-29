@@ -104,15 +104,14 @@ export const useNotifications = () => {
         .from("notifications")
         .update({ is_read: true })
         .eq("id", id);
-      
+
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
       );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
-  }, []);
+  }, [setNotifications]);
 
   const markAllAsRead = useCallback(async () => {
     try {
@@ -120,39 +119,32 @@ export const useNotifications = () => {
         .from("notifications")
         .update({ is_read: true })
         .eq("is_read", false);
-      
+
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-      setUnreadCount(0);
     } catch (error) {
       console.error("Error marking all as read:", error);
     }
-  }, []);
+  }, [setNotifications]);
 
   const deleteNotification = useCallback(async (id: string) => {
     try {
       await supabase.from("notifications").delete().eq("id", id);
-      
-      setNotifications((prev) => {
-        const notification = prev.find((n) => n.id === id);
-        if (notification && !notification.is_read) {
-          setUnreadCount((count) => Math.max(0, count - 1));
-        }
-        return prev.filter((n) => n.id !== id);
-      });
+
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
     } catch (error) {
       console.error("Error deleting notification:", error);
     }
-  }, []);
+  }, [setNotifications]);
 
   const clearAll = useCallback(async () => {
     try {
       await supabase.from("notifications").delete().neq("id", "");
-      setNotifications([]);
-      setUnreadCount(0);
+      setNotifications(() => []);
     } catch (error) {
       console.error("Error clearing notifications:", error);
     }
-  }, []);
+  }, [setNotifications]);
+
 
   useEffect(() => {
     fetchNotifications();
