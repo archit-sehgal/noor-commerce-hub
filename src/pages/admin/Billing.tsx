@@ -644,6 +644,18 @@ const AdminBilling = () => {
       return;
     }
 
+    // Salesman is required to print the bill
+    if (!selectedSalesman) {
+      toast({
+        title: "Salesman required",
+        description: "Please select a salesman before generating the bill",
+        variant: "destructive",
+      });
+      return;
+    }
+
+
+
     setSubmitting(true);
     const startTime = Date.now();
 
