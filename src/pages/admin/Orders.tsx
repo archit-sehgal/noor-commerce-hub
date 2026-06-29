@@ -1207,7 +1207,7 @@ const AdminOrders = () => {
       </div>
 
       {/* Orders Tabs */}
-      {loading ? (
+      {ordersLoading ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="h-8 w-8 animate-spin text-gold" />
         </div>
