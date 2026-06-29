@@ -68,31 +68,35 @@ const triggerHaptic = () => {
 };
 
 export const useNotifications = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const lastNotificationId = useRef<string | null>(null);
 
-  const fetchNotifications = useCallback(async () => {
-    try {
+  const { data: notifications = [], isLoading: loading, refetch } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("notifications")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(50);
-
       if (error) throw error;
-      
-      const typedData = (data || []) as Notification[];
-      setNotifications(typedData);
-      setUnreadCount(typedData.filter((n) => !n.is_read).length);
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return (data || []) as Notification[];
+    },
+    staleTime: 1000 * 30,
+  });
+
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
+
+  const setNotifications = useCallback(
+    (updater: (prev: Notification[]) => Notification[]) => {
+      queryClient.setQueryData<Notification[]>(["notifications"], (prev) => updater(prev || []));
+    },
+    [queryClient]
+  );
+
+  const fetchNotifications = useCallback(() => refetch(), [refetch]);
+
 
   const markAsRead = useCallback(async (id: string) => {
     try {
