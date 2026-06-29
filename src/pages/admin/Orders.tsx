@@ -143,12 +143,9 @@ const AdminOrders = () => {
   const [exchanging, setExchanging] = useState(false);
   const [exchangeCompletedData, setExchangeCompletedData] = useState<{ order: Order; newItems: { product: ExchangeProduct; quantity: number }[]; difference: number } | null>(null);
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const fetchOrders = async () => {
-    try {
+  const { data: orders = [], isLoading: ordersLoading, refetch: refetchOrders } = useQuery({
+    queryKey: ["admin-orders"],
+    queryFn: async () => {
       const data = await fetchAllPaginated(() =>
         supabase
           .from("orders")
@@ -161,19 +158,16 @@ const AdminOrders = () => {
           `)
           .order("created_at", { ascending: false })
       );
-
       // Map invoice_number from the joined invoices
-      const ordersWithInvoice = (data || []).map((order: any) => ({
+      return (data || []).map((order: any) => ({
         ...order,
         invoice_number: order.invoices?.[0]?.invoice_number || null,
-      }));
-      setOrders(ordersWithInvoice);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      })) as Order[];
+    },
+  });
+
+  const fetchOrders = () => refetchOrders();
+
 
   const restoreInventoryForOrder = async (orderId: string) => {
     const order = orders.find(o => o.id === orderId);
