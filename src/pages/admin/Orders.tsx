@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { fetchAllPaginated } from "@/lib/paginatedFetch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -101,8 +102,8 @@ interface ExchangeProduct {
 }
 
 const AdminOrders = () => {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
@@ -142,12 +143,9 @@ const AdminOrders = () => {
   const [exchanging, setExchanging] = useState(false);
   const [exchangeCompletedData, setExchangeCompletedData] = useState<{ order: Order; newItems: { product: ExchangeProduct; quantity: number }[]; difference: number } | null>(null);
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const fetchOrders = async () => {
-    try {
+  const { data: orders = [], isLoading: ordersLoading, refetch: refetchOrders } = useQuery({
+    queryKey: ["admin-orders"],
+    queryFn: async () => {
       const data = await fetchAllPaginated(() =>
         supabase
           .from("orders")
@@ -160,19 +158,16 @@ const AdminOrders = () => {
           `)
           .order("created_at", { ascending: false })
       );
-
       // Map invoice_number from the joined invoices
-      const ordersWithInvoice = (data || []).map((order: any) => ({
+      return (data || []).map((order: any) => ({
         ...order,
         invoice_number: order.invoices?.[0]?.invoice_number || null,
-      }));
-      setOrders(ordersWithInvoice);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      })) as Order[];
+    },
+  });
+
+  const fetchOrders = () => refetchOrders();
+
 
   const restoreInventoryForOrder = async (orderId: string) => {
     const order = orders.find(o => o.id === orderId);
@@ -1212,7 +1207,7 @@ const AdminOrders = () => {
       </div>
 
       {/* Orders Tabs */}
-      {loading ? (
+      {ordersLoading ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="h-8 w-8 animate-spin text-gold" />
         </div>

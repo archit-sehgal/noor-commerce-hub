@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -67,31 +68,35 @@ const triggerHaptic = () => {
 };
 
 export const useNotifications = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const lastNotificationId = useRef<string | null>(null);
 
-  const fetchNotifications = useCallback(async () => {
-    try {
+  const { data: notifications = [], isLoading: loading, refetch } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("notifications")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(50);
-
       if (error) throw error;
-      
-      const typedData = (data || []) as Notification[];
-      setNotifications(typedData);
-      setUnreadCount(typedData.filter((n) => !n.is_read).length);
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return (data || []) as Notification[];
+    },
+    staleTime: 1000 * 30,
+  });
+
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
+
+  const setNotifications = useCallback(
+    (updater: (prev: Notification[]) => Notification[]) => {
+      queryClient.setQueryData<Notification[]>(["notifications"], (prev) => updater(prev || []));
+    },
+    [queryClient]
+  );
+
+  const fetchNotifications = useCallback(() => refetch(), [refetch]);
+
 
   const markAsRead = useCallback(async (id: string) => {
     try {
@@ -99,15 +104,14 @@ export const useNotifications = () => {
         .from("notifications")
         .update({ is_read: true })
         .eq("id", id);
-      
+
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
       );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
-  }, []);
+  }, [setNotifications]);
 
   const markAllAsRead = useCallback(async () => {
     try {
@@ -115,39 +119,32 @@ export const useNotifications = () => {
         .from("notifications")
         .update({ is_read: true })
         .eq("is_read", false);
-      
+
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-      setUnreadCount(0);
     } catch (error) {
       console.error("Error marking all as read:", error);
     }
-  }, []);
+  }, [setNotifications]);
 
   const deleteNotification = useCallback(async (id: string) => {
     try {
       await supabase.from("notifications").delete().eq("id", id);
-      
-      setNotifications((prev) => {
-        const notification = prev.find((n) => n.id === id);
-        if (notification && !notification.is_read) {
-          setUnreadCount((count) => Math.max(0, count - 1));
-        }
-        return prev.filter((n) => n.id !== id);
-      });
+
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
     } catch (error) {
       console.error("Error deleting notification:", error);
     }
-  }, []);
+  }, [setNotifications]);
 
   const clearAll = useCallback(async () => {
     try {
       await supabase.from("notifications").delete().neq("id", "");
-      setNotifications([]);
-      setUnreadCount(0);
+      setNotifications(() => []);
     } catch (error) {
       console.error("Error clearing notifications:", error);
     }
-  }, []);
+  }, [setNotifications]);
+
 
   useEffect(() => {
     fetchNotifications();
@@ -170,7 +167,7 @@ export const useNotifications = () => {
           lastNotificationId.current = newNotification.id;
           
           setNotifications((prev) => [newNotification, ...prev]);
-          setUnreadCount((prev) => prev + 1);
+
           
           // Play sound and haptic for new orders
           if (newNotification.type === 'order') {
