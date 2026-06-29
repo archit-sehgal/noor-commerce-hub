@@ -524,10 +524,13 @@ const AdminBilling = () => {
           <div class="invoice-details">
             <div>
               <p><strong>Invoice No:</strong> ${invoiceData.invoiceNumber}</p>
+              ${invoiceData.orderNumber ? `<p><strong>Order #:</strong> ${invoiceData.orderNumber}</p>` : ""}
               <p><strong>Date:</strong> ${new Date().toLocaleDateString("en-IN")}</p>
               ${invoiceData.customer ? `<p><strong>Customer:</strong> ${invoiceData.customer.name}</p>` : ""}
-              ${invoiceData.salesman ? `<p><strong>Salesman:</strong> ${invoiceData.salesman.name}</p>` : ""}
+              ${invoiceData.customer?.phone ? `<p><strong>Phone:</strong> ${invoiceData.customer.phone}</p>` : ""}
+              <p><strong>Salesman:</strong> ${invoiceData.salesman ? invoiceData.salesman.name : "-"}</p>
             </div>
+
             <div>
               <p><strong>Payment:</strong> ${invoiceData.paymentMethod.toUpperCase()}</p>
               ${isExchange ? `<p><strong>Type:</strong> EXCHANGE</p>` : ""}
