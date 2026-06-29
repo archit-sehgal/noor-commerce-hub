@@ -971,8 +971,9 @@ const AdminBilling = () => {
           <div className="bg-background rounded-lg p-4 shadow-sm">
             <h3 className="font-serif text-lg font-semibold mb-3 flex items-center gap-2">
               <UserCheck className="h-5 w-5 text-primary" />
-              Salesman
+              Salesman <span className="text-destructive">*</span>
             </h3>
+
 
             {selectedSalesman ? (
               <div className="flex items-center justify-between p-3 bg-gold/10 rounded-lg">
