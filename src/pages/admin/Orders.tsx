@@ -114,7 +114,15 @@ const AdminOrders = () => {
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 25;
   const { toast } = useToast();
+
+  // Reset to first page whenever filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, sourceFilter, paymentFilter, dateFrom, dateTo]);
+
 
   // Delete order state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -964,11 +972,16 @@ const AdminOrders = () => {
       );
     }
 
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    const safePage = Math.min(currentPage, totalPages);
+    const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+
     return (
       <>
         {/* Mobile View */}
         <div className="md:hidden space-y-3">
-          {filtered.map((order) => (
+          {paged.map((order) => (
             <Collapsible key={order.id} open={expandedOrders.has(order.id)} onOpenChange={() => toggleExpand(order.id)}>
               <div className="bg-card border border-border rounded-lg overflow-hidden">
                 <CollapsibleTrigger asChild>
@@ -1037,15 +1050,42 @@ const AdminOrders = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((order) => (
+              {paged.map((order) => (
                 <OrderRow key={order.id} order={order} />
               ))}
             </TableBody>
           </Table>
         </div>
+
+        {/* Pagination */}
+        <div className="flex items-center justify-between pt-4">
+          <p className="text-sm text-muted-foreground">
+            Showing {(safePage - 1) * PAGE_SIZE + 1}-{Math.min(safePage * PAGE_SIZE, filtered.length)} of {filtered.length}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={safePage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            >
+              <ChevronUp className="h-4 w-4 mr-1" /> Prev
+            </Button>
+            <span className="text-sm">Page {safePage} / {totalPages}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={safePage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            >
+              Next <ChevronDown className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        </div>
       </>
     );
   };
+
 
   // Calculate revenue only from paid orders
   const todayPaidRevenue = orders

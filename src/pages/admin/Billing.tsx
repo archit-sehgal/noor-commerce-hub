@@ -524,10 +524,13 @@ const AdminBilling = () => {
           <div class="invoice-details">
             <div>
               <p><strong>Invoice No:</strong> ${invoiceData.invoiceNumber}</p>
+              ${invoiceData.orderNumber ? `<p><strong>Order #:</strong> ${invoiceData.orderNumber}</p>` : ""}
               <p><strong>Date:</strong> ${new Date().toLocaleDateString("en-IN")}</p>
               ${invoiceData.customer ? `<p><strong>Customer:</strong> ${invoiceData.customer.name}</p>` : ""}
-              ${invoiceData.salesman ? `<p><strong>Salesman:</strong> ${invoiceData.salesman.name}</p>` : ""}
+              ${invoiceData.customer?.phone ? `<p><strong>Phone:</strong> ${invoiceData.customer.phone}</p>` : ""}
+              <p><strong>Salesman:</strong> ${invoiceData.salesman ? invoiceData.salesman.name : "-"}</p>
             </div>
+
             <div>
               <p><strong>Payment:</strong> ${invoiceData.paymentMethod.toUpperCase()}</p>
               ${isExchange ? `<p><strong>Type:</strong> EXCHANGE</p>` : ""}
@@ -643,6 +646,18 @@ const AdminBilling = () => {
       });
       return;
     }
+
+    // Salesman is required to print the bill
+    if (!selectedSalesman) {
+      toast({
+        title: "Salesman required",
+        description: "Please select a salesman before generating the bill",
+        variant: "destructive",
+      });
+      return;
+    }
+
+
 
     setSubmitting(true);
     const startTime = Date.now();
@@ -959,8 +974,9 @@ const AdminBilling = () => {
           <div className="bg-background rounded-lg p-4 shadow-sm">
             <h3 className="font-serif text-lg font-semibold mb-3 flex items-center gap-2">
               <UserCheck className="h-5 w-5 text-primary" />
-              Salesman
+              Salesman <span className="text-destructive">*</span>
             </h3>
+
 
             {selectedSalesman ? (
               <div className="flex items-center justify-between p-3 bg-gold/10 rounded-lg">
