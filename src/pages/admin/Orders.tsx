@@ -972,6 +972,11 @@ const AdminOrders = () => {
       );
     }
 
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    const safePage = Math.min(currentPage, totalPages);
+    const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+
     return (
       <>
         {/* Mobile View */}
