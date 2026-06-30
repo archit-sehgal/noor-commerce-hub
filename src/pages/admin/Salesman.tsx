@@ -85,7 +85,7 @@ const AdminSalesman = () => {
   const [loadingPeriod, setLoadingPeriod] = useState(false);
   const { toast } = useToast();
 
-  // Build list of months for current financial year (April -> current month)
+  // Build list of months for current financial year (April -> current month + 1 extra month)
   const periodOptions = (() => {
     const now = new Date();
     const fyStartYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
@@ -96,7 +96,7 @@ const AdminSalesman = () => {
     const options: { value: string; label: string }[] = [{ value: "all", label: "All Time" }];
     let y = fyStartYear;
     let m = 3; // April
-    while (y < now.getFullYear() || (y === now.getFullYear() && m <= now.getMonth())) {
+    while (y < now.getFullYear() || (y === now.getFullYear() && m <= now.getMonth() + 1)) {
       options.push({ value: `${y}-${m}`, label: `${monthNames[m]} ${y}` });
       m += 1;
       if (m > 11) { m = 0; y += 1; }
