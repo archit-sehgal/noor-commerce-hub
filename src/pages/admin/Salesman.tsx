@@ -39,6 +39,7 @@ import {
   Eye,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { fetchAllPaginated } from "@/lib/paginatedFetch";
 
 interface Salesman {
   id: string;
