@@ -390,11 +390,28 @@ const AdminSalesman = () => {
             className="pl-10"
           />
         </div>
+        <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Select period" />
+          </SelectTrigger>
+          <SelectContent>
+            {periodOptions.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Button onClick={handleAddNew}>
           <Plus className="h-4 w-4 mr-2" />
           Add Salesman
         </Button>
       </div>
+      {loadingPeriod && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading period data...
+        </div>
+      )}
 
       {/* Salesmen */}
       {loading ? (
