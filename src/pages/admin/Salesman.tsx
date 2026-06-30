@@ -306,7 +306,16 @@ const AdminSalesman = () => {
     }).format(amount);
   };
 
-  const filteredSalesmen = salesmen.filter(
+  // Apply period filter: override stats with the selected month's data
+  const displaySalesmen = periodStats
+    ? salesmen.map((s) => ({
+        ...s,
+        total_sales: periodStats[s.id]?.sales || 0,
+        total_orders: periodStats[s.id]?.orders || 0,
+      }))
+    : salesmen;
+
+  const filteredSalesmen = displaySalesmen.filter(
     (s) =>
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.phone?.includes(searchQuery) ||
@@ -316,8 +325,9 @@ const AdminSalesman = () => {
   // Calculate totals
   const totalSalesmen = salesmen.length;
   const activeSalesmen = salesmen.filter((s) => s.is_active).length;
-  const totalRevenue = salesmen.reduce((sum, s) => sum + Number(s.total_sales || 0), 0);
-  const totalOrders = salesmen.reduce((sum, s) => sum + (s.total_orders || 0), 0);
+  const totalRevenue = displaySalesmen.reduce((sum, s) => sum + Number(s.total_sales || 0), 0);
+  const totalOrders = displaySalesmen.reduce((sum, s) => sum + (s.total_orders || 0), 0);
+
 
   return (
     <AdminLayout title="Salesman Management">
