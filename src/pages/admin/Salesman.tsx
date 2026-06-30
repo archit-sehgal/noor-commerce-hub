@@ -39,6 +39,7 @@ import {
   Eye,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { fetchAllPaginated } from "@/lib/paginatedFetch";
 
 interface Salesman {
   id: string;
@@ -79,11 +80,71 @@ const AdminSalesman = () => {
     commission_rate: 0,
   });
   const [submitting, setSubmitting] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState("all");
+  const [periodStats, setPeriodStats] = useState<Record<string, { sales: number; orders: number }> | null>(null);
+  const [loadingPeriod, setLoadingPeriod] = useState(false);
   const { toast } = useToast();
+
+  // Build list of months for current financial year (April -> current month)
+  const periodOptions = (() => {
+    const now = new Date();
+    const fyStartYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December",
+    ];
+    const options: { value: string; label: string }[] = [{ value: "all", label: "All Time" }];
+    let y = fyStartYear;
+    let m = 3; // April
+    while (y < now.getFullYear() || (y === now.getFullYear() && m <= now.getMonth())) {
+      options.push({ value: `${y}-${m}`, label: `${monthNames[m]} ${y}` });
+      m += 1;
+      if (m > 11) { m = 0; y += 1; }
+    }
+    return options;
+  })();
 
   useEffect(() => {
     fetchSalesmen();
   }, []);
+
+  useEffect(() => {
+    if (selectedPeriod === "all") {
+      setPeriodStats(null);
+      return;
+    }
+    fetchPeriodStats(selectedPeriod);
+  }, [selectedPeriod]);
+
+  const fetchPeriodStats = async (period: string) => {
+    setLoadingPeriod(true);
+    try {
+      const [y, m] = period.split("-").map(Number);
+      const start = new Date(y, m, 1);
+      const end = new Date(y, m + 1, 1);
+      const orders = await fetchAllPaginated<any>(() =>
+        supabase
+          .from("orders")
+          .select("salesman_id, total_amount, created_at")
+          .not("salesman_id", "is", null)
+          .gte("created_at", start.toISOString())
+          .lt("created_at", end.toISOString())
+      );
+      const stats: Record<string, { sales: number; orders: number }> = {};
+      for (const o of orders) {
+        if (!o.salesman_id) continue;
+        if (!stats[o.salesman_id]) stats[o.salesman_id] = { sales: 0, orders: 0 };
+        stats[o.salesman_id].sales += Number(o.total_amount || 0);
+        stats[o.salesman_id].orders += 1;
+      }
+      setPeriodStats(stats);
+    } catch (error) {
+      console.error("Error fetching period stats:", error);
+      toast({ title: "Error", description: "Failed to fetch period data", variant: "destructive" });
+    } finally {
+      setLoadingPeriod(false);
+    }
+  };
 
   const fetchSalesmen = async () => {
     try {
@@ -245,7 +306,16 @@ const AdminSalesman = () => {
     }).format(amount);
   };
 
-  const filteredSalesmen = salesmen.filter(
+  // Apply period filter: override stats with the selected month's data
+  const displaySalesmen = periodStats
+    ? salesmen.map((s) => ({
+        ...s,
+        total_sales: periodStats[s.id]?.sales || 0,
+        total_orders: periodStats[s.id]?.orders || 0,
+      }))
+    : salesmen;
+
+  const filteredSalesmen = displaySalesmen.filter(
     (s) =>
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.phone?.includes(searchQuery) ||
@@ -255,8 +325,9 @@ const AdminSalesman = () => {
   // Calculate totals
   const totalSalesmen = salesmen.length;
   const activeSalesmen = salesmen.filter((s) => s.is_active).length;
-  const totalRevenue = salesmen.reduce((sum, s) => sum + Number(s.total_sales || 0), 0);
-  const totalOrders = salesmen.reduce((sum, s) => sum + (s.total_orders || 0), 0);
+  const totalRevenue = displaySalesmen.reduce((sum, s) => sum + Number(s.total_sales || 0), 0);
+  const totalOrders = displaySalesmen.reduce((sum, s) => sum + (s.total_orders || 0), 0);
+
 
   return (
     <AdminLayout title="Salesman Management">
@@ -319,11 +390,28 @@ const AdminSalesman = () => {
             className="pl-10"
           />
         </div>
+        <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Select period" />
+          </SelectTrigger>
+          <SelectContent>
+            {periodOptions.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Button onClick={handleAddNew}>
           <Plus className="h-4 w-4 mr-2" />
           Add Salesman
         </Button>
       </div>
+      {loadingPeriod && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading period data...
+        </div>
+      )}
 
       {/* Salesmen */}
       {loading ? (
