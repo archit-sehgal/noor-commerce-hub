@@ -234,6 +234,58 @@ const AdminDashboard = () => {
   return (
     <AdminLayout title="Dashboard">
       <div className="space-y-6">
+        {/* Loyalty Search */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-gold" />
+              Loyalty Search Bar
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Input
+                placeholder="Enter customer phone number"
+                value={loyaltyPhone}
+                onChange={(e) => setLoyaltyPhone(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") handleLoyaltySearch(); }}
+                className="max-w-md"
+              />
+              <Button onClick={handleLoyaltySearch} disabled={loyaltyLoading} className="bg-charcoal hover:bg-charcoal/90 text-cream">
+                {loyaltyLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4 mr-2" />}
+                {loyaltyLoading ? "Searching…" : "Check Last Discount"}
+              </Button>
+            </div>
+            {loyaltyError && (
+              <p className="text-sm text-destructive">{loyaltyError}</p>
+            )}
+            {loyaltyResult && (
+              <div className="border rounded-md p-4 bg-muted/30 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                <div>
+                  <p className="text-xs text-muted-foreground">Customer</p>
+                  <p className="font-semibold">{loyaltyResult.customerName}</p>
+                  <p className="text-xs">{loyaltyResult.phone}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Last Invoice</p>
+                  <p className="font-semibold">{loyaltyResult.invoiceNumber || loyaltyResult.orderNumber}</p>
+                  <p className="text-xs">{new Date(loyaltyResult.orderDate).toLocaleDateString("en-IN")}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Discount Given</p>
+                  <p className="font-semibold text-gold">{loyaltyResult.discountPercent.toFixed(2)}%</p>
+                  <p className="text-xs">₹{loyaltyResult.discountAmount.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Bill Total</p>
+                  <p className="font-semibold">₹{loyaltyResult.totalAmount.toLocaleString()}</p>
+                  <p className="text-xs">Subtotal ₹{loyaltyResult.subtotal.toLocaleString()}</p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           <Card>
