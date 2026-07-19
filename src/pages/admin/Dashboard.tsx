@@ -87,7 +87,7 @@ const AdminDashboard = () => {
       const customerIds = customers.map((c) => c.id);
       const { data: orders, error: ordErr } = await supabase
         .from("orders")
-        .select("id, order_number, invoice_number, subtotal, discount_amount, total_amount, created_at, customer_id")
+        .select("id, order_number, subtotal, discount_amount, total_amount, created_at, customer_id")
         .in("customer_id", customerIds)
         .order("created_at", { ascending: false })
         .limit(1);
@@ -96,15 +96,21 @@ const AdminDashboard = () => {
         setLoyaltyError("This customer has no billing history yet");
         return;
       }
-      const o = orders[0];
+      const o: any = orders[0];
       const cust = customers.find((c) => c.id === o.customer_id) || customers[0];
+      // Fetch matching invoice number (if any)
+      const { data: invRow } = await supabase
+        .from("invoices")
+        .select("invoice_number")
+        .eq("order_id", o.id)
+        .maybeSingle();
       const subtotal = Number(o.subtotal) || 0;
       const discountAmount = Number(o.discount_amount) || 0;
       const discountPercent = subtotal > 0 ? (discountAmount / subtotal) * 100 : 0;
       setLoyaltyResult({
         customerName: cust.name || "—",
         phone: cust.phone || normalized,
-        invoiceNumber: o.invoice_number,
+        invoiceNumber: invRow?.invoice_number || null,
         orderNumber: o.order_number,
         orderDate: o.created_at,
         subtotal,
