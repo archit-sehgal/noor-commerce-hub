@@ -4,7 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
 import {
   Package,
   ShoppingCart,
@@ -15,6 +17,8 @@ import {
   FileText,
   Loader2,
   CreditCard,
+  Search,
+  Sparkles,
 } from "lucide-react";
 
 interface DashboardStats {
