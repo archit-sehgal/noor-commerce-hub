@@ -4,7 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
 import {
   Package,
   ShoppingCart,
@@ -15,6 +17,8 @@ import {
   FileText,
   Loader2,
   CreditCard,
+  Search,
+  Sparkles,
 } from "lucide-react";
 
 interface DashboardStats {
@@ -42,6 +46,85 @@ const AdminDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [showWelcomeLoader, setShowWelcomeLoader] = useState(false);
+
+  // Loyalty search
+  const [loyaltyPhone, setLoyaltyPhone] = useState("");
+  const [loyaltyLoading, setLoyaltyLoading] = useState(false);
+  const [loyaltyResult, setLoyaltyResult] = useState<null | {
+    customerName: string;
+    phone: string;
+    invoiceNumber: string | null;
+    orderNumber: string;
+    orderDate: string;
+    subtotal: number;
+    discountAmount: number;
+    discountPercent: number;
+    totalAmount: number;
+  }>(null);
+  const [loyaltyError, setLoyaltyError] = useState<string | null>(null);
+
+  const handleLoyaltySearch = async () => {
+    const phone = loyaltyPhone.trim();
+    if (!phone) {
+      toast.error("Enter a customer phone number");
+      return;
+    }
+    setLoyaltyLoading(true);
+    setLoyaltyError(null);
+    setLoyaltyResult(null);
+    try {
+      const normalized = phone.replace(/\s+/g, "");
+      const { data: customers, error: custErr } = await supabase
+        .from("customers")
+        .select("id, name, phone")
+        .or(`phone.eq.${normalized},phone.ilike.%${normalized}%`)
+        .limit(5);
+      if (custErr) throw custErr;
+      if (!customers || customers.length === 0) {
+        setLoyaltyError("No customer found with that phone number");
+        return;
+      }
+      const customerIds = customers.map((c) => c.id);
+      const { data: orders, error: ordErr } = await supabase
+        .from("orders")
+        .select("id, order_number, subtotal, discount_amount, total_amount, created_at, customer_id")
+        .in("customer_id", customerIds)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (ordErr) throw ordErr;
+      if (!orders || orders.length === 0) {
+        setLoyaltyError("This customer has no billing history yet");
+        return;
+      }
+      const o: any = orders[0];
+      const cust = customers.find((c) => c.id === o.customer_id) || customers[0];
+      // Fetch matching invoice number (if any)
+      const { data: invRow } = await supabase
+        .from("invoices")
+        .select("invoice_number")
+        .eq("order_id", o.id)
+        .maybeSingle();
+      const subtotal = Number(o.subtotal) || 0;
+      const discountAmount = Number(o.discount_amount) || 0;
+      const discountPercent = subtotal > 0 ? (discountAmount / subtotal) * 100 : 0;
+      setLoyaltyResult({
+        customerName: cust.name || "—",
+        phone: cust.phone || normalized,
+        invoiceNumber: invRow?.invoice_number || null,
+        orderNumber: o.order_number,
+        orderDate: o.created_at,
+        subtotal,
+        discountAmount,
+        discountPercent,
+        totalAmount: Number(o.total_amount) || 0,
+      });
+    } catch (err: any) {
+      console.error("Loyalty search error:", err);
+      setLoyaltyError(err.message || "Failed to search");
+    } finally {
+      setLoyaltyLoading(false);
+    }
+  };
 
   // Check for fresh login and show welcome loader until data loads
   useEffect(() => {
@@ -151,6 +234,58 @@ const AdminDashboard = () => {
   return (
     <AdminLayout title="Dashboard">
       <div className="space-y-6">
+        {/* Loyalty Search */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-gold" />
+              Loyalty Search Bar
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Input
+                placeholder="Enter customer phone number"
+                value={loyaltyPhone}
+                onChange={(e) => setLoyaltyPhone(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") handleLoyaltySearch(); }}
+                className="max-w-md"
+              />
+              <Button onClick={handleLoyaltySearch} disabled={loyaltyLoading} className="bg-charcoal hover:bg-charcoal/90 text-cream">
+                {loyaltyLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4 mr-2" />}
+                {loyaltyLoading ? "Searching…" : "Check Last Discount"}
+              </Button>
+            </div>
+            {loyaltyError && (
+              <p className="text-sm text-destructive">{loyaltyError}</p>
+            )}
+            {loyaltyResult && (
+              <div className="border rounded-md p-4 bg-muted/30 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                <div>
+                  <p className="text-xs text-muted-foreground">Customer</p>
+                  <p className="font-semibold">{loyaltyResult.customerName}</p>
+                  <p className="text-xs">{loyaltyResult.phone}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Last Invoice</p>
+                  <p className="font-semibold">{loyaltyResult.invoiceNumber || loyaltyResult.orderNumber}</p>
+                  <p className="text-xs">{new Date(loyaltyResult.orderDate).toLocaleDateString("en-IN")}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Discount Given</p>
+                  <p className="font-semibold text-gold">{loyaltyResult.discountPercent.toFixed(2)}%</p>
+                  <p className="text-xs">₹{loyaltyResult.discountAmount.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Bill Total</p>
+                  <p className="font-semibold">₹{loyaltyResult.totalAmount.toLocaleString()}</p>
+                  <p className="text-xs">Subtotal ₹{loyaltyResult.subtotal.toLocaleString()}</p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           <Card>
