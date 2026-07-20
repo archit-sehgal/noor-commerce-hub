@@ -1242,12 +1242,13 @@ const AdminBilling = () => {
                   <span>-{formatCurrency(returnTotal)}</span>
                 </div>
               )}
-              {purchaseTotal > 0 && (
+              {purchaseItems.length > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-foreground">Purchase Value</span>
-                  <span>{formatCurrency(purchaseTotal)}</span>
+                  <span>{formatCurrency(purchaseItems.reduce((s, it) => s + it.unitPrice * it.quantity, 0))}</span>
                 </div>
               )}
+
               {discountAmount > 0 && (
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>Total Discount</span>
