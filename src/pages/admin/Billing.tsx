@@ -228,10 +228,13 @@ const AdminBilling = () => {
 
       if (product) {
         addToCart(product);
-        toast({
-          title: "Product Added",
-          description: `${product.name} added to cart`,
-        });
+        if ((product.stock_quantity ?? 0) > 0) {
+          toast({
+            title: "Product Added",
+            description: `${product.name} added to cart`,
+          });
+        }
+
       } else {
         toast({
           title: "Product Not Found",
