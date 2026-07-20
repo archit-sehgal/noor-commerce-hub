@@ -963,24 +963,34 @@ const AdminBilling = () => {
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 max-h-[300px] md:max-h-[400px] overflow-y-auto">
-                {filteredProducts.map((product) => (
-                  <button
-                    key={product.id}
-                    onClick={() => addToCart(product)}
-                    className="p-3 border border-border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors text-left"
-                  >
-                    <p className="font-medium text-sm truncate">{product.name}</p>
-                    <p className="text-xs text-foreground">{product.sku || "-"}</p>
-                    <div className="flex justify-between items-center mt-2">
-                      <span className="text-primary font-semibold text-sm">
-                        {formatCurrency(product.discount_price || product.price)}
-                      </span>
-                      <span className="text-xs text-foreground">
-                        Stock: {product.stock_quantity}
-                      </span>
-                    </div>
-                  </button>
-                ))}
+                {filteredProducts.map((product) => {
+                  const displayStock = Math.max(0, product.stock_quantity ?? 0);
+                  const outOfStock = displayStock <= 0;
+                  return (
+                    <button
+                      key={product.id}
+                      onClick={() => addToCart(product)}
+                      disabled={outOfStock}
+                      className={`p-3 border border-border rounded-lg text-left transition-colors ${
+                        outOfStock
+                          ? "opacity-50 cursor-not-allowed bg-muted/40"
+                          : "hover:border-primary hover:bg-primary/5"
+                      }`}
+                    >
+                      <p className="font-medium text-sm truncate">{product.name}</p>
+                      <p className="text-xs text-foreground">{product.sku || "-"}</p>
+                      <div className="flex justify-between items-center mt-2">
+                        <span className="text-primary font-semibold text-sm">
+                          {formatCurrency(product.discount_price || product.price)}
+                        </span>
+                        <span className={`text-xs ${outOfStock ? "text-destructive font-semibold" : "text-foreground"}`}>
+                          {outOfStock ? "Out of Stock" : `Stock: ${displayStock}`}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+
               </div>
             )}
           </div>
