@@ -789,9 +789,10 @@ const AdminBilling = () => {
         ...cart.filter(item => item.quantity !== 0).map((item) =>
           supabase
             .from("products")
-            .update({ stock_quantity: item.product.stock_quantity - item.quantity })
+            .update({ stock_quantity: Math.max(0, (item.product.stock_quantity || 0) - item.quantity) })
             .eq("id", item.product.id)
         ),
+
         // Record stock history
         ...cart.filter(item => item.quantity !== 0).map((item) =>
           supabase.from("stock_history").insert({
