@@ -104,9 +104,22 @@ const AdminDashboard = () => {
         .select("invoice_number")
         .eq("order_id", o.id)
         .maybeSingle();
-      const subtotal = Number(o.subtotal) || 0;
-      const discountAmount = Number(o.discount_amount) || 0;
-      const discountPercent = subtotal > 0 ? (discountAmount / subtotal) * 100 : 0;
+      // Fetch order items to derive the actual discount % entered at billing time
+      const { data: items } = await supabase
+        .from("order_items")
+        .select("quantity, unit_price, total_price")
+        .eq("order_id", o.id);
+      let mrpTotal = 0;
+      let lineTotal = 0;
+      (items || []).forEach((it: any) => {
+        const qty = Number(it.quantity) || 0;
+        if (qty <= 0) return; // ignore returned items for discount %
+        mrpTotal += (Number(it.unit_price) || 0) * qty;
+        lineTotal += Number(it.total_price) || 0;
+      });
+      const discountAmount = Math.max(0, mrpTotal - lineTotal);
+      const discountPercent = mrpTotal > 0 ? (discountAmount / mrpTotal) * 100 : 0;
+      const subtotal = mrpTotal || Number(o.subtotal) || 0;
       setLoyaltyResult({
         customerName: cust.name || "—",
         phone: cust.phone || normalized,
@@ -125,6 +138,7 @@ const AdminDashboard = () => {
       setLoyaltyLoading(false);
     }
   };
+
 
   // Check for fresh login and show welcome loader until data loads
   useEffect(() => {
