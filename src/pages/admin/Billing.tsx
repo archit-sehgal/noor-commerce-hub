@@ -800,7 +800,7 @@ const AdminBilling = () => {
             change_type: item.quantity < 0 ? "return" : "sale",
             change_amount: -item.quantity, // positive for returns (stock added back), negative for sales
             previous_quantity: item.product.stock_quantity,
-            new_quantity: item.product.stock_quantity - item.quantity,
+            new_quantity: Math.max(0, (item.product.stock_quantity || 0) - item.quantity),
             notes: `${item.quantity < 0 ? "Return" : "Sale"} - Order ${orderNumber}`,
             reference_id: order.id,
             created_by: user?.id,
