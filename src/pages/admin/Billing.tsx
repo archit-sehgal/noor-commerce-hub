@@ -245,10 +245,27 @@ const AdminBilling = () => {
   };
 
   const addToCart = (product: Product) => {
+    if ((product.stock_quantity ?? 0) <= 0) {
+      toast({
+        title: "Out of Stock",
+        description: `${product.name} has no stock available`,
+        variant: "destructive",
+      });
+      return;
+    }
     const existingIndex = cart.findIndex((item) => item.product.id === product.id);
     if (existingIndex >= 0) {
+      const current = cart[existingIndex].quantity;
+      if (current >= product.stock_quantity) {
+        toast({
+          title: "Stock Limit Reached",
+          description: `Only ${product.stock_quantity} unit(s) available`,
+          variant: "destructive",
+        });
+        return;
+      }
       const updated = [...cart];
-      updated[existingIndex].quantity += 1;
+      updated[existingIndex] = { ...updated[existingIndex], quantity: current + 1 };
       setCart(updated);
     } else {
       const unitPrice = product.discount_price || product.price;
@@ -265,6 +282,7 @@ const AdminBilling = () => {
       ]);
     }
   };
+
 
   const updateCartItem = (index: number, updates: Partial<CartItem>) => {
     const updated = [...cart];
