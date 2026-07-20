@@ -228,10 +228,13 @@ const AdminBilling = () => {
 
       if (product) {
         addToCart(product);
-        toast({
-          title: "Product Added",
-          description: `${product.name} added to cart`,
-        });
+        if ((product.stock_quantity ?? 0) > 0) {
+          toast({
+            title: "Product Added",
+            description: `${product.name} added to cart`,
+          });
+        }
+
       } else {
         toast({
           title: "Product Not Found",
@@ -245,10 +248,27 @@ const AdminBilling = () => {
   };
 
   const addToCart = (product: Product) => {
+    if ((product.stock_quantity ?? 0) <= 0) {
+      toast({
+        title: "Out of Stock",
+        description: `${product.name} has no stock available`,
+        variant: "destructive",
+      });
+      return;
+    }
     const existingIndex = cart.findIndex((item) => item.product.id === product.id);
     if (existingIndex >= 0) {
+      const current = cart[existingIndex].quantity;
+      if (current >= product.stock_quantity) {
+        toast({
+          title: "Stock Limit Reached",
+          description: `Only ${product.stock_quantity} unit(s) available`,
+          variant: "destructive",
+        });
+        return;
+      }
       const updated = [...cart];
-      updated[existingIndex].quantity += 1;
+      updated[existingIndex] = { ...updated[existingIndex], quantity: current + 1 };
       setCart(updated);
     } else {
       const unitPrice = product.discount_price || product.price;
@@ -265,6 +285,7 @@ const AdminBilling = () => {
       ]);
     }
   };
+
 
   const updateCartItem = (index: number, updates: Partial<CartItem>) => {
     const updated = [...cart];
@@ -768,9 +789,10 @@ const AdminBilling = () => {
         ...cart.filter(item => item.quantity !== 0).map((item) =>
           supabase
             .from("products")
-            .update({ stock_quantity: item.product.stock_quantity - item.quantity })
+            .update({ stock_quantity: Math.max(0, (item.product.stock_quantity || 0) - item.quantity) })
             .eq("id", item.product.id)
         ),
+
         // Record stock history
         ...cart.filter(item => item.quantity !== 0).map((item) =>
           supabase.from("stock_history").insert({
@@ -778,7 +800,7 @@ const AdminBilling = () => {
             change_type: item.quantity < 0 ? "return" : "sale",
             change_amount: -item.quantity, // positive for returns (stock added back), negative for sales
             previous_quantity: item.product.stock_quantity,
-            new_quantity: item.product.stock_quantity - item.quantity,
+            new_quantity: Math.max(0, (item.product.stock_quantity || 0) - item.quantity),
             notes: `${item.quantity < 0 ? "Return" : "Sale"} - Order ${orderNumber}`,
             reference_id: order.id,
             created_by: user?.id,
@@ -945,24 +967,34 @@ const AdminBilling = () => {
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 max-h-[300px] md:max-h-[400px] overflow-y-auto">
-                {filteredProducts.map((product) => (
-                  <button
-                    key={product.id}
-                    onClick={() => addToCart(product)}
-                    className="p-3 border border-border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors text-left"
-                  >
-                    <p className="font-medium text-sm truncate">{product.name}</p>
-                    <p className="text-xs text-foreground">{product.sku || "-"}</p>
-                    <div className="flex justify-between items-center mt-2">
-                      <span className="text-primary font-semibold text-sm">
-                        {formatCurrency(product.discount_price || product.price)}
-                      </span>
-                      <span className="text-xs text-foreground">
-                        Stock: {product.stock_quantity}
-                      </span>
-                    </div>
-                  </button>
-                ))}
+                {filteredProducts.map((product) => {
+                  const displayStock = Math.max(0, product.stock_quantity ?? 0);
+                  const outOfStock = displayStock <= 0;
+                  return (
+                    <button
+                      key={product.id}
+                      onClick={() => addToCart(product)}
+                      disabled={outOfStock}
+                      className={`p-3 border border-border rounded-lg text-left transition-colors ${
+                        outOfStock
+                          ? "opacity-50 cursor-not-allowed bg-muted/40"
+                          : "hover:border-primary hover:bg-primary/5"
+                      }`}
+                    >
+                      <p className="font-medium text-sm truncate">{product.name}</p>
+                      <p className="text-xs text-foreground">{product.sku || "-"}</p>
+                      <div className="flex justify-between items-center mt-2">
+                        <span className="text-primary font-semibold text-sm">
+                          {formatCurrency(product.discount_price || product.price)}
+                        </span>
+                        <span className={`text-xs ${outOfStock ? "text-destructive font-semibold" : "text-foreground"}`}>
+                          {outOfStock ? "Out of Stock" : `Stock: ${displayStock}`}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+
               </div>
             )}
           </div>
