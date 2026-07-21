@@ -186,9 +186,11 @@ export function generateInvoiceHTML(data: InvoiceData): string {
     </div>
     <div>
       <p><strong>Payment:</strong> ${data.paymentStatus.toUpperCase()}</p>
+      <p><strong>Total Qty:</strong> ${data.items.reduce((s, i) => s + Math.abs(i.quantity), 0)}</p>
       ${isExchange ? `<p><strong>Type:</strong> EXCHANGE</p>` : ""}
     </div>
   </div>
+
   <table>
     <thead>
       <tr>
