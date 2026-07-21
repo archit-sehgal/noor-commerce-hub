@@ -97,6 +97,7 @@ const AdminBilling = () => {
   const [newCustomerEmail, setNewCustomerEmail] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
   const [creditAmount, setCreditAmount] = useState<number>(0);
+  const [creditPaidVia, setCreditPaidVia] = useState<"cash" | "card_upi">("cash");
   const [cashAmount, setCashAmount] = useState<number>(0);
   const [cardUpiAmount, setCardUpiAmount] = useState<number>(0);
   const [notes, setNotes] = useState("");
@@ -690,7 +691,11 @@ const AdminBilling = () => {
         notes,
         `In-store ${isExchange ? "exchange" : "purchase"} - ${paymentMethod}`,
         paymentMethod === "double" ? `(Cash: ₹${cashAmount}, Card/UPI: ₹${cardUpiAmount})` : "",
-        paymentMethod === "credit" ? `(Credit: ₹${creditAmount || totalAmount})` : "",
+        paymentMethod === "credit" ? (
+          creditAmount > 0 && creditAmount < totalAmount
+            ? `(Credit: ₹${creditAmount}, ${creditPaidVia === "cash" ? "Cash" : "Card/UPI"}: ₹${totalAmount - creditAmount})`
+            : `(Credit: ₹${creditAmount || totalAmount})`
+        ) : "",
         creditNoteAmount > 0 ? `CREDIT NOTE ISSUED: ₹${creditNoteAmount}` : "",
       ].filter(Boolean).join(" ");
 
@@ -1346,8 +1351,37 @@ const AdminBilling = () => {
                       Full Amount
                     </Button>
                   </div>
+                  {creditAmount > 0 && creditAmount < totalAmount && (
+                    <div className="pt-2 border-t border-border/50 space-y-2">
+                      <Label className="text-sm">
+                        Remaining {formatCurrency(totalAmount - creditAmount)} paid via
+                      </Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          type="button"
+                          variant={creditPaidVia === "cash" ? "default" : "outline"}
+                          size="sm"
+                          className="h-8"
+                          onClick={() => setCreditPaidVia("cash")}
+                        >
+                          Cash
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={creditPaidVia === "card_upi" ? "default" : "outline"}
+                          size="sm"
+                          className="h-8"
+                          onClick={() => setCreditPaidVia("card_upi")}
+                        >
+                          Card / UPI
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                   <p className="text-xs text-muted-foreground">
-                    Credit: {formatCurrency(creditAmount || totalAmount)} — Payment will show as pending
+                    Credit: {formatCurrency(creditAmount || totalAmount)}
+                    {creditAmount > 0 && creditAmount < totalAmount &&
+                      ` + ${creditPaidVia === "cash" ? "Cash" : "Card/UPI"}: ${formatCurrency(totalAmount - creditAmount)}`}
                   </p>
                 </div>
               )}

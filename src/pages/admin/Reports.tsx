@@ -195,7 +195,17 @@ const AdminReports = () => {
           cashRevenue += cashMatch ? Number(cashMatch[1].replace(/,/g, '')) : 0;
           cardUpiRevenue += cardMatch ? Number(cardMatch[1].replace(/,/g, '')) : 0;
         } else if (method === 'credit') {
-          creditRevenue += amount;
+          // Partial credit: some amount paid via cash or card/upi, remainder on credit
+          const notesLower = (o.notes || '').toLowerCase();
+          const creditMatch = notesLower.match(/credit:\s*₹?([\d,]+)/);
+          const cashMatch = notesLower.match(/cash:\s*₹?([\d,]+)/);
+          const cardMatch = notesLower.match(/card\/upi:\s*₹?([\d,]+)/);
+          const creditPortion = creditMatch ? Number(creditMatch[1].replace(/,/g, '')) : amount;
+          const cashPortion = cashMatch ? Number(cashMatch[1].replace(/,/g, '')) : 0;
+          const cardPortion = cardMatch ? Number(cardMatch[1].replace(/,/g, '')) : 0;
+          creditRevenue += creditPortion;
+          cashRevenue += cashPortion;
+          cardUpiRevenue += cardPortion;
         } else if (method === 'card_upi') {
           cardUpiRevenue += amount;
         } else {
