@@ -97,6 +97,7 @@ const AdminBilling = () => {
   const [newCustomerEmail, setNewCustomerEmail] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
   const [creditAmount, setCreditAmount] = useState<number>(0);
+  const [creditPaidVia, setCreditPaidVia] = useState<"cash" | "card_upi">("cash");
   const [cashAmount, setCashAmount] = useState<number>(0);
   const [cardUpiAmount, setCardUpiAmount] = useState<number>(0);
   const [notes, setNotes] = useState("");
