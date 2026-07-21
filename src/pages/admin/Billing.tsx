@@ -1347,8 +1347,37 @@ const AdminBilling = () => {
                       Full Amount
                     </Button>
                   </div>
+                  {creditAmount > 0 && creditAmount < totalAmount && (
+                    <div className="pt-2 border-t border-border/50 space-y-2">
+                      <Label className="text-sm">
+                        Remaining {formatCurrency(totalAmount - creditAmount)} paid via
+                      </Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          type="button"
+                          variant={creditPaidVia === "cash" ? "default" : "outline"}
+                          size="sm"
+                          className="h-8"
+                          onClick={() => setCreditPaidVia("cash")}
+                        >
+                          Cash
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={creditPaidVia === "card_upi" ? "default" : "outline"}
+                          size="sm"
+                          className="h-8"
+                          onClick={() => setCreditPaidVia("card_upi")}
+                        >
+                          Card / UPI
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                   <p className="text-xs text-muted-foreground">
-                    Credit: {formatCurrency(creditAmount || totalAmount)} — Payment will show as pending
+                    Credit: {formatCurrency(creditAmount || totalAmount)}
+                    {creditAmount > 0 && creditAmount < totalAmount &&
+                      ` + ${creditPaidVia === "cash" ? "Cash" : "Card/UPI"}: ${formatCurrency(totalAmount - creditAmount)}`}
                   </p>
                 </div>
               )}
