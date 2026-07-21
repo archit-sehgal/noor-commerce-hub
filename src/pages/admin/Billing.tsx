@@ -691,7 +691,11 @@ const AdminBilling = () => {
         notes,
         `In-store ${isExchange ? "exchange" : "purchase"} - ${paymentMethod}`,
         paymentMethod === "double" ? `(Cash: ₹${cashAmount}, Card/UPI: ₹${cardUpiAmount})` : "",
-        paymentMethod === "credit" ? `(Credit: ₹${creditAmount || totalAmount})` : "",
+        paymentMethod === "credit" ? (
+          creditAmount > 0 && creditAmount < totalAmount
+            ? `(Credit: ₹${creditAmount}, ${creditPaidVia === "cash" ? "Cash" : "Card/UPI"}: ₹${totalAmount - creditAmount})`
+            : `(Credit: ₹${creditAmount || totalAmount})`
+        ) : "",
         creditNoteAmount > 0 ? `CREDIT NOTE ISSUED: ₹${creditNoteAmount}` : "",
       ].filter(Boolean).join(" ");
 
